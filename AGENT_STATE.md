@@ -98,6 +98,7 @@
 - 078 | Restored GitHub CLI authentication | Device login completed for GitHub account PillB with repo/workflow scopes available through gh | Status: Success
 - 079 | Created and published GitHub repository | Initialized local git main, committed the complete tested MVP, created public repository PillB/NetworkAnalyticsPredictivePlatform, pushed commit 96d38391ca7073582862b1a8abe4d1f3764b31a4, and enabled GitHub Pages with Actions | Status: Success
 - 080 | Deployed and remotely verified GitHub Pages MVP | Reran the Pages workflow after initial pre-enablement failure; deployment succeeded and Playwright verified https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ for subpath assets, guided MVP, static safeguards, and report preflight | Status: Success
+- 081 | Finalized remote Pages verification harness | Pushed commit 86b524b9454fc04ff43466e3e6cc6eb9aecdbbd9 with remote-URL Playwright mode; latest Pages workflow succeeded and HTTPS Playwright verification passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -160,6 +161,7 @@
 - A Pages-compatible local artifact is not evidence of public availability; deployment completion requires repository identity, authenticated push, Pages source enablement, successful Actions deployment, and remote HTTPS Playwright verification.
 - GitHub Pages must remain synthetic training-only because it cannot enforce operational OIDC, purpose grants, RLS, audit, or data retention controls.
 - Pages workflow creation and Pages enablement can race on first push; rerunning the workflow after enabling Pages resolved the initial Configure Pages 404.
+- Current GitHub Pages Actions emit Node 20 deprecation annotations for upstream Pages actions while running under Node 24; this is an upstream warning, not a failed deployment, but should be watched.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
