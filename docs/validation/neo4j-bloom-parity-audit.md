@@ -1,6 +1,6 @@
 # Neo4j Bloom Graph Exploration Playwright Audit
 
-Generated: 2026-06-26T19:43:22.049Z
+Generated: 2026-06-26T19:53:57.888Z
 
 ## Scope
 
