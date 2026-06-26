@@ -40,6 +40,7 @@ The platform does not determine guilt. Association, centrality, community member
 - [Product and system requirements](docs/requirements/phase-2-product-requirements.md)
 - [Financial fraud-ring and cuentas mulas use case](docs/requirements/financial-fraud-ring-use-case.md)
 - [Guided analysis journey](docs/ux/guided-analysis-journey.md)
+- [i2-class AI-enhanced execution checklist](docs/implementation/i2-better-ai-execution-checklist.md)
 
 ### Architecture
 

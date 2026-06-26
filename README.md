@@ -97,6 +97,7 @@ reviewable report preview.
 ## Authoritative documentation
 
 - [Master specification](MASTER_SPECIFICATION.md)
+- [i2-class AI-enhanced execution checklist](docs/implementation/i2-better-ai-execution-checklist.md)
 - [Financial fraud-ring use case](docs/requirements/financial-fraud-ring-use-case.md)
 - [System architecture](docs/architecture/system-architecture.md)
 - [Black-box tests](docs/specifications/black-box-tests.md)
