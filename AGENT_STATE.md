@@ -99,6 +99,8 @@
 - 079 | Created and published GitHub repository | Initialized local git main, committed the complete tested MVP, created public repository PillB/NetworkAnalyticsPredictivePlatform, pushed commit 96d38391ca7073582862b1a8abe4d1f3764b31a4, and enabled GitHub Pages with Actions | Status: Success
 - 080 | Deployed and remotely verified GitHub Pages MVP | Reran the Pages workflow after initial pre-enablement failure; deployment succeeded and Playwright verified https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ for subpath assets, guided MVP, static safeguards, and report preflight | Status: Success
 - 081 | Finalized remote Pages verification harness | Pushed commit 86b524b9454fc04ff43466e3e6cc6eb9aecdbbd9 with remote-URL Playwright mode; latest Pages workflow succeeded and HTTPS Playwright verification passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ | Status: Success
+- 082 | Implemented financial fraud-ring use case | Added selectable synthetic cuentas mulas/fraud-ring workflow, transaction fixture, explainable mule indicators, neutral report preflight, advanced TGNN/GNN gates, interactive graph drag/rotate/undo/redo/reset controls, and requirements/ADR/test documentation | Status: Success
+- 083 | Verified local financial workflow and Pages artifact | 25 frontend tests passed including financial-fraud contracts; local GitHub Pages Playwright preview passed for use-case switch, graph rotation, undo, layout reset, guided completion, and report preflight | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -162,12 +164,15 @@
 - GitHub Pages must remain synthetic training-only because it cannot enforce operational OIDC, purpose grants, RLS, audit, or data retention controls.
 - Pages workflow creation and Pages enablement can race on first push; rerunning the workflow after enabling Pages resolved the initial Configure Pages 404.
 - Current GitHub Pages Actions emit Node 20 deprecation annotations for upstream Pages actions while running under Node 24; this is an upstream warning, not a failed deployment, but should be watched.
+- Financial fraud-ring detection must remain behavior/evidence review-priority support; even high mule indicators are not person-level guilt or criminality determinations.
+- Temporal GNN, heterogeneous GNN, sequence, and adaptive models are not production features until leakage-safe hard-negative evaluation, calibration, robustness, explanation, authorization, and human overreliance gates pass.
+- Graph drag/spin/undo/redo/reset is visualization state only and must not alter evidence dependencies or analytical versions.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
-  - Test 1: Keep the GitHub Pages MVP healthy by monitoring workflow status and remote Playwright verification after changes.
+  - Test 1: Push the financial fraud-ring and graph-manipulation implementation to GitHub and verify the GitHub Pages workflow plus remote Playwright URL after deployment.
   - Test 2: Integrate authorization-code/PKCE session transport and external policy evaluation, then benchmark PostgreSQL-backed projections, provenance, jobs, reports, and browser interaction.
-  - Test 3: Execute native zoom, forced-colors, screen-reader, prioritization-overreliance, and representative novice sessions; automated 200–400% reflow is complete.
+  - Test 3: Execute native zoom, forced-colors, screen-reader, prioritization-overreliance, representative novice sessions, and financial-fraud overreliance sessions; automated 200–400% reflow is complete.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
   - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.
   - Test 2: Iterate against failed gates and contradictory evidence.

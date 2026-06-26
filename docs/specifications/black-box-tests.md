@@ -355,3 +355,39 @@ or tie breakers.
 
 Identical versioned inputs produce byte-equivalent assessments and deterministic
 competition ranks, including ties.
+
+## 16. Financial fraud-ring and cuentas mulas workflow
+
+### BB-FRAUD-001 — Required transaction fields
+
+The workflow accepts records with transaction date/time, origin account/person,
+destination account/person, identifiers, amount, currency, and transaction
+type/description. Missing optional device/IP/KYC fields lower evidence coverage
+instead of inventing certainty.
+
+### BB-FRAUD-002 — Mule indicators are explainable
+
+Every review-priority account exposes exact contributing indicators, exact
+transaction dependencies, and contrary explanations.
+
+### BB-FRAUD-003 — Temporal leakage is blocked
+
+Transactions or infrastructure events after the known-at cutoff cannot affect
+the before/after graph, mule score, report, or community roles.
+
+### BB-FRAUD-004 — Neutral output language
+
+The system labels accounts as review-priority or watch/background only. It does
+not output guilt, criminality, dangerousness, or enforcement recommendations.
+
+### BB-FRAUD-005 — Advanced model gates
+
+Temporal GNN, heterogeneous GNN, sequence, and adaptive models remain disabled
+unless leakage-safe benchmarks, hard negatives, calibration, robustness,
+explanation, authorization, and human-factor gates pass.
+
+### BB-FRAUD-006 — Graph manipulation safety
+
+Dragging nodes, rotating/spinning the graph, undo/redo, and layout reset change
+only visualization state. They do not create analytical versions or alter
+evidence dependencies.

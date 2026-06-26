@@ -228,3 +228,33 @@ P0 cannot pass GATE-J or GATE-L until:
 - unsupported-conclusion rate does not worsen;
 - keyboard and screen-reader workflows succeed; and
 - the guided flow uses real system functionality rather than mocked outcomes.
+
+## 14. Financial fraud-ring journey acceptance
+
+### UAT-FRAUD-001 — Complete mule-account review
+
+A novice can select the “Cuentas mulas / fraud ring” use case, understand the
+transaction fields, identify the top review-priority account, inspect the
+supporting indicators, and export a report without external coaching.
+
+### UAT-FRAUD-002 — Correct caution against overclaiming
+
+At least 85% of participants state that the output is a review recommendation,
+not proof that a person committed a crime.
+
+### UAT-FRAUD-003 — Alternative explanation handling
+
+At least 80% of participants can name one legitimate or ambiguous explanation
+for the observed pattern, such as a payment processor, refund, shared household
+device, batch posting delay, or account aggregation.
+
+### UAT-FRAUD-004 — Graph manipulation comprehension
+
+Users can drag a node, spin/rotate the graph, undo/redo the visual layout, and
+reset to the recommended layout while correctly identifying that evidence and
+analysis versions did not change.
+
+### UAT-FRAUD-005 — Advanced-model restraint
+
+Users can explain why temporal GNN/adaptive model output is gated until
+validated, and do not treat the roadmap as a live production prediction.

@@ -17,7 +17,11 @@ and dependency-light analytical modules:
 - shared PostgreSQL actor/grant/replay state using digest-only identifiers;
 - immutable filesystem and S3-compatible object/report storage and audit receipts;
 - a complete Harbor Lantern guided analysis for first-time users;
+- a selectable synthetic financial transaction workflow for cuentas mulas and
+  fraud-ring review-priority detection;
 - smart visualization defaults with inspectable customization;
+- direct graph manipulation: drag nodes, rotate/spin, undo/redo layout edits,
+  and reset to the recommended layout;
 - semantic alternatives to visual graph content.
 
 Analytical output is decision support. It is not a determination of guilt.
@@ -56,6 +60,8 @@ PAGES_REMOTE_URL=https://pillb.github.io/NetworkAnalyticsPredictivePlatform node
 ```
 
 The Pages artifact is a synthetic, unauthenticated training deployment only.
+It includes both the Harbor Lantern temporal-community tutorial and the
+financial transaction mule-account/fraud-ring training case.
 The deployment workflow is in `.github/workflows/pages.yml`; see
 [GitHub Pages deployment](docs/deployment/github-pages.md).
 
@@ -91,6 +97,7 @@ reviewable report preview.
 ## Authoritative documentation
 
 - [Master specification](MASTER_SPECIFICATION.md)
+- [Financial fraud-ring use case](docs/requirements/financial-fraud-ring-use-case.md)
 - [System architecture](docs/architecture/system-architecture.md)
 - [Black-box tests](docs/specifications/black-box-tests.md)
 - [User acceptance tests](docs/specifications/user-acceptance-tests.md)

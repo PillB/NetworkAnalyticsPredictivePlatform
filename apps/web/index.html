@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Harbor Lantern guided temporal network analysis training application."
+          content="Guided temporal network analysis and financial fraud-ring detection training application."
     />
     <title>Harbor Lantern · Guided analysis</title>
     <link rel="stylesheet" href="../../packages/design-system/tokens.css" />
@@ -22,9 +22,9 @@
         </div>
       </div>
       <div class="case-context" aria-label="Current case context">
-        <span><b>Case</b> HL-TRAIN-001</span>
-        <span><b>Event range</b> Jan 18–Mar 18, 2026</span>
-        <span><b>Known at</b> Mar 18 · 23:59</span>
+        <span><b>Case</b> <span id="caseId">HL-TRAIN-001</span></span>
+        <span><b>Event range</b> <span id="caseRange">Jan 18–Mar 18, 2026</span></span>
+        <span><b>Known at</b> <span id="caseKnownAt">Mar 18 · 23:59</span></span>
         <span class="version-chip">Analysis v1</span>
       </div>
       <button class="icon-button" id="helpButton" type="button" aria-expanded="false">
@@ -38,6 +38,13 @@
           <p class="kicker">Training case</p>
           <h1 id="workflow-title">A guided investigation</h1>
           <p>Fictional data · about 8 minutes</p>
+          <label class="use-case-picker">
+            <span>Use case</span>
+            <select id="useCaseMode">
+              <option value="harbor">Temporal community split</option>
+              <option value="fraud">Cuentas mulas / fraud ring</option>
+            </select>
+          </label>
         </div>
         <nav aria-label="Guided analysis steps">
           <ol class="step-list" id="stepList"></ol>
@@ -100,6 +107,8 @@
               <option value="all">All recommended</option>
               <option value="communications">Communications</option>
               <option value="transfers">Transfers</option>
+              <option value="cashout">Cash-out</option>
+              <option value="infrastructure">Infrastructure</option>
               <option value="devices">Shared devices</option>
               <option value="employment">Employment</option>
               <option value="shipment">Shipment involvement</option>
@@ -138,6 +147,13 @@
               <span>High contrast</span>
               <input id="highContrast" type="checkbox" />
             </label>
+            <div class="layout-controls" aria-label="Graph layout controls">
+              <button class="button secondary" id="rotateLeft" type="button">Rotate left</button>
+              <button class="button secondary" id="rotateRight" type="button">Spin right</button>
+              <button class="button secondary" id="graphUndo" type="button">Undo layout</button>
+              <button class="button secondary" id="graphRedo" type="button">Redo layout</button>
+              <button class="button secondary" id="resetLayout" type="button">Reset layout</button>
+            </div>
             <p>Styling changes do not create a new analysis version. Evidence and uncertainty markers remain visible.</p>
           </div>
         </section>
@@ -147,7 +163,7 @@
             <div class="card-heading">
               <div>
                 <p class="kicker">Synchronized comparison</p>
-                <h2>Observed network</h2>
+                <h2 id="graphHeading">Observed network</h2>
               </div>
               <div class="legend" aria-label="Graph legend">
                 <span><i class="legend-shape person"></i>Person</span>
@@ -197,7 +213,7 @@
             <div class="card-heading">
               <div>
                 <p class="kicker">Community change summary</p>
-                <h2>Possible temporary split</h2>
+                <h2 id="communityHeading">Possible temporary split</h2>
               </div>
               <span class="confidence-chip" id="splitConfidence">Moderate confidence</span>
             </div>
@@ -216,7 +232,7 @@
             </details>
             <div class="alternative-control">
               <label class="switch-row">
-                <span><b>Include disputed Elena Voss alias</b><small>Recommended: include, but mark distinctly</small></span>
+                <span><b id="aliasControlLabel">Include disputed Elena Voss alias</b><small id="aliasControlHelp">Recommended: include, but mark distinctly</small></span>
                 <input id="aliasIncluded" type="checkbox" checked />
               </label>
             </div>

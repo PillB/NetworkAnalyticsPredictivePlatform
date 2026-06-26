@@ -74,6 +74,17 @@ try {
       await page.locator("#priorityQueue").innerText(),
       /No ordering shown in static fallback mode/i,
     );
+    await page.locator("#useCaseMode").selectOption("fraud");
+    assert.match(await page.locator("#question-title").textContent(), /mule accounts|fraud ring/i);
+    assert.match(await page.locator("#communityHeading").textContent(), /mule bridge/i);
+    assert.equal(await page.locator("#stepList .step-button").count(), 7);
+    await page.locator("#visualControls").click();
+    await page.locator("#rotateRight").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /rotated/i);
+    await page.locator("#graphUndo").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /undo/i);
+    await page.locator("#resetLayout").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /layout reset/i);
     for (let index = 0; index < 6; index += 1) {
       await page.locator("#nextStep").click();
     }

@@ -73,6 +73,20 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 }
 .workflow-panel h1 { margin: 3px 0; font: 24px/1.15 var(--font-display); }
 .workflow-heading > p:last-child { margin: 7px 0 20px; color: var(--muted); font-size: 12px; }
+.use-case-picker {
+  display: block;
+  margin: 14px 0 18px;
+}
+.use-case-picker span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.use-case-picker select { width: 100%; }
 .kicker {
   margin: 0 0 5px;
   color: var(--teal);
@@ -221,6 +235,13 @@ select, .control-button {
 .visual-popover label { display: block; margin-bottom: 14px; }
 .visual-popover input[type="range"] { width: 100%; }
 .visual-popover p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.layout-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin: 12px 0;
+}
+.layout-controls .button { min-height: 31px; padding: 6px 8px; }
 .switch-row { display: flex !important; justify-content: space-between; align-items: center; gap: 12px; }
 .switch-row input[type="checkbox"] { width: 36px; height: 19px; accent-color: var(--teal); }
 .analysis-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; margin-top: 16px; }
@@ -255,7 +276,8 @@ select, .control-button {
 .graph-edge.status-appeared { stroke: var(--teal); }
 .graph-edge.status-no-longer-observed { stroke: var(--amber); }
 .graph-edge.is-selected { stroke: #d45f35; stroke-width: 2.5; }
-.graph-node { fill: var(--blue); stroke: white; stroke-width: 1.2; pointer-events: none; }
+.graph-node { fill: var(--blue); stroke: white; stroke-width: 1.2; cursor: grab; }
+.graph-node:active { cursor: grabbing; }
 .graph-node.type-person { fill: var(--plum); }
 .graph-node.type-place { fill: #51806f; }
 .graph-node.type-device { fill: var(--amber); }

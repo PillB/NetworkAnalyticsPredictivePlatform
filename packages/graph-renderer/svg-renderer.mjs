@@ -6,12 +6,30 @@ function svgElement(name, attributes = {}) {
   return element;
 }
 
-function point(node, spacing) {
-  const scale = 0.82 + Number(spacing) * 0.18;
+function rotateAroundCenter(pointValue, degrees) {
+  const radians = (Number(degrees) * Math.PI) / 180;
+  const dx = pointValue.x - 50;
+  const dy = pointValue.y - 50;
   return {
-    x: 50 + (node.x - 50) * scale,
-    y: 50 + (node.y - 50) * scale,
+    x: 50 + dx * Math.cos(radians) - dy * Math.sin(radians),
+    y: 50 + dx * Math.sin(radians) + dy * Math.cos(radians),
   };
+}
+
+function point(node, spacing, positions = {}, rotation = 0) {
+  const base = positions[node.id] ?? { x: node.x, y: node.y };
+  const scale = 0.82 + Number(spacing) * 0.18;
+  return rotateAroundCenter({
+    x: 50 + (base.x - 50) * scale,
+    y: 50 + (base.y - 50) * scale,
+  }, rotation);
+}
+
+function svgPoint(svg, event) {
+  const pt = svg.createSVGPoint();
+  pt.x = event.clientX;
+  pt.y = event.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 
 function nodeShape(node, x, y) {
@@ -34,7 +52,11 @@ export function renderGraph(svg, model, options = {}) {
     labelDensity = "comfortable",
     spacing = 1,
     showCommunities = true,
+    positions = {},
+    rotation = 0,
     onSelect = () => {},
+    onNodeMoveStart = () => {},
+    onNodeMove = () => {},
   } = options;
   svg.replaceChildren();
   svg.setAttribute("viewBox", "0 0 100 100");
@@ -52,8 +74,8 @@ export function renderGraph(svg, model, options = {}) {
   }
 
   model.edges.forEach((edge) => {
-    const source = point(edge.sourceNode, spacing);
-    const target = point(edge.targetNode, spacing);
+    const source = point(edge.sourceNode, spacing, positions, rotation);
+    const target = point(edge.targetNode, spacing, positions, rotation);
     const line = svgElement("line", {
       x1: source.x,
       y1: source.y,
@@ -72,8 +94,13 @@ export function renderGraph(svg, model, options = {}) {
   });
 
   model.nodes.forEach((node) => {
-    const { x, y } = point(node, spacing);
-    const group = svgElement("g", { class: `graph-node type-${node.type}` });
+    const { x, y } = point(node, spacing, positions, rotation);
+    const group = svgElement("g", {
+      class: `graph-node type-${node.type}`,
+      tabindex: 0,
+      "data-node-id": node.id,
+      "aria-label": `${node.label}. Drag to reposition this node in the visualization only.`,
+    });
     group.append(nodeShape(node, x, y));
     if (labelDensity !== "minimal" || node.id === "northstar") {
       const label = svgElement("text", {
@@ -85,6 +112,19 @@ export function renderGraph(svg, model, options = {}) {
       label.textContent = node.label;
       group.append(label);
     }
+    group.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      group.setPointerCapture(event.pointerId);
+      onNodeMoveStart(node.id);
+    });
+    group.addEventListener("pointermove", (event) => {
+      if (!group.hasPointerCapture(event.pointerId)) return;
+      const next = svgPoint(svg, event);
+      onNodeMove(node.id, { x: next.x, y: next.y });
+    });
+    group.addEventListener("pointerup", (event) => {
+      if (group.hasPointerCapture(event.pointerId)) group.releasePointerCapture(event.pointerId);
+    });
     svg.append(group);
   });
 

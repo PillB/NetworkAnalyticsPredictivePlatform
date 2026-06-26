@@ -38,6 +38,7 @@ The platform does not determine guilt. Association, centrality, community member
 ### Requirements and UX
 
 - [Product and system requirements](docs/requirements/phase-2-product-requirements.md)
+- [Financial fraud-ring and cuentas mulas use case](docs/requirements/financial-fraud-ring-use-case.md)
 - [Guided analysis journey](docs/ux/guided-analysis-journey.md)
 
 ### Architecture
@@ -57,6 +58,7 @@ The platform does not determine guilt. Association, centrality, community member
 - [ADR 0014: SDK-neutral S3-compatible adapters](docs/architecture/decisions/0014-sdk-neutral-s3-compatible-adapters.md)
 - [ADR 0015: PostgreSQL security stores](docs/architecture/decisions/0015-postgresql-security-store-adapters.md)
 - [ADR 0016: PyJWT OIDC verification](docs/architecture/decisions/0016-pyjwt-oidc-verification.md)
+- [ADR 0017: Financial fraud-ring detection](docs/architecture/decisions/0017-financial-fraud-ring-detection.md)
 
 ### Verification
 
@@ -73,6 +75,7 @@ The platform does not determine guilt. Association, centrality, community member
 ### P0 — first differentiated vertical slice
 
 - Synthetic Harbor Lantern case.
+- Synthetic financial transaction case for cuentas mulas and fraud-ring auto-detection.
 - Purpose-bound case entry.
 - Assertion-level temporal evidence.
 - Valid-time and known-at reconstruction.
@@ -85,6 +88,7 @@ The platform does not determine guilt. Association, centrality, community member
 - Correction impact preview.
 - Guided ELI5 analysis.
 - Smart defaults and safe visualization customization.
+- Direct graph manipulation: drag nodes, spin/rotate view, undo/redo layout edits, and reset to recommended layout without changing analysis versions.
 - Structured finding and reconstructable report.
 - Tamper-evident audit.
 - Keyboard and equivalent table/text workflows.
@@ -147,6 +151,8 @@ The platform does not determine guilt. Association, centrality, community member
 | REQ-FR-025 | P1 | Evidence-constrained lead prioritization |
 | REQ-FR-026 | P2 | Optional temporal learned models |
 | REQ-FR-027 | P2 | Incremental analytics |
+| REQ-FR-028 | P0 | Financial transaction mule-account and fraud-ring review workflow |
+| REQ-FR-029 | P0 | Interactive graph layout manipulation with visual undo/redo/reset |
 
 Detailed acceptance criteria are in the Phase 2 requirements.
 
@@ -204,6 +210,8 @@ Detailed acceptance criteria are in the Phase 2 requirements.
 | DEC-031 | Automated browser accessibility checks are prerequisites only; representative novice, overreliance, keyboard, zoom/reflow, and screen-reader sessions control the human-factor release gate |
 | DEC-032 | OIDC ID tokens are verified through a trusted HTTPS JWKS endpoint with a fixed asymmetric algorithm allowlist, required claims, nonce/ACR checks, and multi-audience authorized-party validation |
 | DEC-033 | GitHub Pages publishes only the synthetic static-training MVP from a generated subpath-safe artifact; operational data, identity, policy, persistence, and API capabilities require the production deployment |
+| DEC-034 | Financial fraud-ring and cuentas mulas MVP uses explainable CPU-first account/ring review indicators; temporal GNNs and adaptive models are gated derived artifacts |
+| DEC-035 | Node dragging, graph spin/rotation, undo/redo, and layout reset are visualization-state operations and do not create analytical versions |
 
 ## 8. Required architecture invariants
 
