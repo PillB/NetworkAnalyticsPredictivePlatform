@@ -440,13 +440,20 @@ Current implementation evidence:
 - Used a STORM-inspired implementation loop with dedicated subagents for Step 8
   model/evaluation design and Step 9 assistant workflow design, then integrated
   their recommendations into executable local code.
+- Added production-readiness contracts for calibration curves, neural training
+  run plans, trained-artifact validation, model-provider configuration, and the
+  final predictive production promotion gate.
+- The UI now exposes that neural training is adapter-blocked and production
+  prediction display remains blocked until real trained artifacts, approved
+  providers, and representative overreliance evidence pass.
 
 Remaining gaps:
 
-- This remains a deterministic simulation and evaluation contract, not a trained
-  neural model. Full TGNN/GNN training, real calibration curves, external
-  retrieval/model providers, and representative analyst-overreliance studies
-  remain required before any predictive display can be enabled.
+- This remains a deterministic simulation and production-readiness contract, not
+  a trained neural model. Full TGNN/GNN training, real calibration curves,
+  artifact manifests, external retrieval/model providers, privacy/security
+  review, and representative analyst-overreliance studies remain required before
+  any predictive display can be enabled.
 
 ### Step 9 — Further AI functionality research and implementation
 
@@ -530,13 +537,21 @@ Current implementation evidence:
 - Browser coverage now exercises query preview, gap/entity review, coach,
   active-learning suggestion, cited answer, refusal, neutral report draft,
   save-as-note, and red-team review.
+- Added production-readiness contracts for prompt-injection detection,
+  retrieved-source isolation, server-side retrieval authorization, content-free
+  persistent AI audit records, privacy review, external provider request gating,
+  and representative overreliance study evidence.
+- The assistant UI now reports retrieval authorization, provider gating,
+  overreliance status, and a content-free audit hash when running gap/entity
+  review.
 
 Remaining gaps:
 
-- No external LLM is wired yet. Production AI still needs model/provider
-  configuration, prompt-injection isolation, persisted audit records,
-  authorized retrieval services, human usability measurements, and live
-  red-team evaluation before release.
+- Step 9 remains deterministic and local. Production still requires server-side
+  authorized retrieval services, persistent audit storage, provider isolation,
+  prompt-injection sandboxing, privacy/security review, retention policy,
+  representative analyst overreliance studies, and measured task-time/error
+  evidence before external AI can be used on operational data.
 
 ### Phase A — Current MVP stabilization and deployment validation
 

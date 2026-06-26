@@ -39,6 +39,10 @@ import {
   evaluatePredictiveModelCandidates,
 } from "../../packages/predictive/model-gates.mjs";
 import {
+  createNeuralTrainingRunPlan,
+  evaluateProductionPromotion,
+} from "../../packages/predictive/production-readiness.mjs";
+import {
   loadWorkbenchBootstrap,
 } from "../../packages/api-client/workbench-client.mjs";
 import {
@@ -85,6 +89,12 @@ import {
   setTaskState,
   undoWorkspaceChange,
 } from "../../packages/graph-renderer/chart-workspace.mjs";
+import {
+  authorizeServerRetrievalRequest,
+  createPersistentAiAuditRecord,
+  evaluateOverrelianceStudyEvidence,
+  validateExternalModelProviderRequest,
+} from "../../packages/ai-assistant/production-readiness.mjs";
 import {
   applyScenePreset,
   executeGraphPhrase,
@@ -634,11 +644,31 @@ function renderModelGates() {
   elements.modelGatePanel.innerHTML = modelEvaluation.candidates.map((candidate) => {
     const attempt = enableCandidate(modelEvaluation, candidate.id);
     const card = candidate.modelCard;
+    const trainingPlan = createNeuralTrainingRunPlan({
+      candidateId: candidate.id,
+      folds: modelEvaluation.temporalFolds.folds,
+    });
+    const productionGate = evaluateProductionPromotion({
+      candidateId: candidate.id,
+      predictions: [],
+      dependencies: [],
+      redTeamScores: candidate.metrics.redTeamScores,
+      target: card.target,
+      overrelianceStudy: { status: "not-run" },
+    }, {
+      providerConfig: {
+        provider: "unconfigured",
+        endpoint: "",
+        dataPolicy: "no-operational-data-without-authorization",
+        deploymentMode: "local-offline",
+      },
+    });
     return `
       <div class="workspace-item">
         <b>${escapeHtml(candidate.label)}</b>
         <small>${escapeHtml(candidate.family)} · ${escapeHtml(candidate.gateStatus)} · precision@budget ${candidate.metrics.precisionAtBudget.toFixed(2)}</small>
         <small>${escapeHtml(attempt.reason)}</small>
+        <small>Training plan: ${escapeHtml(trainingPlan.status)} · Production gate: ${escapeHtml(productionGate.decision)}</small>
         <details>
           <summary>Model card</summary>
           <small>
@@ -648,6 +678,7 @@ function renderModelGates() {
             Features: ${card.featureFamilies.map(escapeHtml).join(", ")}<br>
             Baseline lift: ${card.baselineLift.toFixed(2)} · calibration ${card.calibration.expectedCalibrationError.toFixed(2)}<br>
             Hard-negative FPR: ${card.hardNegative.falsePositiveRate.toFixed(2)} · red-team ${card.redTeam.passed ? "passed" : "failed"}<br>
+            Production blockers: ${productionGate.failures.map(escapeHtml).join("; ")}<br>
             ${escapeHtml(card.prohibitedUse)}
           </small>
         </details>
@@ -662,6 +693,10 @@ function renderAssistant() {
     <div class="workspace-item">
       <b>Assistant ready</b>
       <small>Answers must cite visible local evidence and remain draft-only.</small>
+    </div>
+    <div class="workspace-item">
+      <b>Production AI gate</b>
+      <small>External providers, server-side retrieval, persistent audit, privacy review, and overreliance evidence are required before production use.</small>
     </div>
   `;
 }
@@ -1542,10 +1577,42 @@ elements.findAiGaps.addEventListener("click", () => {
     workspace: chartWorkspace,
     report: activeWorkflow().reportModel(state),
   });
+  const retrievalAuthorization = authorizeServerRetrievalRequest({
+    actorId: "training-analyst",
+    purpose: "training-case-review",
+    projectionId: "visible-training-projection",
+    requestedSourceIds: retrieval.retrievedSourceIds,
+    allowedSourceIds: retrieval.retrievedSourceIds,
+  });
+  const providerGate = validateExternalModelProviderRequest({
+    providerConfig: { provider: "unconfigured", status: "unapproved", secretsInClient: false },
+    retrievalAuthorization,
+    sources: retrieval.rows.map((row) => ({
+      id: row.id,
+      source: row.source,
+      text: `${row.label} ${row.caveat}`,
+    })),
+    prompt: elements.assistantPrompt.value,
+  });
+  const overreliance = evaluateOverrelianceStudyEvidence([]);
+  const auditRecord = createPersistentAiAuditRecord({
+    actorId: "training-analyst",
+    purpose: "training-case-review",
+    audit: {
+      action: "ai-gap-review",
+      policyDecision: providerGate.allowed ? "allowed" : "blocked-production-provider",
+      retrievedSourceIds: retrieval.retrievedSourceIds,
+      model: providerGate.provider,
+      configVersion: "ai-production-readiness-v1",
+      userDecision: "preview-only",
+      output: "Gap finder, entity resolution, and retrieval readiness summary.",
+    },
+  });
   elements.assistantOutput.innerHTML = `
     <div class="workspace-item"><b>Gap finder: ${escapeHtml(gaps.status)}</b><small>${gaps.gaps.map((gap) => `${escapeHtml(gap.severity)} · ${escapeHtml(gap.issue)}`).join("<br>") || "No high-severity gaps found."}</small></div>
     <div class="workspace-item"><b>Entity-resolution suggestions</b><small>${entitySuggestions.suggestions.map((item) => `${escapeHtml(item.label)} · ${item.reasons.map(escapeHtml).join("; ")}`).join("<br>") || "No duplicate suggestions in the visible projection."}</small></div>
     <div class="workspace-item"><b>Retrieved authorized evidence</b><small>${retrieval.rows.map((row) => `${escapeHtml(row.id)} · ${escapeHtml(row.source)}`).join("<br>")}</small></div>
+    <div class="workspace-item"><b>Production readiness</b><small>Retrieval auth ${retrievalAuthorization.authorized ? "passed" : "blocked"} · Provider gate ${providerGate.allowed ? "passed" : "blocked"} · Overreliance study ${escapeHtml(overreliance.status)} · Audit ${escapeHtml(auditRecord.recordHash)}</small></div>
   `;
   setStatus("AI contradiction, gap, and entity-resolution review generated");
 });

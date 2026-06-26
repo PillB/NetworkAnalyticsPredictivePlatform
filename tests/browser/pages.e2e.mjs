@@ -234,13 +234,15 @@ try {
     await page.locator("#restoreLayout").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Restored saved layout/i);
     assert.match(await page.locator("#modelGatePanel").innerText(), /TGN event-stream|Blocked/i);
+    assert.match(await page.locator("#modelGatePanel").innerText(), /Training plan: blocked-no-training-adapter|Production gate: blocked-production-display/i);
     await page.locator("#modelGatePanel details").first().click();
-    assert.match(await page.locator("#modelGatePanel").innerText(), /Model card|Hard-negative FPR|Never person-level guilt/i);
+    assert.match(await page.locator("#modelGatePanel").innerText(), /Model card|Hard-negative FPR|Production blockers|Never person-level guilt/i);
     await page.locator("#assistantPrompt").fill("show path between Acct 100 and Acct 777");
     await page.locator("#previewAiQuery").click();
     assert.match(await page.locator("#assistantOutput").innerText(), /Safe query preview|analyst confirmation required/i);
     await page.locator("#findAiGaps").click();
     assert.match(await page.locator("#assistantOutput").innerText(), /Gap finder|Entity-resolution suggestions|Retrieved authorized evidence/i);
+    assert.match(await page.locator("#assistantOutput").innerText(), /Production readiness|Provider gate blocked|Overreliance study blocked|Audit audit-/i);
     await page.locator("#coachAiStep").click();
     assert.match(await page.locator("#assistantOutput").innerText(), /Coach|What could go wrong/i);
     await page.locator("#suggestAiReview").click();
