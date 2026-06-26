@@ -245,7 +245,7 @@ select, .control-button {
 .switch-row { display: flex !important; justify-content: space-between; align-items: center; gap: 12px; }
 .switch-row input[type="checkbox"] { width: 36px; height: 19px; accent-color: var(--teal); }
 .analysis-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; margin-top: 16px; }
-.visualization-card, .inspector-card, .community-card, .report-card, .priority-card, .table-card, .chart-workspace-card {
+.visualization-card, .inspector-card, .community-card, .report-card, .priority-card, .table-card, .chart-workspace-card, .import-card {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -389,6 +389,35 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 .priority-body details { margin-top: 8px; }
 .priority-empty { padding: 14px; border-radius: 9px; background: #f3f1e9; }
 .priority-empty p { margin-bottom: 0; color: var(--muted); font-size: 10px; }
+.import-card { margin-top: 16px; padding: 18px; }
+.import-input { display: block; margin-top: 10px; }
+.import-input > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.import-input textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #c9d0ca;
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.import-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.import-preview .workspace-item { background: #f8faf7; border: 1px solid var(--line); }
 .chart-workspace-card { margin-top: 16px; padding: 18px; }
 .chart-tools {
   display: grid;
@@ -507,6 +536,7 @@ dialog p, dialog li { line-height: 1.55; }
   .visual-popover { left: 10px; right: 10px; width: auto; }
   .graph-comparison, .lower-grid { grid-template-columns: 1fr; }
   .priority-list { grid-template-columns: 1fr; }
+  .import-preview { grid-template-columns: 1fr; }
   .chart-tools, .chart-workspace-grid { grid-template-columns: 1fr; }
   .change-ribbon { grid-template-columns: 1fr; }
   .lineage-children { gap: 8px; width: 100%; }

@@ -92,6 +92,30 @@
           </div>
         </section>
 
+        <section class="import-card" id="transactionImportPanel" aria-labelledby="transaction-import-title">
+          <div class="card-heading">
+            <div>
+              <p class="kicker">Financial transaction import</p>
+              <h2 id="transaction-import-title">Paste CSV, preview mapping, then analyze</h2>
+            </div>
+            <span class="status-chip">Training import</span>
+          </div>
+          <p class="priority-warning">
+            GitHub Pages import is synthetic and local to your browser session.
+            Operational ingestion still requires authorization, retention, audit, and policy controls.
+          </p>
+          <label class="import-input">
+            <span>CSV transactions</span>
+            <textarea id="transactionCsv" rows="7" spellcheck="false"></textarea>
+          </label>
+          <div class="report-actions">
+            <button class="button secondary" id="loadSampleCsv" type="button">Load sample CSV</button>
+            <button class="button secondary" id="previewImport" type="button">Preview import</button>
+            <button class="button primary" id="applyImport" type="button" disabled>Use imported transactions</button>
+          </div>
+          <div id="importPreview" class="import-preview" aria-live="polite"></div>
+        </section>
+
         <section class="control-bar" aria-label="Analysis and visualization controls">
           <label>
             <span>Comparison</span>

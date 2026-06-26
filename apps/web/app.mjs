@@ -16,6 +16,11 @@ import {
 } from "../../packages/guided-workflow/harbor-lantern.mjs";
 import * as FinancialFraud from "../../packages/guided-workflow/financial-fraud.mjs";
 import {
+  SAMPLE_TRANSACTION_CSV,
+  createImportedFraudWorkflow,
+  previewTransactionImport,
+} from "../../packages/guided-workflow/transaction-import.mjs";
+import {
   loadWorkbenchBootstrap,
 } from "../../packages/api-client/workbench-client.mjs";
 import {
@@ -47,6 +52,8 @@ let state = createInitialState();
 let activeInspectorTab = "evidence";
 let graphView = { positions: {}, rotation: 0, undo: [], redo: [] };
 let chartWorkspace = createChartWorkspace();
+let importPreview = null;
+let importedFraudWorkflow = null;
 
 const elements = Object.fromEntries(
   [
@@ -65,6 +72,8 @@ const elements = Object.fromEntries(
     "helpDialog", "closeHelp", "chartSearch", "pinFirstResult", "expandSelected",
     "findPath", "annotationText", "addAnnotation", "layoutName", "saveLayout",
     "restoreLayout", "workspaceUndo", "workspaceRedo", "chartSearchResults", "chartRows", "chartNotes",
+    "transactionImportPanel", "transactionCsv", "loadSampleCsv", "previewImport",
+    "applyImport", "importPreview",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -93,6 +102,24 @@ function financialInitialState() {
 
 function activeWorkflow() {
   if (activeUseCase === "fraud") {
+    if (importedFraudWorkflow) {
+      return {
+        ...importedFraudWorkflow,
+        exportName: "imported-cuentas-mulas-fraud-ring",
+        relationOptions: [
+          ["all", "All recommended"],
+          ["transfers", "Transfers"],
+          ["cashout", "Cash-out"],
+          ["infrastructure", "Infrastructure"],
+        ],
+        question: importedFraudWorkflow.case.question,
+        graphHeading: "Imported financial transaction network",
+        communityHeading: "Imported mule/ring hypothesis",
+        confidenceLabel: "Review priority",
+        aliasLabel: "Include infrastructure events",
+        aliasHelp: "Recommended: include, but treat as supporting context",
+      };
+    }
     return {
       case: FinancialFraud.CASE,
       steps: FinancialFraud.STEPS,
@@ -205,6 +232,7 @@ function renderCoach() {
 
 function renderControls() {
   const workflow = activeWorkflow();
+  elements.transactionImportPanel.hidden = activeUseCase !== "fraud";
   elements.useCaseMode.value = activeUseCase;
   elements.caseId.textContent = workflow.case.displayId ?? workflow.case.id;
   elements.caseRange.textContent = workflow.case.eventRange ?? "Jan 18–Mar 18, 2026";
@@ -242,6 +270,29 @@ function renderControls() {
   elements.graphRedo.disabled = graphView.redo.length === 0;
   document.documentElement.dataset.contrast = state.settings.highContrast ? "high" : "standard";
   document.querySelector(".version-chip").textContent = `Analysis v${state.analysisVersion}`;
+}
+
+function renderImportPreview() {
+  if (activeUseCase !== "fraud") return;
+  elements.applyImport.disabled = !importPreview || importPreview.summary.accepted === 0;
+  if (!importPreview) {
+    elements.importPreview.innerHTML = `
+      <div class="workspace-item"><b>No import preview yet</b><small>Load the sample or paste CSV, then preview.</small></div>
+    `;
+    return;
+  }
+  const mapped = Object.entries(importPreview.mappedColumns)
+    .filter(([, column]) => column)
+    .map(([field, column]) => `${field} → ${column}`)
+    .join("<br>");
+  const rejected = importPreview.rejectedRows.slice(0, 4)
+    .map((row) => `row ${row.rowNumber}: ${row.reasons.join("; ")}`)
+    .join("<br>") || "None";
+  elements.importPreview.innerHTML = `
+    <div class="workspace-item"><b>${importPreview.summary.accepted} accepted</b><small>${importPreview.summary.rejected} rejected of ${importPreview.summary.totalRows} rows</small></div>
+    <div class="workspace-item"><b>Mapped columns</b><small>${mapped || "No required columns mapped"}</small></div>
+    <div class="workspace-item"><b>Rejected rows</b><small>${escapeHtml(rejected)}</small></div>
+  `;
 }
 
 function renderGraphs() {
@@ -330,9 +381,10 @@ function inspectorOptions(item) {
 function renderInspector() {
   const workflow = activeWorkflow();
   let item = workflow.relationshipById(state.selectedId);
-  const visibleIds = new Set(semanticRows(state.settings, graphSource()).map((row) => row.id));
+  const visibleRows = semanticRows(state.settings, graphSource());
+  const visibleIds = new Set(visibleRows.map((row) => row.id));
   if (!item || !visibleIds.has(item.id)) {
-    item = workflow.relationshipById(activeUseCase === "fraud" ? "tx-004" : "r2");
+    item = workflow.relationshipById(activeUseCase === "fraud" ? (visibleRows[0]?.id ?? "tx-004") : "r2");
     state = { ...state, selectedId: item.id };
   }
   elements.inspectorContent.innerHTML =
@@ -497,6 +549,7 @@ function render() {
   renderSteps();
   renderCoach();
   renderControls();
+  renderImportPreview();
   renderGraphs();
   renderInspector();
   renderCommunity();
@@ -614,7 +667,10 @@ elements.nextStep.addEventListener("click", () => {
 
 elements.useCaseMode.addEventListener("change", (event) => {
   activeUseCase = event.target.value;
-  state = activeUseCase === "fraud" ? financialInitialState() : createInitialState();
+  const workflow = activeUseCase === "fraud" ? activeWorkflow() : null;
+  state = activeUseCase === "fraud"
+    ? { ...financialInitialState(), selectedId: workflow?.relationships?.[0]?.id ?? "tx-004" }
+    : createInitialState();
   activeInspectorTab = "evidence";
   resetGraphView();
   chartWorkspace = createChartWorkspace();
@@ -627,6 +683,31 @@ elements.useCaseMode.addEventListener("change", (event) => {
 elements.scopeToggle.addEventListener("click", () => {
   elements.scopeDrawer.hidden = !elements.scopeDrawer.hidden;
   elements.scopeToggle.setAttribute("aria-expanded", String(!elements.scopeDrawer.hidden));
+});
+elements.loadSampleCsv.addEventListener("click", () => {
+  elements.transactionCsv.value = SAMPLE_TRANSACTION_CSV;
+  importPreview = null;
+  renderImportPreview();
+  setStatus("Sample transaction CSV loaded for preview");
+});
+elements.previewImport.addEventListener("click", () => {
+  importPreview = previewTransactionImport(elements.transactionCsv.value, { fileName: "training-transactions.csv" });
+  renderImportPreview();
+  setStatus(`Import preview: ${importPreview.summary.accepted} accepted, ${importPreview.summary.rejected} rejected`);
+});
+elements.applyImport.addEventListener("click", () => {
+  if (!importPreview || importPreview.summary.accepted === 0) {
+    setStatus("No accepted imported rows to analyze");
+    return;
+  }
+  activeUseCase = "fraud";
+  importedFraudWorkflow = createImportedFraudWorkflow(importPreview);
+  state = { ...financialInitialState(), selectedId: importedFraudWorkflow.relationships[0]?.id ?? "tx-004" };
+  activeInspectorTab = "evidence";
+  resetGraphView();
+  chartWorkspace = createChartWorkspace();
+  render();
+  setStatus(`Imported ${importPreview.summary.accepted} transactions into the fraud-ring workflow`);
 });
 elements.visualControls.addEventListener("click", () => {
   elements.visualPopover.hidden = !elements.visualPopover.hidden;

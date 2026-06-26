@@ -392,6 +392,22 @@ Dragging nodes, rotating/spinning the graph, undo/redo, and layout reset change
 only visualization state. They do not create analytical versions or alter
 evidence dependencies.
 
+### BB-FRAUD-007 — Import preview and mapping
+
+CSV/JSON transaction import shows mapped columns, accepted row counts, rejected
+row counts, and required-field gaps before analysis is updated.
+
+### BB-FRAUD-008 — Rejected-row reporting
+
+Invalid timestamps, missing origin/destination, invalid amounts, missing
+currency, and missing transaction type are rejected with row numbers and
+human-readable reasons.
+
+### BB-FRAUD-009 — Imported graph and report provenance
+
+Accepted imported rows create a visible transaction graph and report dependency
+set that records source file, parser version, row numbers, and normalized fields.
+
 ## 17. i2-class chart workspace
 
 ### BB-CHART-001 — Search and pin

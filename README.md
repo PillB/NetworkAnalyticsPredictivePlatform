@@ -19,6 +19,8 @@ and dependency-light analytical modules:
 - a complete Harbor Lantern guided analysis for first-time users;
 - a selectable synthetic financial transaction workflow for cuentas mulas and
   fraud-ring review-priority detection;
+- browser-local training CSV import for financial transactions with mapping,
+  preview, rejected-row reporting, and imported fraud-ring analysis;
 - smart visualization defaults with inspectable customization;
 - direct graph manipulation: drag nodes, rotate/spin, undo/redo layout edits,
   and reset to the recommended layout;

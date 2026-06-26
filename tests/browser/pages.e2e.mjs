@@ -78,6 +78,13 @@ try {
     assert.match(await page.locator("#question-title").textContent(), /mule accounts|fraud ring/i);
     assert.match(await page.locator("#communityHeading").textContent(), /mule bridge/i);
     assert.equal(await page.locator("#stepList .step-button").count(), 7);
+    await page.locator("#loadSampleCsv").click();
+    await page.locator("#previewImport").click();
+    assert.match(await page.locator("#importPreview").innerText(), /8 accepted/i);
+    assert.match(await page.locator("#importPreview").innerText(), /1 rejected/i);
+    await page.locator("#applyImport").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /Imported 8 transactions/i);
+    assert.match(await page.locator("#graphHeading").textContent(), /Imported financial/i);
     await page.locator("#visualControls").click();
     await page.locator("#rotateRight").click();
     assert.match(await page.locator("#statusMessage").textContent(), /rotated/i);

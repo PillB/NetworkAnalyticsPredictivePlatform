@@ -23,6 +23,7 @@ Minimum input fields:
 
 - Adds a selectable “Cuentas mulas / fraud ring” guided workflow in the web app.
 - Provides a synthetic transaction fixture covering collection, bridge/mule, cash-out, and shared infrastructure nodes.
+- Supports a browser-local training CSV import workflow with column mapping, accepted/rejected row preview, rejected-row reasons, parser/file/row provenance, and imported transaction graph generation.
 - Runs an explainable CPU-first mule-indicator detector over account behavior.
 - Highlights review-priority accounts using behavioral indicators:
   - multiple inbound origins;
@@ -62,5 +63,7 @@ Outputs are review-priority decision support, not criminality scores. The produc
 ## Executable evidence
 
 - `packages/guided-workflow/financial-fraud.mjs`
+- `packages/guided-workflow/transaction-import.mjs`
 - `tests/frontend/financial-fraud.test.mjs`
+- `tests/frontend/transaction-import.test.mjs`
 - `tests/browser/pages.e2e.mjs`

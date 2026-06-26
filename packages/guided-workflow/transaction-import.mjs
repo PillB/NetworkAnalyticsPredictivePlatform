@@ -1,0 +1,375 @@
+import {
+  CASE as DEFAULT_CASE,
+  DEFAULT_SETTINGS,
+  STEPS,
+} from "./financial-fraud.mjs";
+
+export const TRANSACTION_IMPORT_VERSION = "TransactionImportV1";
+
+export const SAMPLE_TRANSACTION_CSV = `transaction_id,timestamp,origin_id,origin_kind,destination_id,destination_kind,amount,currency,type,description
+imp-001,2026-05-01T09:05:00Z,victim-a,person,acct-100,account,980,USD,fraud complaint transfer,Invoice callback
+imp-002,2026-05-01T09:20:00Z,victim-b,person,acct-100,account,1000,USD,fraud complaint transfer,Supplier update
+imp-003,2026-05-01T10:10:00Z,victim-c,person,acct-101,account,1250,USD,fraud complaint transfer,Urgent settlement
+imp-004,2026-05-01T10:44:00Z,acct-100,account,acct-777,account,1950,USD,internal transfer,Consolidation
+imp-005,2026-05-01T11:04:00Z,acct-101,account,acct-777,account,1200,USD,internal transfer,Consolidation
+imp-006,2026-05-01T12:12:00Z,acct-777,account,acct-901,account,1500,USD,cash-out transfer,ATM pre-load
+imp-007,2026-05-01T12:21:00Z,acct-777,account,acct-902,account,1480,USD,cash-out transfer,Wallet cash-out
+imp-008,2026-05-02T08:14:00Z,device-7,device,acct-777,account,0,N/A,login event,Shared device context
+bad-009,not-a-date,victim-x,person,acct-999,account,12,USD,transfer,Invalid row example`;
+
+const FIELD_ALIASES = {
+  id: ["transaction_id", "transactionid", "tx_id", "id", "reference"],
+  at: ["timestamp", "datetime", "date_time", "transaction_time", "date", "time", "at"],
+  origin: ["origin_id", "origin", "source", "source_id", "from", "from_account", "account_origin", "person_origin_id"],
+  originKind: ["origin_kind", "origin_type", "source_type", "from_type"],
+  destination: ["destination_id", "destination", "target", "target_id", "to", "to_account", "account_destination", "person_destination_id"],
+  destinationKind: ["destination_kind", "destination_type", "target_type", "to_type"],
+  amount: ["amount", "value", "transaction_amount"],
+  currency: ["currency", "ccy"],
+  type: ["type", "transaction_type", "description_type", "category"],
+  description: ["description", "memo", "narrative", "details", "concept"],
+};
+
+const REQUIRED_FIELDS = ["id", "at", "origin", "destination", "amount", "currency", "type"];
+
+function normalizeHeader(value) {
+  return String(value ?? "").trim().toLowerCase().replaceAll(/[\s-]+/g, "_");
+}
+
+function splitCsvLine(line) {
+  const cells = [];
+  let current = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"' && line[index + 1] === '"') {
+      current += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      cells.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+export function parseCsv(text) {
+  const lines = String(text ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (!lines.length) return { headers: [], rows: [] };
+  const headers = splitCsvLine(lines[0]).map(normalizeHeader);
+  const rows = lines.slice(1).map((line) => {
+    const cells = splitCsvLine(line);
+    return Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? ""]));
+  });
+  return { headers, rows };
+}
+
+export function inferColumnMapping(headers) {
+  const normalized = headers.map(normalizeHeader);
+  const mapping = {};
+  for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+    mapping[field] = normalized.find((header) => aliases.includes(header)) ?? "";
+  }
+  return mapping;
+}
+
+function parseAmount(value) {
+  const number = Number(String(value ?? "").replaceAll(",", ""));
+  return Number.isFinite(number) ? number : null;
+}
+
+function validDate(value) {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
+function normalizeKind(value, fallback) {
+  const clean = String(value || fallback || "").trim().toLowerCase();
+  if (["person", "account", "device", "ip", "place", "organization"].includes(clean)) return clean;
+  if (clean.includes("device")) return "device";
+  if (clean.includes("ip")) return "place";
+  if (clean.includes("person") || clean.startsWith("p-") || clean.startsWith("victim")) return "person";
+  return "account";
+}
+
+export function previewTransactionImport(csvText, options = {}) {
+  const { headers, rows } = parseCsv(csvText);
+  const mapping = inferColumnMapping(headers);
+  const missingFields = REQUIRED_FIELDS.filter((field) => !mapping[field]);
+  const acceptedRows = [];
+  const rejectedRows = [];
+
+  rows.forEach((row, rowIndex) => {
+    const rowNumber = rowIndex + 2;
+    const reasons = [];
+    if (missingFields.length) reasons.push(`Missing required mapped fields: ${missingFields.join(", ")}`);
+    const at = mapping.at ? validDate(row[mapping.at]) : null;
+    if (!at) reasons.push("Invalid timestamp");
+    const amount = mapping.amount ? parseAmount(row[mapping.amount]) : null;
+    if (amount === null) reasons.push("Invalid amount");
+    const currency = mapping.currency ? String(row[mapping.currency] ?? "").trim().toUpperCase() : "";
+    if (!currency) reasons.push("Missing currency");
+    const origin = mapping.origin ? String(row[mapping.origin] ?? "").trim() : "";
+    const destination = mapping.destination ? String(row[mapping.destination] ?? "").trim() : "";
+    if (!origin) reasons.push("Missing origin");
+    if (!destination) reasons.push("Missing destination");
+    const type = mapping.type ? String(row[mapping.type] ?? "").trim() : "";
+    if (!type) reasons.push("Missing transaction type");
+
+    const id = mapping.id ? String(row[mapping.id] ?? "").trim() : `row-${rowNumber}`;
+    if (reasons.length) {
+      rejectedRows.push({ rowNumber, id, reasons, raw: row });
+      return;
+    }
+
+    acceptedRows.push({
+      id,
+      at,
+      origin,
+      originKind: normalizeKind(mapping.originKind ? row[mapping.originKind] : "", origin),
+      destination,
+      destinationKind: normalizeKind(mapping.destinationKind ? row[mapping.destinationKind] : "", destination),
+      amount,
+      currency,
+      type,
+      description: mapping.description ? String(row[mapping.description] ?? "").trim() : "",
+      rowNumber,
+    });
+  });
+
+  return {
+    contract: TRANSACTION_IMPORT_VERSION,
+    fileName: options.fileName ?? "pasted-transactions.csv",
+    parserVersion: "csv-import-0.1",
+    headers,
+    mappedColumns: mapping,
+    requiredFields: REQUIRED_FIELDS,
+    missingFields,
+    acceptedRows,
+    rejectedRows,
+    summary: {
+      totalRows: rows.length,
+      accepted: acceptedRows.length,
+      rejected: rejectedRows.length,
+    },
+    provenance: {
+      sourceFileName: options.fileName ?? "pasted-transactions.csv",
+      parserVersion: "csv-import-0.1",
+      importedAt: "training-session",
+    },
+  };
+}
+
+function nodeFor(id, kind, index) {
+  const lane = kind === "person" ? 16 : kind === "account" ? 48 : kind === "device" || kind === "place" ? 76 : 30;
+  return {
+    id,
+    type: kind === "ip" ? "place" : kind,
+    label: kind === "account" ? `Acct ${id.replace(/^acct[-_]?/i, "")}` : id,
+    x: 12 + ((index * 17) % 76),
+    y: lane + ((index * 11) % 18),
+    role: kind === "account" ? "imported account" : "imported entity",
+  };
+}
+
+function importedRelationships(preview, knownAt) {
+  if (!preview.acceptedRows.length) return [];
+  const eventTimes = preview.acceptedRows.map((row) => new Date(row.at).getTime()).sort((a, b) => a - b);
+  const midpoint = eventTimes[Math.floor(eventTimes.length / 2)] ?? eventTimes[0];
+  return preview.acceptedRows.map((transaction) => {
+    const infrastructure = transaction.amount === 0 || /login|device|ip|infrastructure/i.test(transaction.type);
+    const period = new Date(transaction.at).getTime() <= midpoint ? "before" : "after";
+    return {
+      id: transaction.id,
+      subject: transaction.origin,
+      object: transaction.destination,
+      predicate: infrastructure ? "accesses" : "transfers to",
+      relation: infrastructure ? "infrastructure" : /cash|withdraw|atm|wallet/i.test(transaction.type) ? "cashout" : "transfers",
+      periods: [period],
+      status: period === "after" ? "appeared" : "observed",
+      eventTime: transaction.at.replace("T", " ").replace("Z", " UTC"),
+      knownAt: knownAt.replace("T", " ").replace("Z", " UTC"),
+      evidenceClass: "imported financial transaction",
+      confidence: "imported",
+      reliability: "uploaded ledger",
+      credibility: "requires validation",
+      source: `${transaction.id} · row ${transaction.rowNumber} · ${transaction.type} · ${transaction.amount} ${transaction.currency}`,
+      reasoning: `${transaction.amount} ${transaction.currency} moved from ${transaction.origin} to ${transaction.destination} at ${transaction.at}. Imported row ${transaction.rowNumber} is treated as training evidence.`,
+      caveat: "Imported rows are synthetic/training data in GitHub Pages mode. Operational use requires authorized ingestion, validation, and governance.",
+      communityBefore: "imported collection",
+      communityAfter: transaction.origin === transaction.destination ? "self-loop" : "imported flow",
+    };
+  });
+}
+
+function outboundFor(transactions, accountId) {
+  return transactions.filter((tx) => tx.origin === accountId && tx.amount > 0);
+}
+
+function inboundFor(transactions, accountId) {
+  return transactions.filter((tx) => tx.destination === accountId && tx.amount > 0);
+}
+
+function hoursBetween(a, b) {
+  return Math.abs(new Date(b).getTime() - new Date(a).getTime()) / 36e5;
+}
+
+export function createImportedFraudWorkflow(preview) {
+  const knownAt = preview.acceptedRows
+    .map((row) => row.at)
+    .sort()
+    .at(-1) ?? DEFAULT_CASE.knownAt;
+  const nodeMap = new Map();
+  preview.acceptedRows.forEach((row) => {
+    if (!nodeMap.has(row.origin)) nodeMap.set(row.origin, nodeFor(row.origin, row.originKind, nodeMap.size));
+    if (!nodeMap.has(row.destination)) nodeMap.set(row.destination, nodeFor(row.destination, row.destinationKind, nodeMap.size));
+  });
+  const nodes = [...nodeMap.values()];
+  const relationships = importedRelationships(preview, knownAt);
+  const transactions = preview.acceptedRows;
+  const caseModel = {
+    ...DEFAULT_CASE,
+    id: "FR-IMPORT-TRAINING",
+    name: "Imported cuentas mulas and fraud-ring detection",
+    question: "Which imported accounts deserve review for mule-account or fraud-ring behavior?",
+    eventRange: transactions.length ? `${transactions[0].at.slice(0, 10)}/${knownAt.slice(0, 10)}` : DEFAULT_CASE.eventRange,
+    knownAt,
+  };
+
+  function nodeById(id) {
+    return nodes.find((node) => node.id === id);
+  }
+
+  function relationshipById(id) {
+    return relationships.find((relationship) => relationship.id === id);
+  }
+
+  function visibleRelationships(settings = DEFAULT_SETTINGS) {
+    const includeInfrastructure = settings.includeInfrastructure ?? settings.aliasIncluded ?? true;
+    return relationships.filter((relationship) => {
+      if (!includeInfrastructure && relationship.relation === "infrastructure") return false;
+      if (settings.relationFilter !== "all" && relationship.relation !== settings.relationFilter) return false;
+      return true;
+    });
+  }
+
+  function detectFraudRings(settings = DEFAULT_SETTINGS) {
+    const accounts = nodes.filter((node) => node.type === "account");
+    const scores = accounts.map((account) => {
+      const inbound = inboundFor(transactions, account.id);
+      const outbound = outboundFor(transactions, account.id);
+      const uniqueOrigins = new Set(inbound.map((tx) => tx.origin)).size;
+      const uniqueDestinations = new Set(outbound.map((tx) => tx.destination)).size;
+      const inboundAmount = inbound.reduce((sum, tx) => sum + tx.amount, 0);
+      const outboundAmount = outbound.reduce((sum, tx) => sum + tx.amount, 0);
+      const passThroughRatio = inboundAmount ? outboundAmount / inboundAmount : 0;
+      const fastestPassThroughHours = inbound.length && outbound.length
+        ? Math.min(...inbound.flatMap((inTx) => outbound.map((outTx) => hoursBetween(inTx.at, outTx.at))))
+        : null;
+      const indicators = [
+        uniqueOrigins >= 2 && "multiple inbound origins",
+        uniqueDestinations >= 2 && "fan-out to multiple destinations",
+        passThroughRatio >= 0.75 && "high pass-through ratio",
+        fastestPassThroughHours !== null && fastestPassThroughHours <= 3 && "rapid outbound movement",
+        inbound.concat(outbound).some((tx) => tx.amount % 100 === 0 || tx.amount % 50 === 0) && "round or near-round amounts",
+      ].filter(Boolean);
+      const score = Math.min(100, indicators.length * 18);
+      return {
+        accountId: account.id,
+        label: account.label,
+        role: account.role,
+        score,
+        status: score >= Number(settings.riskThreshold ?? 70) ? "review-priority" : score >= 45 ? "watch" : "background",
+        indicators,
+        inboundAmount,
+        outboundAmount,
+        passThroughRatio,
+        fastestPassThroughHours,
+        dependencies: inbound.concat(outbound).map((tx) => tx.id),
+      };
+    }).sort((a, b) => b.score - a.score || a.accountId.localeCompare(b.accountId));
+    return {
+      scores,
+      topAccount: scores[0] ?? { label: "No account", score: 0, indicators: ["no accepted rows"], dependencies: [] },
+      ringHypothesis: "Imported transaction graph was scanned for convergence, rapid pass-through, and fan-out behavior.",
+      advancedModelRoadmap: [
+        "Temporal GNN candidates remain disabled until imported datasets pass leakage-safe evaluation.",
+        "Imported transaction features are provenance-bearing and must not become person-level guilt labels.",
+      ],
+    };
+  }
+
+  function deriveAnalysis(settings = DEFAULT_SETTINGS) {
+    const detection = detectFraudRings(settings);
+    const top = detection.topAccount;
+    return {
+      splitConfidence: top.score >= 70 ? "review priority" : "low–moderate review priority",
+      interpretation: `${top.label} is the top imported review-priority account (${top.score}/100) because it combines ${top.indicators.join(", ")}.`,
+      communities: Math.max(1, new Set(transactions.flatMap((tx) => [tx.origin, tx.destination])).size > 4 ? 3 : 1),
+      changedMemberships: relationships.length,
+      evidenceCoverage: `${Math.round((preview.summary.accepted / Math.max(1, preview.summary.totalRows)) * 100)}%`,
+      alternative: "Rejected rows, legitimate processors, refunds, shared accounts, and delayed posting can change the imported pattern.",
+      versionReason: "Imported financial transaction mule-ring detection",
+    };
+  }
+
+  function reportModel(state) {
+    const analysis = deriveAnalysis(state.settings);
+    const detection = detectFraudRings(state.settings);
+    return {
+      title: "Imported cuentas mulas · Fraud-ring review report",
+      question: caseModel.question,
+      scope: `${preview.fileName} · ${preview.summary.accepted} accepted / ${preview.summary.rejected} rejected rows`,
+      before: "Imported collection phase · first half of accepted transaction times",
+      after: "Imported fan-out phase · second half of accepted transaction times",
+      knownAt: knownAt.replace("T", " ").replace("Z", " UTC"),
+      fixture: `${TRANSACTION_IMPORT_VERSION}@${preview.parserVersion}`,
+      assessment: `${analysis.interpretation} This is a review recommendation, not a determination that any person committed a crime.`,
+      contraryEvidence: analysis.alternative,
+      method: "Explainable imported-transaction mule-indicator baseline; TGNN candidates remain gated until validated.",
+      limitations: "Training import only; rejected rows and mapping assumptions are disclosed; scores are uncalibrated.",
+      nextAction: "Review rejected rows, validate account ownership/KYC, corroborate complaints, and test legitimate processor explanations before escalation.",
+      dependencies: detection.scores.flatMap((score) => score.dependencies),
+    };
+  }
+
+  function runPreflight(state) {
+    const report = reportModel(state);
+    const checks = [
+      ["Import mapping is recorded", Object.values(preview.mappedColumns).some(Boolean)],
+      ["Accepted and rejected row counts are recorded", preview.summary.totalRows >= preview.summary.accepted],
+      ["Known-at cutoff is recorded", Boolean(report.knownAt)],
+      ["Neutral review-priority language is used", /review recommendation|review-priority/i.test(report.assessment)],
+      ["Contrary explanations are included", /Rejected rows|processor|refund/i.test(report.contraryEvidence)],
+      ["Calibration limitations are disclosed", /uncalibrated/i.test(report.limitations)],
+      ["Imported transaction dependencies are attached", report.dependencies.length > 0],
+    ];
+    return { checks, passed: checks.every(([, passed]) => passed) };
+  }
+
+  return {
+    imported: true,
+    preview,
+    case: caseModel,
+    steps: STEPS,
+    nodes,
+    relationships,
+    transactions,
+    defaults: DEFAULT_SETTINGS,
+    nodeById,
+    relationshipById,
+    visibleRelationships,
+    deriveAnalysis,
+    reportModel,
+    runPreflight,
+    detectFraudRings,
+  };
+}
