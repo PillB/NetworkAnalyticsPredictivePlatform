@@ -119,6 +119,7 @@
 - 099 | Implemented Step 1 graph visual customization slice | Added projection/unprojection helpers, layout checkpoint helper, presentation-only node icons/images, safe PNG/JPEG/WebP validation, saved layout visual metadata, requestAnimationFrame drag preview with pointerup commit, UI controls, unit tests, static assertions, and Pages/Main Playwright coverage | Status: Success
 - 100 | Deployed and remotely verified latest training build | Pushed commits e875dec and bac6b64 to main; public GitHub Actions run 28218260529 for bac6b64 completed successfully; remote HTTPS Playwright passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ including JSON import and graph visual customization flow | Status: Success
 - 101 | Implemented Step 2 chart authoring/export slice | Added manual chart entities, manual chart links, link styling, redacted chart rows, briefing export metadata, unsupported manual-claim blocking, report export warning, reducer tests, static assertions, Pages browser flow, and main Playwright coverage | Status: Success
+- 102 | Deployed and remotely verified Step 2 charting slice | Pushed commit bc98558 to main; public GitHub Actions run 28219037642 completed successfully; remote HTTPS Playwright passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ including chart authoring, redaction, export, fraud workflow, and report preflight | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -198,10 +199,9 @@
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
-  - Test 1: Deploy and remotely verify the Step 2 chart authoring/export training build.
-  - Test 2: Continue transaction import with server-side authorized upload/persistence, larger calibrated hard-negative benchmarks, and analyst overreliance tests; local JSON support, explicit mapping UI, timezone/currency validation, and first legitimate-processor benchmark are complete.
-  - Test 3: Extend Phase B chart workspace with persisted visualization presets, weighted/evidence-aware temporal paths, independent editable chart coordinates, and accessibility coverage for workspace actions.
-  - Test 4: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
+  - Test 1: Continue transaction import with server-side authorized upload/persistence, larger calibrated hard-negative benchmarks, and analyst overreliance tests; local JSON support, explicit mapping UI, timezone/currency validation, and first legitimate-processor benchmark are complete.
+  - Test 2: Extend Phase B chart workspace with persisted visualization presets, weighted/evidence-aware temporal paths, independent editable chart coordinates, and accessibility coverage for workspace actions.
+  - Test 3: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
   - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.
   - Test 2: Iterate against failed gates and contradictory evidence.
