@@ -34,6 +34,7 @@ The platform does not determine guilt. Association, centrality, community member
 - [Market, workflow, and governance baseline](docs/research/phase-1a-market-and-workflows.md)
 - [Temporal graph and community research](docs/research/phase-1b-temporal-graphs-and-communities.md)
 - [State-of-the-art synthesis and evaluation gates](docs/research/phase-1c-state-of-art-synthesis.md)
+- [Phase B competitor and user-value validation](docs/research/phase-b-competitor-user-validation.md)
 
 ### Requirements and UX
 

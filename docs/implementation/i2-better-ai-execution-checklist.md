@@ -89,6 +89,11 @@ Retrospective questions:
 
 Objective: turn the synthetic mule-ring workflow into a reusable transaction-analysis module.
 
+Validation basis: Phase B competitor/user-value review found import templates,
+preview/mapping/validation, rejected-row feedback, and broad data access to be
+repeatedly emphasized by current graph investigation competitors and user-facing
+materials.
+
 Deliverables:
 
 - CSV/JSON transaction import template with field mapping, validation, currency handling, timezone handling, and rejected-row report.

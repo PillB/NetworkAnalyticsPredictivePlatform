@@ -110,6 +110,8 @@
 - 090 | Deployed and remotely verified Phase B slice | Pushed commit 5fceb34; GitHub Pages workflow 28210556810 succeeded; remote Playwright verified the live URL including chart workspace, fraud workflow, guided completion, and report preflight | Status: Success
 - 091 | Extended chart workspace reducer and path explanations | Added workspace undo/redo for pins, expansion, paths, annotations, and saved-layout metadata; visible paths now expose exact relationship dependencies, source labels, event time, known-at, confidence, and caveats | Status: Success
 - 092 | Verified extended chart workspace locally | 31 frontend/static module tests passed and local GitHub Pages Playwright passed for path dependency display, workspace undo/redo, save/restore layout, guided completion, and report preflight | Status: Success
+- 093 | Validated roadmap against competitors and user-valued workflows | Added docs/research/phase-b-competitor-user-validation.md using STORM lenses and current public sources for i2, Linkurious, Maltego, and prior Gephi/open-graph findings; concluded transaction CSV/JSON import is the next highest-value build priority before further AI | Status: Success
+- 094 | Verified validation documentation links | 31 frontend/static module tests passed and README/master/checklist references resolve by text search | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -180,11 +182,12 @@
 - Full automated evidence is passing, but human-factor evidence remains unrun; do not mark Gate L or operational value complete until representative novice, analyst, accessibility, and overreliance sessions pass.
 - Phase B chart workspace proves search/pin/expand/path/annotation/layout semantics, but paths are unweighted visible-graph paths, annotations are not report-exported, and saved layouts are session-only until persistence/export semantics are defined.
 - Workspace undo/redo now covers authoring metadata but not graph layout coordinates; graph layout history remains separate by design to preserve the analysis/workspace/view-state boundary.
+- Competitor/user-value validation shows users prize import, search, expansion, undo/redo, no-code query, timeline/geography, case collaboration, training, and broad data access; advanced AI must be grounded on these basics rather than substituting for them.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
-  - Test 1: Extend Phase B chart workspace with persisted visualization presets, annotation/report export semantics, weighted/evidence-aware temporal paths, and accessibility coverage for workspace actions.
-  - Test 2: Promote financial fraud-ring workflow from synthetic module to importable transaction-analysis module with CSV/JSON field mapping, validation, larger benchmark, and calibration/overreliance tests.
+  - Test 1: Promote financial fraud-ring workflow from synthetic module to importable transaction-analysis module with CSV/JSON field mapping, preview, validation, rejected-row reporting, provenance, and browser workflow.
+  - Test 2: Extend Phase B chart workspace with persisted visualization presets, annotation/report export semantics, weighted/evidence-aware temporal paths, and accessibility coverage for workspace actions.
   - Test 3: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
   - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.
