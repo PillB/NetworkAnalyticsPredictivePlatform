@@ -107,6 +107,7 @@ try {
       mimeType: "image/png",
       buffer: tinyPng,
     });
+    await page.waitForFunction(() => /Presentation image updated/i.test(document.querySelector("#statusMessage")?.textContent ?? ""));
     assert.match(await page.locator("#statusMessage").textContent(), /Presentation image updated/i);
     assert.ok(await page.locator(".node-image").count() >= 1);
     await page.locator("#resetNodeVisual").click();
