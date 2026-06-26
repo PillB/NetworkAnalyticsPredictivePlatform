@@ -253,6 +253,35 @@ Retrospective questions:
 - Which legitimate high-degree flows still produce false positives?
 - Does the UI make uncalibrated status impossible to miss?
 
+Current implementation evidence:
+
+- Implemented CSV and JSON transaction import with inferred and explicit field
+  mapping, timezone and supported-currency validation, rejected-row reasons, and
+  imported graph/report contracts.
+- Added validation for transaction direction, entity identity syntax, duplicate
+  transaction IDs, non-zero self-transfers, negative amounts, and zero-amount
+  context rows that use a money currency.
+- Added an extended synthetic hard-negative benchmark fixture with complaint
+  consolidation, payroll hub, legitimate processor refund, and shared
+  infrastructure rows.
+- Added uncalibrated benchmark metrics for precision at review budget,
+  false-positive accounts, flagged hard negatives, abstention rate, explanation
+  coverage, and overreliance warnings.
+- Tests cover parser/mapping behavior, rejected-row reasons, hard negatives,
+  imported workflow graph/detection/report/preflight contracts, local Pages
+  preview, and full repository regression gates.
+
+Remaining gaps:
+
+- Import remains browser-local training behavior on GitHub Pages; server-side
+  authorized upload, persistence, malware/content scanning, actor/purpose audit,
+  retention, and schema-versioned operational import are still required.
+- The benchmark is synthetic and explicitly uncalibrated; it does not establish
+  operational precision, fairness, robustness, or analyst overreliance safety.
+- Direction semantics are validated and normalized, but not yet used for a
+  full debit/credit accounting model or jurisdiction-specific transaction
+  policy.
+
 ### Step 7 — Crime-organization detection and prediction
 
 Goal: support non-financial group/ring detection with evidence-neutral

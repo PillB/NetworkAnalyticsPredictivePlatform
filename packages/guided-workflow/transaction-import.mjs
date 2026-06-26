@@ -133,6 +133,161 @@ export const LEGITIMATE_PROCESSOR_BENCHMARK_JSON = JSON.stringify({
   ],
 }, null, 2);
 
+export const EXTENDED_HARD_NEGATIVE_BENCHMARK_JSON = JSON.stringify({
+  transactions: [
+    {
+      transaction_id: "bench-pos-001",
+      timestamp: "2026-05-05T09:00:00Z",
+      origin_id: "victim-b1",
+      origin_kind: "person",
+      destination_id: "acct-300",
+      destination_kind: "account",
+      amount: 1000,
+      currency: "USD",
+      direction: "outbound",
+      type: "fraud complaint transfer",
+      description: "Complaint-backed inbound to collection account",
+      expected_account_id: "acct-777",
+      expected_review_priority: "true",
+    },
+    {
+      transaction_id: "bench-pos-002",
+      timestamp: "2026-05-05T09:20:00Z",
+      origin_id: "victim-b2",
+      origin_kind: "person",
+      destination_id: "acct-301",
+      destination_kind: "account",
+      amount: 950,
+      currency: "USD",
+      direction: "outbound",
+      type: "fraud complaint transfer",
+      description: "Complaint-backed inbound to collection account",
+      expected_account_id: "acct-777",
+      expected_review_priority: "true",
+    },
+    {
+      transaction_id: "bench-pos-003",
+      timestamp: "2026-05-05T10:05:00Z",
+      origin_id: "acct-300",
+      origin_kind: "account",
+      destination_id: "acct-777",
+      destination_kind: "account",
+      amount: 1000,
+      currency: "USD",
+      direction: "outbound",
+      type: "internal transfer",
+      description: "Rapid consolidation",
+      expected_account_id: "acct-777",
+      expected_review_priority: "true",
+    },
+    {
+      transaction_id: "bench-pos-004",
+      timestamp: "2026-05-05T10:12:00Z",
+      origin_id: "acct-301",
+      origin_kind: "account",
+      destination_id: "acct-777",
+      destination_kind: "account",
+      amount: 950,
+      currency: "USD",
+      direction: "outbound",
+      type: "internal transfer",
+      description: "Rapid consolidation",
+      expected_account_id: "acct-777",
+      expected_review_priority: "true",
+    },
+    {
+      transaction_id: "bench-pos-005",
+      timestamp: "2026-05-05T10:50:00Z",
+      origin_id: "acct-777",
+      origin_kind: "account",
+      destination_id: "cashout-b1",
+      destination_kind: "account",
+      amount: 975,
+      currency: "USD",
+      direction: "outbound",
+      type: "cash-out transfer",
+      description: "Cash-out fan-out",
+      expected_account_id: "acct-777",
+      expected_review_priority: "true",
+    },
+    {
+      transaction_id: "bench-neg-001",
+      timestamp: "2026-05-05T11:00:00Z",
+      origin_id: "employer-b",
+      origin_kind: "organization",
+      destination_id: "payroll-hub",
+      destination_kind: "account",
+      amount: 6000,
+      currency: "USD",
+      direction: "outbound",
+      type: "payroll batch funding",
+      description: "Legitimate payroll settlement",
+      expected_account_id: "payroll-hub",
+      expected_review_priority: "false",
+    },
+    {
+      transaction_id: "bench-neg-002",
+      timestamp: "2026-05-05T11:02:00Z",
+      origin_id: "payroll-hub",
+      origin_kind: "account",
+      destination_id: "employee-b1",
+      destination_kind: "person",
+      amount: 3000,
+      currency: "USD",
+      direction: "outbound",
+      type: "payroll batch payout",
+      description: "Salary payment",
+      expected_account_id: "payroll-hub",
+      expected_review_priority: "false",
+    },
+    {
+      transaction_id: "bench-neg-003",
+      timestamp: "2026-05-05T11:03:00Z",
+      origin_id: "payroll-hub",
+      origin_kind: "account",
+      destination_id: "employee-b2",
+      destination_kind: "person",
+      amount: 3000,
+      currency: "USD",
+      direction: "outbound",
+      type: "payroll batch payout",
+      description: "Salary payment",
+      expected_account_id: "payroll-hub",
+      expected_review_priority: "false",
+    },
+    {
+      transaction_id: "bench-neg-004",
+      timestamp: "2026-05-05T12:00:00Z",
+      origin_id: "merchant-processor",
+      origin_kind: "account",
+      destination_id: "customer-b1",
+      destination_kind: "person",
+      amount: 120,
+      currency: "USD",
+      direction: "outbound",
+      type: "refund",
+      description: "Legitimate processor refund",
+      expected_account_id: "merchant-processor",
+      expected_review_priority: "false",
+    },
+    {
+      transaction_id: "bench-neg-005",
+      timestamp: "2026-05-05T12:05:00Z",
+      origin_id: "shared-branch-device",
+      origin_kind: "device",
+      destination_id: "payroll-hub",
+      destination_kind: "account",
+      amount: 0,
+      currency: "N/A",
+      direction: "context",
+      type: "shared branch login event",
+      description: "Shared infrastructure without money movement",
+      expected_account_id: "payroll-hub",
+      expected_review_priority: "false",
+    },
+  ],
+}, null, 2);
+
 const FIELD_ALIASES = {
   id: ["transaction_id", "transactionid", "tx_id", "id", "reference"],
   at: ["timestamp", "datetime", "date_time", "transaction_time", "date", "time", "at"],
@@ -142,12 +297,16 @@ const FIELD_ALIASES = {
   destinationKind: ["destination_kind", "destination_type", "target_type", "to_type"],
   amount: ["amount", "value", "transaction_amount"],
   currency: ["currency", "ccy"],
+  direction: ["direction", "flow_direction", "debit_credit", "dr_cr"],
   type: ["type", "transaction_type", "description_type", "category"],
   description: ["description", "memo", "narrative", "details", "concept"],
+  expectedAccountId: ["expected_account_id", "label_account_id", "ground_truth_account_id"],
+  expectedReviewPriority: ["expected_review_priority", "label_review_priority", "ground_truth_review_priority"],
 };
 
 const REQUIRED_FIELDS = ["id", "at", "origin", "destination", "amount", "currency", "type"];
 const SUPPORTED_CURRENCIES = new Set(["USD", "EUR", "GBP", "PEN", "MXN", "COP", "BRL", "CAD", "N/A"]);
+const SUPPORTED_DIRECTIONS = new Set(["", "inbound", "outbound", "credit", "debit", "context", "transfer"]);
 
 function normalizeHeader(value) {
   return String(value ?? "").trim().toLowerCase().replaceAll(/[\s-]+/g, "_");
@@ -266,6 +425,28 @@ function normalizeKind(value, fallback) {
   return "account";
 }
 
+function normalizeDirection(value) {
+  const clean = String(value ?? "").trim().toLowerCase();
+  if (!clean) return "";
+  if (["cr", "credit"].includes(clean)) return "credit";
+  if (["dr", "debit"].includes(clean)) return "debit";
+  if (["in", "incoming", "inbound"].includes(clean)) return "inbound";
+  if (["out", "outgoing", "outbound"].includes(clean)) return "outbound";
+  return clean;
+}
+
+function parseBoolean(value) {
+  const clean = String(value ?? "").trim().toLowerCase();
+  if (["true", "yes", "1", "review-priority", "positive"].includes(clean)) return true;
+  if (["false", "no", "0", "background", "negative"].includes(clean)) return false;
+  return null;
+}
+
+function validEntityId(value) {
+  const clean = String(value ?? "").trim();
+  return /^[A-Za-z0-9][A-Za-z0-9._:-]{1,63}$/.test(clean);
+}
+
 export function previewTransactionImport(text, options = {}) {
   const parsed = parseTransactionInput(text, options);
   const { headers, rows } = parsed;
@@ -310,10 +491,22 @@ export function previewTransactionImport(text, options = {}) {
     const destination = mapping.destination ? String(row[mapping.destination] ?? "").trim() : "";
     if (!origin) reasons.push("Missing origin");
     if (!destination) reasons.push("Missing destination");
+    if (origin && !validEntityId(origin)) reasons.push("Invalid origin identity");
+    if (destination && !validEntityId(destination)) reasons.push("Invalid destination identity");
+    if (origin && destination && origin === destination && amount !== 0) reasons.push("Origin and destination are identical for money movement");
+    const direction = normalizeDirection(mapping.direction ? row[mapping.direction] : "");
+    if (!SUPPORTED_DIRECTIONS.has(direction)) reasons.push(`Unsupported direction: ${direction}`);
+    if (amount === 0 && currency !== "N/A") reasons.push("Zero-amount context rows must use N/A currency");
+    if (amount !== null && amount < 0) reasons.push("Amount cannot be negative");
     const type = mapping.type ? String(row[mapping.type] ?? "").trim() : "";
     if (!type) reasons.push("Missing transaction type");
 
     const id = mapping.id ? String(row[mapping.id] ?? "").trim() : `row-${rowNumber}`;
+    if (!id) reasons.push("Missing transaction id");
+    if (id && !validEntityId(id)) reasons.push("Invalid transaction id");
+    if (acceptedRows.some((accepted) => accepted.id === id) || rejectedRows.some((rejected) => rejected.id === id)) {
+      reasons.push("Duplicate transaction id");
+    }
     if (reasons.length) {
       rejectedRows.push({ rowNumber, id, reasons, raw: row });
       return;
@@ -328,9 +521,12 @@ export function previewTransactionImport(text, options = {}) {
       destinationKind: normalizeKind(mapping.destinationKind ? row[mapping.destinationKind] : "", destination),
       amount,
       currency,
+      direction,
       timezone: String(row[mapping.at]).match(/(?:z|[+-]\d{2}:?\d{2})$/i)?.[0]?.toUpperCase() ?? "",
       type,
       description: mapping.description ? String(row[mapping.description] ?? "").trim() : "",
+      expectedAccountId: mapping.expectedAccountId ? String(row[mapping.expectedAccountId] ?? "").trim() : "",
+      expectedReviewPriority: mapping.expectedReviewPriority ? parseBoolean(row[mapping.expectedReviewPriority]) : null,
       rowNumber,
     });
   });
@@ -426,6 +622,54 @@ function hardNegativeReasons(transactions, accountId) {
   ].filter(Boolean);
 }
 
+function labeledAccounts(preview) {
+  const labels = new Map();
+  for (const row of preview.acceptedRows ?? []) {
+    if (!row.expectedAccountId || row.expectedReviewPriority === null) continue;
+    if (!labels.has(row.expectedAccountId)) labels.set(row.expectedAccountId, row.expectedReviewPriority);
+    labels.set(row.expectedAccountId, labels.get(row.expectedAccountId) || row.expectedReviewPriority);
+  }
+  return labels;
+}
+
+export function evaluateImportedFraudBenchmark(preview, settings = DEFAULT_SETTINGS) {
+  const labels = labeledAccounts(preview);
+  const workflow = createImportedFraudWorkflow(preview);
+  const detection = workflow.detectFraudRings({ ...settings, includeBenchmarkEvaluation: false });
+  const reviewBudget = Math.max(1, Math.min(3, labels.size || 1));
+  const reviewed = detection.scores.slice(0, reviewBudget);
+  const positives = new Set([...labels.entries()].filter(([, value]) => value).map(([accountId]) => accountId));
+  const negatives = new Set([...labels.entries()].filter(([, value]) => !value).map(([accountId]) => accountId));
+  const truePositiveAccounts = reviewed.filter((score) => positives.has(score.accountId)).map((score) => score.accountId);
+  const falsePositiveAccounts = reviewed.filter((score) => negatives.has(score.accountId)).map((score) => score.accountId);
+  const flaggedHardNegatives = detection.scores
+    .filter((score) => negatives.has(score.accountId) && score.status === "review-priority")
+    .map((score) => score.accountId);
+  const labeledCount = labels.size;
+  const abstentionRate = labeledCount ? detection.scores.filter((score) => score.indicators.length === 0 && score.contraryEvidence.length > 0).length / labeledCount : 0;
+  return {
+    contract: "ImportedFraudBenchmarkEvaluationV1",
+    calibrated: false,
+    reviewBudget,
+    labeledAccounts: labeledCount,
+    positiveAccounts: positives.size,
+    negativeAccounts: negatives.size,
+    precisionAtReviewBudget: reviewed.length ? truePositiveAccounts.length / reviewed.length : 0,
+    falsePositiveAccounts,
+    flaggedHardNegatives,
+    abstentionRate,
+    explanationCoverage: detection.scores.length
+      ? detection.scores.filter((score) => score.indicators.length || score.contraryEvidence.length).length / detection.scores.length
+      : 0,
+    overrelianceWarnings: [
+      "Synthetic labels do not establish operational calibration.",
+      "Review-priority means analyst workload ordering, not criminality.",
+      flaggedHardNegatives.length > 0 && "Hard-negative accounts were still flagged and require detector revision.",
+      falsePositiveAccounts.length > 0 && "Top-review budget includes labeled negatives; analysts must inspect contrary evidence.",
+    ].filter(Boolean),
+  };
+}
+
 export function createImportedFraudWorkflow(preview) {
   const knownAt = preview.acceptedRows
     .map((row) => row.at)
@@ -502,10 +746,14 @@ export function createImportedFraudWorkflow(preview) {
         dependencies: inbound.concat(outbound).map((tx) => tx.id),
       };
     }).sort((a, b) => b.score - a.score || a.accountId.localeCompare(b.accountId));
+    const benchmarkEvaluation = settings.includeBenchmarkEvaluation === false ? null : labeledAccounts(preview).size
+      ? evaluateImportedFraudBenchmark(preview, settings)
+      : null;
     return {
       scores,
       topAccount: scores[0] ?? { label: "No account", score: 0, indicators: ["no accepted rows"], dependencies: [] },
       ringHypothesis: "Imported transaction graph was scanned for convergence, rapid pass-through, and fan-out behavior.",
+      benchmarkEvaluation,
       advancedModelRoadmap: [
         "Temporal GNN candidates remain disabled until imported datasets pass leakage-safe evaluation.",
         "Imported transaction features are provenance-bearing and must not become person-level guilt labels.",

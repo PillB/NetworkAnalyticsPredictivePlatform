@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  EXTENDED_HARD_NEGATIVE_BENCHMARK_JSON,
   LEGITIMATE_PROCESSOR_BENCHMARK_JSON,
   SAMPLE_TRANSACTION_CSV,
   SAMPLE_TRANSACTION_JSON,
   createImportedFraudWorkflow,
+  evaluateImportedFraudBenchmark,
   parseCsv,
   parseJson,
   previewTransactionImport,
@@ -63,6 +65,26 @@ test("timestamps without explicit timezone and unsupported currencies are reject
   assert.match(preview.rejectedRows[0].reasons.join(" "), /Unsupported currency: BTC/);
 });
 
+test("direction, entity identity, duplicate id, and self-transfer validation reject unsafe rows", () => {
+  const preview = previewTransactionImport([
+    "transaction_id,timestamp,origin_id,destination_id,amount,currency,direction,type",
+    "dup-1,2026-05-01T10:00:00Z,acct-1,acct-2,12,USD,sideways,transfer",
+    "dup-1,2026-05-01T10:01:00Z,acct-1,acct-2,12,USD,outbound,transfer",
+    "bad-identity,2026-05-01T10:02:00Z,acct 1,acct-2,12,USD,outbound,transfer",
+    "self-pay,2026-05-01T10:03:00Z,acct-1,acct-1,12,USD,outbound,transfer",
+    "negative,2026-05-01T10:04:00Z,acct-1,acct-2,-12,USD,outbound,transfer",
+    "context-currency,2026-05-01T10:05:00Z,device-1,acct-2,0,USD,context,login event",
+  ].join("\n"));
+  assert.equal(preview.summary.accepted, 0);
+  const reasons = preview.rejectedRows.flatMap((row) => row.reasons).join(" | ");
+  assert.match(reasons, /Unsupported direction: sideways/);
+  assert.match(reasons, /Duplicate transaction id/);
+  assert.match(reasons, /Invalid origin identity/);
+  assert.match(reasons, /Origin and destination are identical/);
+  assert.match(reasons, /Amount cannot be negative/);
+  assert.match(reasons, /Zero-amount context rows must use N\/A currency/);
+});
+
 test("legitimate processor benchmark stays out of review-priority status", () => {
   const preview = previewTransactionImport(LEGITIMATE_PROCESSOR_BENCHMARK_JSON, {
     format: "json",
@@ -74,6 +96,24 @@ test("legitimate processor benchmark stays out of review-priority status", () =>
   assert.notEqual(detection.topAccount.status, "review-priority");
   assert.ok(detection.scores.some((score) => score.contraryEvidence.includes("payroll or salary hub pattern")));
   assert.ok(detection.scores.some((score) => score.contraryEvidence.includes("refund or reversal pattern")));
+});
+
+test("extended hard-negative benchmark reports uncalibrated precision and overreliance warnings", () => {
+  const preview = previewTransactionImport(EXTENDED_HARD_NEGATIVE_BENCHMARK_JSON, {
+    format: "json",
+    fileName: "extended-hard-negative.json",
+  });
+  assert.equal(preview.summary.accepted, 10);
+  const evaluation = evaluateImportedFraudBenchmark(preview);
+  assert.equal(evaluation.contract, "ImportedFraudBenchmarkEvaluationV1");
+  assert.equal(evaluation.calibrated, false);
+  assert.equal(evaluation.positiveAccounts, 1);
+  assert.ok(evaluation.negativeAccounts >= 2);
+  assert.ok(evaluation.precisionAtReviewBudget >= 0);
+  assert.ok(evaluation.explanationCoverage > 0.5);
+  assert.ok(evaluation.overrelianceWarnings.some((warning) => /not establish operational calibration/i.test(warning)));
+  const workflow = createImportedFraudWorkflow(preview);
+  assert.equal(workflow.detectFraudRings().benchmarkEvaluation.calibrated, false);
 });
 
 test("imported workflow exposes graph, detection, report, and preflight contracts", () => {
