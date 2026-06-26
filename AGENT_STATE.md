@@ -95,6 +95,9 @@
 - 075 | Added GitHub Pages black-box browser gate | Playwright serves the artifact at /NetworkAnalyticsPredictivePlatform/, verifies seven guided steps, fixture/module loading, static safeguards, finding creation, report preflight, and zero browser errors | Status: Success
 - 076 | Completed expanded full promotion run | 155 Python tests passed with 2 conditional DSN skips covered live, 19 frontend tests passed, static/API/accessibility/Pages Playwright passed, and PostgreSQL 18 migrations 0001–0003 passed | Status: Success
 - 077 | Attempted GitHub publication prerequisites | Workspace is not a git repository, no matching PillB repository was found through GitHub search, and gh reports an invalid PillB token; remote creation, push, Pages enablement, and HTTPS verification require restored authentication or a repository URL | Status: Blocked
+- 078 | Restored GitHub CLI authentication | Device login completed for GitHub account PillB with repo/workflow scopes available through gh | Status: Success
+- 079 | Created and published GitHub repository | Initialized local git main, committed the complete tested MVP, created public repository PillB/NetworkAnalyticsPredictivePlatform, pushed commit 96d38391ca7073582862b1a8abe4d1f3764b31a4, and enabled GitHub Pages with Actions | Status: Success
+- 080 | Deployed and remotely verified GitHub Pages MVP | Reran the Pages workflow after initial pre-enablement failure; deployment succeeded and Playwright verified https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ for subpath assets, guided MVP, static safeguards, and report preflight | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -156,10 +159,11 @@
 - Zoom-equivalent automation found real reflow and focus defects, but it still does not establish native browser zoom, forced-colors, screen-reader announcements, or representative novice comprehension.
 - A Pages-compatible local artifact is not evidence of public availability; deployment completion requires repository identity, authenticated push, Pages source enablement, successful Actions deployment, and remote HTTPS Playwright verification.
 - GitHub Pages must remain synthetic training-only because it cannot enforce operational OIDC, purpose grants, RLS, audit, or data retention controls.
+- Pages workflow creation and Pages enablement can race on first push; rerunning the workflow after enabling Pages resolved the initial Configure Pages 404.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
-  - Test 1: Publish the tested synthetic MVP through GitHub Pages once repository identity and authentication are available; verify the public HTTPS URL with the Pages browser journey.
+  - Test 1: Keep the GitHub Pages MVP healthy by monitoring workflow status and remote Playwright verification after changes.
   - Test 2: Integrate authorization-code/PKCE session transport and external policy evaluation, then benchmark PostgreSQL-backed projections, provenance, jobs, reports, and browser interaction.
   - Test 3: Execute native zoom, forced-colors, screen-reader, prioritization-overreliance, and representative novice sessions; automated 200–400% reflow is complete.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation

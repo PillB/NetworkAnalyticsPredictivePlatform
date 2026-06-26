@@ -7,7 +7,10 @@ import { pathToFileURL } from "node:url";
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 4402);
 const repository = process.env.PAGES_BASE_PATH ?? "NetworkAnalyticsPredictivePlatform";
-const baseURL = `http://127.0.0.1:${port}/${repository}`;
+const remoteURL = process.env.PAGES_REMOTE_URL;
+const baseURL = remoteURL
+  ? remoteURL.replace(/\/+$/g, "")
+  : `http://127.0.0.1:${port}/${repository}`;
 
 function playwrightModulePath() {
   if (process.env.PLAYWRIGHT_MODULE) return process.env.PLAYWRIGHT_MODULE;
@@ -36,13 +39,15 @@ async function waitForServer() {
   throw new Error("Pages preview did not become ready");
 }
 
-execFileSync(process.execPath, ["scripts/build-pages.mjs"], { stdio: "inherit" });
-const server = spawn(process.execPath, ["scripts/serve-pages.mjs"], {
-  env: { ...process.env, HOST: "127.0.0.1", PORT: String(port), PAGES_BASE_PATH: repository },
-  stdio: ["ignore", "pipe", "pipe"],
-});
+if (!remoteURL) execFileSync(process.execPath, ["scripts/build-pages.mjs"], { stdio: "inherit" });
+const server = remoteURL
+  ? null
+  : spawn(process.execPath, ["scripts/serve-pages.mjs"], {
+      env: { ...process.env, HOST: "127.0.0.1", PORT: String(port), PAGES_BASE_PATH: repository },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
 let stderr = "";
-server.stderr.on("data", (chunk) => {
+server?.stderr.on("data", (chunk) => {
   stderr += chunk;
 });
 
@@ -80,8 +85,12 @@ try {
   } finally {
     await browser.close();
   }
-  console.log("GitHub Pages preview: subpath assets, guided MVP, and report preflight passed");
+  console.log(
+    remoteURL
+      ? "GitHub Pages remote: subpath assets, guided MVP, and report preflight passed"
+      : "GitHub Pages preview: subpath assets, guided MVP, and report preflight passed",
+  );
 } finally {
-  server.kill("SIGTERM");
+  server?.kill("SIGTERM");
   if (stderr.trim()) process.stderr.write(stderr);
 }

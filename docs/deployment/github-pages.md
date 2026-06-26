@@ -54,6 +54,13 @@ The Playwright test serves the artifact under
 - finding creation and report preflight;
 - no browser console or page errors.
 
+After publication, verify the public HTTPS deployment with the same assertions:
+
+```bash
+PAGES_REMOTE_URL=https://OWNER.github.io/NetworkAnalyticsPredictivePlatform \
+  node tests/browser/pages.e2e.mjs
+```
+
 ## GitHub Actions
 
 `.github/workflows/pages.yml` follows GitHub's custom Pages workflow:
@@ -76,7 +83,7 @@ After publication, record:
 - repository and commit SHA;
 - Pages workflow run URL and conclusion;
 - deployed Pages URL;
-- remote Playwright result against the HTTPS URL;
+- remote Playwright result against the HTTPS URL using `PAGES_REMOTE_URL`;
 - any differences from the local subpath preview.
 
 The deployment is not complete until the public HTTPS URL passes the same

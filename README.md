@@ -52,6 +52,7 @@ cached Chromium binary.
 ```bash
 make pages-build
 make test-browser-pages
+PAGES_REMOTE_URL=https://pillb.github.io/NetworkAnalyticsPredictivePlatform node tests/browser/pages.e2e.mjs
 ```
 
 The Pages artifact is a synthetic, unauthenticated training deployment only.
