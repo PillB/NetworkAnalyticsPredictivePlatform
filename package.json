@@ -1,0 +1,16 @@
+{
+  "name": "network-analytics-predictive-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/frontend/*.test.mjs",
+    "test:browser": "node tests/browser/playwright.e2e.mjs",
+    "test:pages": "node tests/browser/pages.e2e.mjs",
+    "build:pages": "node scripts/build-pages.mjs",
+    "demo": "node scripts/serve-web.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

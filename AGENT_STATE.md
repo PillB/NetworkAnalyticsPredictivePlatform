@@ -1,0 +1,172 @@
+# SYSTEM STATE:
+
+## 🎯 Final Success Criteria
+- Deliver a professional criminal-network analysis application with explainable temporal graph analysis, dynamic community detection, risk scoring, and analyst-oriented workflows.
+- Demonstrably improve on IBM i2-class tools in temporal exploration and community analysis through a source-backed comparison and reproducible evaluations.
+- Provide a modern, scalable, maintainable separation of UI, data, services, and analytical scripts, with CPU-capable operation and optional GPU acceleration.
+- Support both experienced intelligence analysts and new users through an interactive tutorial and representative investigative workflow.
+- Complete research, requirements, architecture, implementation, evaluation, and documentation with traceable evidence and tests.
+
+## 🛑 Immutable Constraints & Guardrails
+- Every phase or turn must follow READ → ACT → WRITE & COMPRESS, beginning by reading this file and ending by updating it.
+- Preserve this exact top-level memory structure; keep entries concise, factual, chronological, and free of superficial chatter.
+- Do not make consequential architecture decisions before completing relevant research, alternatives analysis, and retrospective review.
+- Use primary, current sources for technical research and clearly separate verified facts, inferences, and proposed differentiators.
+- Apply the Architect → Builder → Reviewer discipline and design → implementation → evaluation → refinement loops to significant modules.
+- Treat analytical outputs as decision support, not determinations of guilt; require provenance, uncertainty, explainability, auditability, access control, and bias/privacy safeguards.
+- Keep UI, data, services, and analytical scripts modular; support CPU-only execution with optional acceleration.
+- Preserve user work and avoid destructive repository operations.
+
+## 🕒 Transactional Ledger (Chronological)
+- 001 | Read workspace and attempted to load AGENT_STATE.md | State file was missing and no project files were listed; initial state must be created without assuming prior progress | Status: Success
+- 002 | Initialized persistent system state and execution pipeline | Objective, guardrails, phase tests, and immediate Phase 1 research scope recorded | Status: Success
+- 003 | Started Phase 1A with three parallel research roles | Commercial tools, analyst workflow/governance, and open graph-platform evidence streams assigned; main thread reserved for source reconciliation and synthesis | Status: Success
+- 004 | Completed Phase 1A market and workflow synthesis | Compared nine products/ecosystems; documented roles, end-to-end workflows, governance, provenance, onboarding, contradictions, and dated sources in docs/research/phase-1a-market-and-workflows.md | Status: Success
+- 005 | Performed Phase 1A Architect/Builder/Reviewer retrospective | Architect identified governed temporal investigation as the opportunity; Builder found reusable components but no complete solution; Reviewer rejected unbenchmarked scale/usability claims and flagged U.S.-centric legal assumptions | Status: Success
+- 006 | Verified Phase 1A artifact and compressed state | Research document exists with 239 lines and required synthesis sections; pipeline now advances to Phase 1B | Status: Success
+- 007 | Read persisted state and began Phase 1B | Confirmed active task is temporal graph learning and dynamic communities under primary-source, no-premature-architecture, CPU-baseline, explainability, provenance, and human-review boundaries | Status: Success
+- 008 | Completed Phase 1B temporal graph learning research | Taxonomized snapshot, event, streaming, and temporal-KG methods; identified leakage controls, explainability limits, implementation maturity, and a layered candidate evaluation set | Status: Success
+- 009 | Completed Phase 1B dynamic-community and lineage research | Taxonomized six method families; separated detection from lineage; defined lifecycle semantics, uncertainty, robustness, metrics, and CPU-first candidates | Status: Success
+- 010 | Completed Phase 1B evaluation and compute research | Defined six evaluation planes, dataset portfolio, calibration and perturbation protocols, compute tiers, and fifteen testable hypotheses | Status: Success
+- 011 | Synthesized and documented Phase 1B | Added docs/research/phase-1b-temporal-graphs-and-communities.md with primary sources, candidate methods, contradictions, and Architect/Builder/Reviewer retrospective | Status: Success
+- 012 | Verified Phase 1B artifact and advanced to Phase 1C | Confirmed the 472-line report and active research boundaries before synthesis | Status: Success
+- 013 | Completed Phase 1C state-of-the-art synthesis | Reconciled market gaps, technical feasibility, governance, contradictory evidence, product hypotheses, benchmark portfolio, and eight decision gates in docs/research/phase-1c-state-of-art-synthesis.md | Status: Success
+- 014 | Completed Phase 1 retrospective | Identified public-evidence limits, dynamic-community semantic risk, provenance performance risk, entity-resolution dominance, jurisdiction variance, and the possibility that governance/correction—not ML—is the strongest differentiator | Status: Success
+- 015 | Verified Phase 1 completion artifacts and compressed state | Three research reports total 1,084 lines and Phase 1C contains the required verdict, feasibility reconciliation, hypotheses, gates, evidence assessment, and completion statement; pipeline advanced to Phase 2 | Status: Success
+- 016 | Read Phase 2 state and incorporated the user's UX directive | Requirements must guarantee at least one complete hand-held ELI5 analysis journey, explicit reasoning and option explanations, best-in-class intuitive value, smart defaults, and customizable visualizations | Status: Success
+- 017 | Completed Phase 2 Architect product decisions | Defined evidence-backed replicate, improve, innovate, and defer decisions; personas, jobs, product boundary, and value propositions | Status: Success
+- 018 | Completed implementation-ready UX journey | Defined the 16-screen Harbor Lantern guided analysis, expert/reviewer/admin journeys, synchronized customizable views, recovery, accessibility, and usability gates in docs/ux/guided-analysis-journey.md | Status: Success
+- 019 | Completed Builder/Reviewer feasibility analysis | Defined prioritized functional and non-functional requirements, CPU budgets, security/privacy controls, predictive gates, traceability, and minimum differentiated scope | Status: Success
+- 020 | Reconciled and approved Phase 2 requirements | Resolved predictive-scoring scope as P1/P2 gated functionality; documented the approved baseline in docs/requirements/phase-2-product-requirements.md | Status: Success
+- 021 | Verified Phase 2 artifacts and began Phase 3 | Requirements baseline is 431 lines and guided journey is 492 lines with complete P0 scope, release gates, sign-off, and 16-screen workflow | Status: Success
+- 022 | Completed Phase 3 architecture alternatives analysis | Compared PostgreSQL-first, graph-first, and hybrid data designs plus frontend, deployment, security, and testing alternatives against P0 requirements | Status: Success
+- 023 | Selected P0 architecture and technology boundaries | PostgreSQL-first modular monolith, FastAPI, CPU analytics worker, React workbench, Cytoscape adapter, authorized projections, S3-compatible objects, OIDC, and OpenTelemetry selected | Status: Success
+- 024 | Documented system architecture and ADRs | Added system architecture plus six traceable decision records covering persistence, modularity, frontend graph, authorization projections, lineage, and predictive boundaries | Status: Success
+- 025 | Verified Phase 3 and entered Phase 4 | Architecture package totals 1,011 lines and covers required boundaries, decisions, alternatives, traceability, risks, migration triggers, and early spikes; local runtime has Node 24/npm 11 but Python 3.9 and no detected Docker CLI | Status: Success
+- 026 | Incorporated consolidated-specification directive | Phase 4 must maintain an authoritative Markdown inventory of requirements and technical decisions plus explicit black-box, user-acceptance, architecture, and technology test specifications | Status: Success
+- 027 | Created authoritative master specification | MASTER_SPECIFICATION.md now inventories objectives, scope, requirements, decisions, invariants, contracts, budgets, gates, and definition of done | Status: Success
+- 028 | Created black-box and user test contracts | Added observable temporal, provenance, authorization, graph, lineage, workflow, report, audit, accessibility, performance, and UAT scenarios | Status: Success
+- 029 | Created requirements traceability matrix | Requirements now map to architecture decisions, black-box tests, user tests, and release gates; implementation evidence fields are defined | Status: Success
+- 030 | Started Phase 4 vertical-slice implementation | Assigned disjoint backend temporal semantics, analytics lineage, and frontend guided-journey workstreams; root integration and review remain on the main thread | Status: Success
+- 031 | Added dependency-light project integration baseline | Created repository boundaries, local static server, package metadata, and one-command Python/frontend test and demo entry points without requiring network installation | Status: Success
+- 032 | Recorded the first executable implementation contract | Defined module boundaries, Harbor Lantern fixture semantics, ten-stage novice path, smart-default rules, visualization invariants, evidence commands, promotion conditions, and deferred adapters in docs/implementation/phase-4-vertical-slice.md | Status: Success
+- 033 | Implemented deterministic temporal/provenance core | Added immutable bitemporal revisions, historical reconstruction, corrections, point-event semantics, provenance serialization, Harbor Lantern fixtures, optional FastAPI adapter, and 10 passing backend tests | Status: Success
+- 034 | Implemented detector-independent community lineage | Added CPU-only deterministic matching, stable identities, explicit lifecycle events, uncertainty flags, Harbor Lantern fixtures, and 7 passing analytics tests | Status: Success
+- 035 | Implemented guided Harbor Lantern workbench | Added a complete seven-step ELI5 analysis, synchronized comparison, smart defaults, customization, semantic mirror, provenance/reasoning/options, uncertainty alternatives, and reconstructable report with 13 passing frontend tests | Status: Success
+- 036 | Reviewed and corrected local application integration | Root static server initially broke shared-package imports; changed it to redirect to /apps/web/ and verified HTML, JavaScript, and CSS assets over localhost | Status: Success
+- 037 | Executed and documented vertical-slice verification | All 30 automated tests and Python/JavaScript syntax checks pass; traceability evidence, limitations, contradictions, and next promotion tests recorded in docs/implementation/phase-4-test-report.md | Status: Success
+- 038 | Added repeatable Playwright acceptance suite | Implemented real-browser desktop/mobile journey, keyboard/focus, versioning, report-download, responsive-overflow, console-error, and screenshot checks using cached Chromium | Status: Success
+- 039 | Detected and fixed browser-only module-serving defect | Playwright showed the shell loaded with zero workflow steps because .mjs used an invalid MIME type; server now returns JavaScript MIME and a regression assertion protects it | Status: Success
+- 040 | Re-ran integrated verification and synchronized evidence | make test-all passes 30 unit/module tests plus the Playwright scenario; README, vertical-slice contract, traceability matrix, and test report now record browser evidence and remaining accessibility limits | Status: Success
+- 041 | Created canonical Harbor Lantern interchange | Added versioned synthetic JSON containing case scope, guided steps, graph entities/relationships, temporal corrections, lineage scenarios, and smart defaults; Python and browser modules now load this source | Status: Success
+- 042 | Added anti-drift fixture contracts | Backend verifies canonical revisions and lineage members; frontend records fixture schema/version in reports and preflight; duplicated hard-coded graph fixture data was removed | Status: Success
+- 043 | Added PostgreSQL 18 canonical migration and ADR | Defined append-only bitemporal evidence, correction lineage, authorized projection manifests, versioned analyses/communities/reports, forced RLS, exact dependencies, and hash-chained audit scaffolding with 10 structural tests | Status: Success
+- 044 | Corrected schema defects during review | Replaced explicit timestamp infinity with an unbounded recorded range, added observed-event/persistent-state classes, and made global audit reads fail closed without actor and purpose context | Status: Success
+- 045 | Implemented authorization-first service contracts | Added immutable manifest, authorization, projection, comparison, lineage, report, workbench, and structured-error contracts; cache keys isolate all security/temporal/source dimensions | Status: Success
+- 046 | Added temporal window projection semantics | Point events and interval assertions now reconstruct over valid-time windows while respecting known-at cutoffs; before/after comparison is derived from authorized immutable projections | Status: Success
+- 047 | Enforced pre-analytics topology authorization | Handling and field restrictions remove assertions before graph/lineage construction; lineage rejects members outside the authorized projection instead of computing broadly and hiding later | Status: Success
+- 048 | Wired the workbench to FastAPI service output | Added WorkbenchBootstrapV1 endpoint, API client, locked Python 3.11 runtime, same-origin static mounts, explicit training fallback, and API-backed status | Status: Success
+- 049 | Verified integrated static and API-backed application | make test-all passes 16 backend, 7 lineage, 21 API/service, 10 database-contract, 18 frontend tests plus static and FastAPI Playwright desktop/mobile journeys and syntax checks | Status: Success
+- 050 | Started operational and scoring workstreams | Assigned disjoint durable-job/staleness and explainable evidence-priority baseline implementations while preserving predictive release gates | Status: Success
+- 051 | Requested PostgreSQL 18 runtime installation | Homebrew has a PostgreSQL 18.4 bottle available; installation initiated to enable live migration, RLS, trigger, concurrency, and rollback tests | Status: Success
+- 052 | Installed and isolated PostgreSQL 18.4 test runtime | Homebrew installation completed; tests use temporary clusters under /tmp rather than a persistent background service | Status: Success
+- 053 | Added live PostgreSQL integration gate | Migrations 0001/0002, correction history, concurrent successor fencing, append-only triggers, forced RLS, audit chaining, atomic job publication, stale propagation, and reverse-order rollback pass | Status: Success
+- 054 | Implemented durable bounded analytical jobs | Added lease fencing, heartbeat, cancellation, retries/deadlines, staged immutable outputs, atomic result heads, last-valid preservation, transitive correction staleness, audit outbox, and checkpoint requests with 20 tests | Status: Success
+- 055 | Corrected security-definer job isolation | Claim, heartbeat, publication, correction impact, and lease reaping now require explicit case authorization; claim and reaping are scoped to one target case instead of mutating cross-case jobs | Status: Success
+- 056 | Implemented explainable evidence-priority baseline | Added deterministic CPU review ordering for relationships and evidence gaps with cutoff enforcement, protected-input rejection, exact dependencies, bounded contributions, missingness penalties, sensitivity, abstention, deterministic ties, and no calibration claim | Status: Success
+- 057 | Integrated safe review ordering into workbench | Authorized API bundle exposes relationship/gap priority assessments; UI explains purpose, uncertainty range, dependency count, removal sensitivity, limitations, and visible abstention while prohibiting guilt/dangerousness interpretation | Status: Success
+- 058 | Completed expanded integrated verification | make test-all passes 107 unit/module/contract tests, static and API-backed Playwright desktop/mobile journeys, live PostgreSQL 18 integration, and Python/JavaScript syntax checks | Status: Success
+- 059 | Started database-authority and production-boundary workstreams | Assigned disjoint PostgreSQL application repository, OIDC/policy session, and immutable object/audit-anchor implementations; main thread retains integration and evaluation | Status: Success
+- 060 | Added locked psycopg3 runtime | Declared and installed psycopg 3.3.4 binary and pool packages for PostgreSQL application access; uv.lock and Python 3.11 environment updated | Status: Success
+- 061 | Implemented PostgreSQL application repository and canonical importer | Added deterministic UUID mapping, idempotent Harbor Lantern import, correction-aware point/window reads, domain rehydration, and transaction-local pooled RLS handling | Status: Success
+- 062 | Proved PostgreSQL/reference temporal equivalence | Live PostgreSQL 18 imports the fixture twice and exactly compares serialized point and window snapshots with the in-memory repository; status, metadata, and correction-reason drifts were found and corrected | Status: Success
+- 063 | Implemented purpose-bound identity and policy boundary | Added verified-claims contracts, replay protection, active actor mapping, expiring/revocable grants, explicit purpose, fail-closed current policy decisions, least-privilege sessions, content-free audit intents, and full session-to-RLS context | Status: Success
+- 064 | Implemented immutable object/report storage and external audit anchoring | Added SHA-256 content addressing, atomic no-overwrite publication, tamper verification, exact report dependencies, append-only retention markers, path hardening, and content-free chained receipts | Status: Success
+- 065 | Added reproducible CPU feasibility benchmark | Recorded 1k entities, 10k assertions, 12 periods, and 25 sources on 8 CPUs; historical P95 8.258 ms, two-period P95 21.852 ms, lineage P95 324.037 ms, and correction preview P95 0.008 ms, explicitly limited to in-memory feasibility | Status: Success
+- 066 | Completed expanded promotion gate and synchronized specifications | 125 Python tests passed with 2 conditional DSN tests skipped, 18 frontend tests passed, static/API Playwright journeys passed, live PostgreSQL 18 passed, benchmark passed, and ADR/master/traceability/test-report documentation was updated | Status: Success
+- 067 | Added shared security-state migration | Migration 0003 stores only SHA-256 issuer/subject/token/nonce digests, immutable purpose-bound grants, append-only revocations, and atomic replay consumptions with hardened security-definer functions and scoped rollback | Status: Success
+- 068 | Implemented and live-tested PostgreSQL security adapters | Actor mapping, current grant lookup, and replay protection use parameterized hardened functions; live PostgreSQL exposed and corrected an issuer-string versus issuer-digest mismatch | Status: Success
+- 069 | Implemented production-configurable OIDC signature verification | Locked PyJWT 2.13.0 and cryptography 49.0.0; HTTPS JWKS, fixed asymmetric algorithms, required claims, issuer/audience/expiry/issue-time, nonce, ACR, JTI, signature, and multi-audience azp checks pass | Status: Success
+- 070 | Implemented SDK-neutral S3-compatible storage and anchoring | Conditional-create support, provider SHA-256 checksums, immutable object/report manifests, exact dependency reconstruction, content-free chained receipts, and ambiguous-write failure are covered by 21 storage tests | Status: Success
+- 071 | Added automated 200–400% zoom/reflow gate | Playwright keyboard, visible-focus, semantic-table, and no-page-overflow checks pass at 640, 427, and 320 CSS pixels; fixed obscured popover toggle, skip-link focus, and 400% select overflow | Status: Success
+- 072 | Defined representative human evaluation protocol | Documented novice ELI5 journey, overreliance challenges, screen-reader/keyboard assertions, metrics, stop rules, release thresholds, evidence handling, and Gate L exit decisions without claiming unrun user evidence | Status: Success
+- 073 | Completed production-boundary promotion run | 155 Python tests passed with 2 conditional DSN tests skipped but covered live, 18 frontend tests passed, static/API Playwright passed, accessibility Playwright passed, and PostgreSQL 18 migrations 0001–0003 plus rollback passed | Status: Success
+- 074 | Implemented GitHub Pages training artifact and workflow | Added deterministic static build, root/404 redirects, subpath-safe assets, explicit no-API training mode, official Pages artifact/deploy workflow, deployment documentation, and local preview commands | Status: Success
+- 075 | Added GitHub Pages black-box browser gate | Playwright serves the artifact at /NetworkAnalyticsPredictivePlatform/, verifies seven guided steps, fixture/module loading, static safeguards, finding creation, report preflight, and zero browser errors | Status: Success
+- 076 | Completed expanded full promotion run | 155 Python tests passed with 2 conditional DSN skips covered live, 19 frontend tests passed, static/API/accessibility/Pages Playwright passed, and PostgreSQL 18 migrations 0001–0003 passed | Status: Success
+- 077 | Attempted GitHub publication prerequisites | Workspace is not a git repository, no matching PillB repository was found through GitHub search, and gh reports an invalid PillB token; remote creation, push, Pages enablement, and HTTPS verification require restored authentication or a repository URL | Status: Blocked
+
+## 🧠 Retrospective & Post-Mortem Notes
+- No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
+- The requested scope is multi-phase and cannot be responsibly collapsed into implementation before competitive, workflow, and algorithm research.
+- Phase transitions require an explicit “What could make this wrong?” review and reconciliation of contradictory evidence.
+- “IBM i2” is legacy terminology: IBM divested i2 in 2022 and current ownership is Harris Computer Corporation.
+- Vendor use of “temporal analysis” is inconsistent; storage/filtering/timelines must not be treated as evidence of temporal graph computation.
+- Public documentation does not prove usability, effectiveness, scale, licensing boundaries, or absence of private capabilities; later phases need reproducible benchmarks and analyst evaluation.
+- Legal and governance findings are principally U.S.-oriented baselines and require deployment-specific counsel and policy validation.
+- Static snapshot communities do not provide stable longitudinal identities; Phase 1B must examine explicit matching, lifecycle events, uncertainty, and robustness to missing data.
+- Temporal prediction, community detection, and community lineage are separate concerns and must remain replaceable and independently evaluable.
+- Complex temporal models do not consistently beat recency, frequency, EdgeBank, or other simple baselines; neural methods require task-specific measured justification.
+- Random-negative MRR and ROC-AUC can materially overstate operational usefulness; hard negatives, full-candidate precision, calibration, and analyst workload are required.
+- Temporal smoothness can hide real births, splits, and abrupt change; stability and correctness must be measured separately.
+- Missing observations are not negative evidence; evaluation must include selective missingness, late data, entity-resolution errors, and bridge-edge perturbations.
+- Attention is not a sufficient explanation; analyst-facing outputs require source assertions, temporal paths/motifs, counterfactual sensitivity, alternatives, and uncertainty.
+- The research thesis is falsifiable: temporal/community differentiation must improve controlled analyst outcomes and pass correctness, baseline, calibration, robustness, explanation, performance, human-factor, and governance gates.
+- Core evidence history, temporal reconstruction, access, correction, audit, and lineage representation must remain deterministic and model-independent.
+- Phase 1 evidence is sufficient to define requirements, but not to select architecture or promise that predictive models will ship.
+- The first implementation cannot be considered usable until a novice can complete one end-to-end analysis with guided choices, plain-language explanations, recoverable errors, and a useful report.
+- Smart defaults and customization are complementary: defaults must produce a valid first result, while every consequential filter, projection, visualization, and analytical parameter remains inspectable and adjustable.
+- The P0 product thesis requires four inseparable differentiators: bitemporal provenance, anchored temporal comparison, explainable community lineage, and a complete guided analysis.
+- Predictive lead prioritization remains required by the final objective but is P1/P2 and disabled until baseline, calibration, robustness, explanation, governance, and human-factor gates pass.
+- The principal engineering risk is provenance and downstream dependency tracing at interactive latency, not the community detector itself.
+- The guided journey must exercise real product behavior and include ambiguity, contradiction, missingness, correction, parameter changes, recovery, and report reconstruction.
+- PostgreSQL is the P0 authority; a graph database is a disposable future read model triggered only by failed path/query benchmarks.
+- Traversal, layouts, analytics, and future models must consume authorized immutable projections; post-computation hiding is prohibited.
+- The frontend is a coordinated workbench: renderer state is not authoritative, analytical versions and visualization presets are separate, and the canvas always has an accessible semantic mirror.
+- The P0 architecture is a modular monolith plus worker; distributed queues, microservices, Kubernetes, and external policy engines are deferred until measured requirements justify them.
+- Phase 4 must begin with executable risk spikes for bitemporal correctness, authorization/cache isolation, provenance latency, two-pane rendering, accessibility synchronization, lineage correctness, and report reconstruction.
+- The first executable slice uses standard-library Python and browser-native JavaScript so semantic and UX tests run before framework installation; approved production adapters must preserve these contracts.
+- Frontend and backend currently use separate Harbor Lantern fixture representations; a generated shared interchange contract is the next anti-drift requirement.
+- Static accessibility assertions do not replace screen-reader, zoom/reflow, keyboard journey, or representative novice testing.
+- Synthetic behavior proves semantics but not operational value, bias safety, threshold validity, scale, authorization, persistence, audit, or provenance latency.
+- Python compilation initially attempted to write outside the sandbox cache; setting PYTHONPYCACHEPREFIX to /tmp provided a valid non-product workaround and syntax checks passed.
+- HTTP status checks alone did not prove browser executability: assets returned 200 while `.mjs` had a MIME type Chromium rejected; real-browser execution is now a required frontend promotion check.
+- Playwright validates functional keyboard and responsive behavior but does not prove screen-reader compatibility, WCAG conformance, or novice comprehension; those remain explicit Phase 5 evaluations.
+- Canonical fixture imports use standardized JSON import attributes in Node 24 and current Chromium; broader browser support must be tested or replaced by build-time generation before production browser support is finalized.
+- Static SQL assertions found meaningful contract defects but cannot prove PostgreSQL execution; live PostgreSQL 18 apply/rollback, trigger, RLS, concurrency, and plan tests are now the principal persistence gate.
+- Authorization headers in the training API demonstrate contract flow only; production still requires OIDC verification, external policy decisions, short-lived authorization sessions, and pooled-connection context reset.
+- Lineage inputs must be a subset of authorized projection entities; associating an authorized projection ID without validating members is insufficient and was corrected.
+- Static fallback now returns an explicit no-content training signal so expected API unavailability does not create browser console errors or masquerade as authorized service data.
+- FastAPI's current TestClient emits a Starlette deprecation warning for `httpx`; tests pass, but the transport harness must migrate when the supported replacement stabilizes.
+- Static PostgreSQL contract tests were insufficient alone; the installed isolated PostgreSQL 18.4 runtime exposed test-fixture and function-boundary issues and now provides an executable migration gate.
+- A security-definer function can bypass forced RLS. Every such function must enforce authorization explicitly; opaque lease tokens and RLS policies alone are not sufficient.
+- A global expired-lease reaper invoked by a case worker creates unauthorized cross-case mutation even without data disclosure; maintenance side effects must be case-scoped or reserved for a separately authorized maintenance role.
+- Evidence-priority integration targets relationships and evidence gaps, not people. The displayed index is an uncalibrated review-ordering aid and remains operationally gated despite being executable.
+- The API-backed queue demonstrates abstention on an under-supported source-coverage gap; insufficient evidence produces no numeric value rather than a low-confidence invented score.
+- Adapter tests that rely on an undeclared runner can create false confidence; persistence tests were normalized to the locked unittest gate and live semantics moved into the permanent PostgreSQL harness.
+- Revision-ID equality is too weak for persistence compatibility. Exact serialized comparisons exposed source metadata, uncertainty-status, and correction-reason drift that otherwise passed.
+- Shared live databases require assertion-scoped test predicates; importing the canonical fixture exposed an older global revision-count assumption.
+- OIDC/policy contracts are not a configured production identity system. Cryptographic issuer verification, callback/session transport, shared replay and grant stores, and external policy deployment remain open.
+- Filesystem content addressing and audit anchoring prove contracts, not independent operational trust. Cloud storage, separate anchor administration, backup/restore, and retention execution remain open.
+- CPU feasibility at a synthetic in-memory tier does not establish PostgreSQL, HTTP, browser, concurrency, memory-pressure, or operational-scale performance.
+- Fake adapter and schema tests can both pass while disagreeing on representation; the live security adapter test exposed issuer string/digest incompatibility and is now a permanent gate.
+- SHA-256 identity digests are pseudonymous sensitive metadata, not anonymization; access control, encryption, retention, and potential keyed hashing remain deployment decisions.
+- Generic JWT signature verification is insufficient for OIDC: fixed algorithms, trusted issuer/audience, nonce, ACR, required claims, and multi-audience azp semantics must all hold.
+- Conditional cloud writes and provider-reported SHA-256 checksums are mandatory for immutable publication; ETags and ambiguous SDK responses are not integrity evidence.
+- Zoom-equivalent automation found real reflow and focus defects, but it still does not establish native browser zoom, forced-colors, screen-reader announcements, or representative novice comprehension.
+- A Pages-compatible local artifact is not evidence of public availability; deployment completion requires repository identity, authenticated push, Pages source enablement, successful Actions deployment, and remote HTTPS Playwright verification.
+- GitHub Pages must remain synthetic training-only because it cannot enforce operational OIDC, purpose grants, RLS, audit, or data retention controls.
+
+## 📋 The Execution Pipeline
+- [ ] Active Step: Phase 4 — application development
+  - Test 1: Publish the tested synthetic MVP through GitHub Pages once repository identity and authentication are available; verify the public HTTPS URL with the Pages browser journey.
+  - Test 2: Integrate authorization-code/PKCE session transport and external policy evaluation, then benchmark PostgreSQL-backed projections, provenance, jobs, reports, and browser interaction.
+  - Test 3: Execute native zoom, forced-colors, screen-reader, prioritization-overreliance, and representative novice sessions; automated 200–400% reflow is complete.
+- [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
+  - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.
+  - Test 2: Iterate against failed gates and contradictory evidence.
+  - Test 3: Publish deployment, analyst, administrator, methodology, and evaluation documentation.
+- [ ] Future Milestone: Production-pilot readiness
+  - Test 1: Complete jurisdiction-specific legal, privacy, records, security, and operational review.
+  - Test 2: Demonstrate backup/restore, audit anchoring, incident response, access review, and controlled dissemination.
+  - Test 3: Validate value and safety with representative analysts without relying on synthetic correctness alone.
