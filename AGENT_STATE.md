@@ -101,6 +101,9 @@
 - 081 | Finalized remote Pages verification harness | Pushed commit 86b524b9454fc04ff43466e3e6cc6eb9aecdbbd9 with remote-URL Playwright mode; latest Pages workflow succeeded and HTTPS Playwright verification passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ | Status: Success
 - 082 | Implemented financial fraud-ring use case | Added selectable synthetic cuentas mulas/fraud-ring workflow, transaction fixture, explainable mule indicators, neutral report preflight, advanced TGNN/GNN gates, interactive graph drag/rotate/undo/redo/reset controls, and requirements/ADR/test documentation | Status: Success
 - 083 | Verified local financial workflow and Pages artifact | 25 frontend tests passed including financial-fraud contracts; local GitHub Pages Playwright preview passed for use-case switch, graph rotation, undo, layout reset, guided completion, and report preflight | Status: Success
+- 084 | Defined i2-class AI-enhanced delivery checklist | Added docs/implementation/i2-better-ai-execution-checklist.md with competitor-gap map, phased deliverables, done conditions, retrospectives, and success criteria for Harbor Lantern, fraud-ring, crime-organization detection/prediction, AI assistant, and production readiness | Status: Success
+- 085 | Verified CI/CD and live training deployment | GitHub Pages workflow succeeded for app commit bf24658 and checklist commit a66f50a; remote Playwright verified https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ after each relevant deployment | Status: Success
+- 086 | Ran full local promotion suite | make test-all passed: backend, analytics, API, database contracts, jobs, prioritization, benchmarks, persistence with 2 DSN skips covered by live harness, security, storage, 25 frontend tests, static/API/browser/accessibility/Pages Playwright, and PostgreSQL 18 live integration | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -167,12 +170,14 @@
 - Financial fraud-ring detection must remain behavior/evidence review-priority support; even high mule indicators are not person-level guilt or criminality determinations.
 - Temporal GNN, heterogeneous GNN, sequence, and adaptive models are not production features until leakage-safe hard-negative evaluation, calibration, robustness, explanation, authorization, and human overreliance gates pass.
 - Graph drag/spin/undo/redo/reset is visualization state only and must not alter evidence dependencies or analytical versions.
+- “Feature-complete i2 but better with AI” requires chart authoring/search/import/timeline/map/case-management parity plus differentiators; current MVP is strong in governed temporal semantics and two guided use cases but still needs chart authoring, import UI, map/timeline UI, AI assistant, and production pilot controls.
+- Full automated evidence is passing, but human-factor evidence remains unrun; do not mark Gate L or operational value complete until representative novice, analyst, accessibility, and overreliance sessions pass.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
-  - Test 1: Push the financial fraud-ring and graph-manipulation implementation to GitHub and verify the GitHub Pages workflow plus remote Playwright URL after deployment.
-  - Test 2: Integrate authorization-code/PKCE session transport and external policy evaluation, then benchmark PostgreSQL-backed projections, provenance, jobs, reports, and browser interaction.
-  - Test 3: Execute native zoom, forced-colors, screen-reader, prioritization-overreliance, representative novice sessions, and financial-fraud overreliance sessions; automated 200–400% reflow is complete.
+  - Test 1: Build Phase B i2-class chart authoring and exploration: manual chart workspace, search, bounded expansion, path finding, annotations, saved layouts, and accessible equivalent operations.
+  - Test 2: Promote financial fraud-ring workflow from synthetic module to importable transaction-analysis module with CSV/JSON field mapping, validation, larger benchmark, and calibration/overreliance tests.
+  - Test 3: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
   - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.
   - Test 2: Iterate against failed gates and contradictory evidence.
