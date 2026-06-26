@@ -40,12 +40,18 @@ import {
 import { renderGraph } from "../../packages/graph-renderer/svg-renderer.mjs";
 import {
   addAnnotation,
+  addManualEdge,
+  addManualEntity,
   commitWorkspaceChange,
   createChartWorkspace,
+  editManualEdge,
   expandNeighbors,
+  exportBriefingChart,
   explainPath,
   pinSearchResult,
+  redactChartItem,
   redoWorkspaceChange,
+  restoreRedactions,
   saveLayout,
   searchGraph,
   selectedLayout,
@@ -83,6 +89,8 @@ const elements = Object.fromEntries(
     "helpDialog", "closeHelp", "chartSearch", "pinFirstResult", "expandSelected",
     "findPath", "annotationText", "addAnnotation", "layoutName", "saveLayout",
     "restoreLayout", "workspaceUndo", "workspaceRedo", "chartSearchResults", "chartRows", "chartNotes",
+    "manualEntityLabel", "manualEntityType", "addManualEntity", "manualEdgeSource", "manualEdgeTarget",
+    "manualEdgeLabel", "manualEdgeStyle", "addManualEdge", "redactChartItem", "restoreRedactions", "exportChart",
     "transactionImportPanel", "transactionFormat", "transactionCsv", "loadSampleCsv",
     "loadSampleJson", "previewImport", "applyImport", "importPreview", "mappingControls",
   ].map((id) => [id, document.getElementById(id)]),
@@ -553,10 +561,16 @@ function renderChartWorkspace() {
   const results = chartSearchResults();
   const rows = semanticChartRows(chartWorkspace, graphSource());
   const pathSteps = explainPath(chartWorkspace, graphSource(), state.settings);
+  const briefing = exportBriefingChart(chartWorkspace, graphSource(), state.settings);
   elements.chartSearch.value = chartWorkspace.query;
   elements.restoreLayout.disabled = !selectedLayout(chartWorkspace);
   elements.workspaceUndo.disabled = !(chartWorkspace.undoStack ?? []).length;
   elements.workspaceRedo.disabled = !(chartWorkspace.redoStack ?? []).length;
+  const selectableRows = rows.length ? rows : activeWorkflow().nodes.slice(0, 6).map((node) => ({ id: node.id, label: node.label }));
+  const edgeOptions = selectableRows.map((row) => `<option value="${escapeHtml(row.id)}">${escapeHtml(row.label)}</option>`).join("");
+  elements.manualEdgeSource.innerHTML = edgeOptions;
+  elements.manualEdgeTarget.innerHTML = edgeOptions;
+  if (selectableRows[1]) elements.manualEdgeTarget.value = selectableRows[1].id;
   elements.chartSearchResults.innerHTML = results.length
     ? results.map((result, index) => `
       <button class="workspace-item" type="button" data-chart-result="${index}">
@@ -569,14 +583,20 @@ function renderChartWorkspace() {
     ? rows.map((row) => `
       <div class="workspace-item">
         <b>${escapeHtml(row.label)}</b>
-        <small>${escapeHtml(row.type)} · ${escapeHtml(row.role)} · ${row.noteCount} notes</small>
+        <small>${escapeHtml(row.type)} · ${escapeHtml(row.role)} · ${row.noteCount} notes${row.redacted ? " · redacted" : ""}</small>
       </div>
     `).join("")
     : `<div class="workspace-item">No chart rows yet.<small>Pin a result or expand the selected relationship.</small></div>`;
+  const manualEdgeHtml = (chartWorkspace.manualEdges ?? []).map((edge) => `
+    <div class="workspace-item">
+      <b>${escapeHtml(edge.label)}</b>
+      <small>${escapeHtml(edge.sourceId)} → ${escapeHtml(edge.targetId)} · ${escapeHtml(edge.style)} · ${escapeHtml(edge.evidenceStatus)}</small>
+    </div>
+  `).join("");
   const pathHtml = pathSteps.length
     ? `<div class="workspace-item"><b>Path explanation · ${pathSteps.length} exact dependencies</b><small>${pathSteps.map((step) => `${escapeHtml(step.label)} · ${escapeHtml(step.source)} · ${escapeHtml(step.confidence ?? "unknown")} confidence`).join("<br>")}</small></div>`
     : "";
-  elements.chartRows.innerHTML = `${pathHtml}${rowHtml}`;
+  elements.chartRows.innerHTML = `${pathHtml}${rowHtml}${manualEdgeHtml}`;
   const notes = chartWorkspace.annotations.map((note) => `
     <div class="workspace-item">
       <b>${escapeHtml(note.classification)}</b>
@@ -589,8 +609,10 @@ function renderChartWorkspace() {
       <small>${Object.keys(layout.positions).length} moved nodes · ${Object.keys(layout.nodeVisuals ?? {}).length} custom visuals · ${layout.rotation}° rotation</small>
     </div>
   `).join("");
-  elements.chartNotes.innerHTML = notes || layouts
-    ? `${notes}${layouts}`
+  const hasBriefingState = notes || layouts || briefing.provenance.manualItemCount || briefing.redactionCount || pathSteps.length;
+  const briefingHtml = `<div class="workspace-item"><b>Briefing export</b><small>${escapeHtml(briefing.status)} · ${briefing.redactionCount} redactions · ${briefing.unsupportedClaims.length} unsupported manual claims blocked</small></div>`;
+  elements.chartNotes.innerHTML = hasBriefingState
+    ? `${notes}${layouts}${briefingHtml}`
     : `<div class="workspace-item">No annotations or saved layouts.<small>Notes are analyst commentary, not evidence.</small></div>`;
 }
 
@@ -704,6 +726,7 @@ function reportHtml() {
   <h2>Uncertainty and alternatives</h2><p>${escapeHtml(report.contraryEvidence)} ${escapeHtml(report.limitations)}</p>
   <p class="notice"><b>Interpretation safeguard:</b> Community membership and graph connection are not proof of wrongdoing.</p>
   <h2>Recommended next action</h2><p>${escapeHtml(report.nextAction)}</p>
+  <h2>Chart workspace packet</h2><p>${escapeHtml(exportBriefingChart(chartWorkspace, graphSource(), state.settings).provenance.warning)}</p>
   <h2>Semantic evidence table</h2><table><thead><tr><th>Relationship</th><th>Event time</th><th>Known at</th><th>Evidence</th></tr></thead><tbody>
   ${rows.map((row) => `<tr><td>${escapeHtml(row.subjectLabel)} ${escapeHtml(row.predicate)} ${escapeHtml(row.objectLabel)}</td><td>${escapeHtml(row.eventTime)}</td><td>${escapeHtml(row.knownAt)}</td><td>${escapeHtml(row.source)} · ${escapeHtml(row.confidence)}</td></tr>`).join("")}
   </tbody></table><h2>Provenance appendix</h2><ol>${report.dependencies.map((source) => `<li>${escapeHtml(source)}</li>`).join("")}</ol></body></html>`;
@@ -907,6 +930,49 @@ elements.addAnnotation.addEventListener("click", () => {
   elements.annotationText.value = "";
   renderChartWorkspace();
   setStatus(chartWorkspace.annotations.length > before ? "Analyst annotation added without changing evidence" : "Annotation text was empty");
+});
+elements.addManualEntity.addEventListener("click", () => {
+  const before = chartWorkspace.manualEntities.length;
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, addManualEntity(chartWorkspace, elements.manualEntityLabel.value, elements.manualEntityType.value));
+  elements.manualEntityLabel.value = "";
+  renderChartWorkspace();
+  setStatus(chartWorkspace.manualEntities.length > before ? "Manual chart entity added as analyst-created, not evidence" : "Manual entity label was empty");
+});
+elements.addManualEdge.addEventListener("click", () => {
+  const before = chartWorkspace.manualEdges.length;
+  let next = addManualEdge(chartWorkspace, elements.manualEdgeSource.value, elements.manualEdgeTarget.value, elements.manualEdgeLabel.value);
+  const created = next.manualEdges.at(-1);
+  if (created && created.id && elements.manualEdgeStyle.value !== "solid") {
+    next = editManualEdge(next, created.id, { style: elements.manualEdgeStyle.value });
+  }
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, next);
+  elements.manualEdgeLabel.value = "";
+  renderChartWorkspace();
+  setStatus(chartWorkspace.manualEdges.length > before ? "Manual chart link added as analyst-created, not evidence" : "Manual link needs two different endpoints");
+});
+elements.redactChartItem.addEventListener("click", () => {
+  const targetId = chartWorkspace.manualEntities[0]?.id
+    ?? chartWorkspace.pinnedNodeIds[0]
+    ?? state.selectedId;
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, redactChartItem(chartWorkspace, targetId));
+  renderChartWorkspace();
+  setStatus("Chart item redacted in the briefing view only");
+});
+elements.restoreRedactions.addEventListener("click", () => {
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, restoreRedactions(chartWorkspace));
+  renderChartWorkspace();
+  setStatus("Chart redactions restored in the briefing view");
+});
+elements.exportChart.addEventListener("click", () => {
+  const packet = exportBriefingChart(chartWorkspace, graphSource(), state.settings);
+  const blob = new Blob([JSON.stringify(packet, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${activeWorkflow().exportName}-chart-packet-v${state.analysisVersion}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  setStatus(`Briefing chart export ${packet.status}; manual items remain outside evidence`);
 });
 elements.saveLayout.addEventListener("click", () => {
   chartWorkspace = commitWorkspaceChange(chartWorkspace, saveLayout(chartWorkspace, elements.layoutName.value, graphView));

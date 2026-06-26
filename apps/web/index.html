@@ -304,6 +304,48 @@
             <button class="button secondary" id="workspaceUndo" type="button">Undo workspace</button>
             <button class="button secondary" id="workspaceRedo" type="button">Redo workspace</button>
           </div>
+          <div class="chart-authoring-tools">
+            <label>
+              <span>Manual entity</span>
+              <input id="manualEntityLabel" type="text" maxlength="60" placeholder="Briefing-only entity..." />
+            </label>
+            <label>
+              <span>Type</span>
+              <select id="manualEntityType">
+                <option value="person">Person</option>
+                <option value="account">Account</option>
+                <option value="organization">Organization</option>
+                <option value="device">Device</option>
+                <option value="place">Place</option>
+                <option value="entity">Entity</option>
+              </select>
+            </label>
+            <button class="button secondary" id="addManualEntity" type="button">Add entity</button>
+            <label>
+              <span>Link from</span>
+              <select id="manualEdgeSource"></select>
+            </label>
+            <label>
+              <span>Link to</span>
+              <select id="manualEdgeTarget"></select>
+            </label>
+            <label>
+              <span>Link label</span>
+              <input id="manualEdgeLabel" type="text" maxlength="60" placeholder="Briefing link..." />
+            </label>
+            <label>
+              <span>Style</span>
+              <select id="manualEdgeStyle">
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="emphasis">Emphasis</option>
+              </select>
+            </label>
+            <button class="button secondary" id="addManualEdge" type="button">Add link</button>
+            <button class="button secondary" id="redactChartItem" type="button">Redact selected</button>
+            <button class="button secondary" id="restoreRedactions" type="button">Restore redactions</button>
+            <button class="button primary" id="exportChart" type="button">Export chart</button>
+          </div>
           <div class="chart-workspace-grid">
             <article>
               <h3>Search results</h3>

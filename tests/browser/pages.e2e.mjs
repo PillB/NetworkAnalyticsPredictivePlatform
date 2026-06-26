@@ -138,6 +138,26 @@ try {
     await page.locator("#annotationText").fill("Review transaction timing before briefing");
     await page.locator("#addAnnotation").click();
     assert.match(await page.locator("#chartNotes").innerText(), /analyst annotation/i);
+    await page.locator("#manualEntityLabel").fill("Briefing only account");
+    await page.locator("#manualEntityType").selectOption("account");
+    await page.locator("#addManualEntity").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /Manual chart entity added/i);
+    assert.match(await page.locator("#chartRows").innerText(), /Briefing only account/i);
+    await page.locator("#manualEdgeSource").selectOption("manual-entity-1");
+    await page.locator("#manualEdgeTarget").selectOption("acct-777");
+    await page.locator("#manualEdgeLabel").fill("briefing-only link");
+    await page.locator("#manualEdgeStyle").selectOption("dashed");
+    await page.locator("#addManualEdge").click();
+    assert.match(await page.locator("#chartRows").innerText(), /briefing-only link/i);
+    await page.locator("#redactChartItem").click();
+    assert.match(await page.locator("#chartRows").innerText(), /Redacted chart item/i);
+    assert.match(await page.locator("#chartNotes").innerText(), /blocked/i);
+    const [chartDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      page.locator("#exportChart").click(),
+    ]);
+    assert.match(chartDownload.suggestedFilename(), /chart-packet/i);
+    assert.match(await page.locator("#statusMessage").textContent(), /manual items remain outside evidence/i);
     await page.locator("#workspaceUndo").click();
     assert.match(await page.locator("#statusMessage").textContent(), /workspace undo/i);
     await page.locator("#workspaceRedo").click();
@@ -154,6 +174,7 @@ try {
     await page.locator("#markFinding").click();
     await page.locator("#runPreflight").click();
     assert.equal(await page.locator("#reportStatus").textContent(), "Preflight passed");
+    assert.match(await page.locator("#reportPreview").innerText(), /Provenance appendix/i);
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();

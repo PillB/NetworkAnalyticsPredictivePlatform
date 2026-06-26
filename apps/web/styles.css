@@ -510,7 +510,7 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-.chart-tools input {
+.chart-tools input, .chart-authoring-tools input, .chart-authoring-tools select {
   width: 100%;
   min-height: 34px;
   padding: 7px 9px;
@@ -519,6 +519,24 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
   background: var(--surface-strong);
   color: var(--ink);
   font-size: 11px;
+}
+.chart-authoring-tools {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(105px, .6fr) max-content minmax(120px, .7fr) minmax(120px, .7fr) minmax(150px, 1fr) minmax(105px, .6fr) max-content max-content max-content max-content;
+  gap: 9px;
+  align-items: end;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.chart-authoring-tools label > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 .chart-workspace-grid {
   display: grid;
@@ -615,7 +633,7 @@ dialog p, dialog li { line-height: 1.55; }
   .priority-list { grid-template-columns: 1fr; }
   .import-preview, .mapping-grid { grid-template-columns: 1fr; }
   .import-toolbar { align-items: stretch; }
-  .chart-tools, .chart-workspace-grid { grid-template-columns: 1fr; }
+  .chart-tools, .chart-authoring-tools, .chart-workspace-grid { grid-template-columns: 1fr; }
   .change-ribbon { grid-template-columns: 1fr; }
   .lineage-children { gap: 8px; width: 100%; }
   .lineage-node { min-width: 0; flex: 1; }

@@ -5,12 +5,19 @@ export function createChartWorkspace() {
     expandedNodeIds: [],
     pathNodeIds: [],
     pathRelationshipIds: [],
+    manualEntities: [],
+    manualEdges: [],
     annotations: [],
+    redactedItemIds: [],
     savedLayouts: [],
     selectedSavedLayoutId: "",
     undoStack: [],
     redoStack: [],
   };
+}
+
+function nextId(prefix, items) {
+  return `${prefix}-${items.length + 1}`;
 }
 
 function normalized(value) {
@@ -200,6 +207,95 @@ export function addAnnotation(workspace, text, targetId) {
   };
 }
 
+export function addManualEntity(workspace, label, type = "entity") {
+  const clean = String(label ?? "").trim();
+  if (!clean) return workspace;
+  const entity = {
+    id: nextId("manual-entity", workspace.manualEntities ?? []),
+    label: clean,
+    type: String(type || "entity").trim().toLowerCase(),
+    role: "analyst-created chart entity",
+    classification: "analyst chart item",
+    evidenceStatus: "not evidence",
+  };
+  return {
+    ...workspace,
+    manualEntities: [...(workspace.manualEntities ?? []), entity],
+  };
+}
+
+export function editManualEntity(workspace, entityId, updates = {}) {
+  return {
+    ...workspace,
+    manualEntities: (workspace.manualEntities ?? []).map((entity) => entity.id === entityId
+      ? {
+          ...entity,
+          label: String(updates.label ?? entity.label).trim() || entity.label,
+          type: String(updates.type ?? entity.type).trim().toLowerCase() || entity.type,
+        }
+      : entity),
+  };
+}
+
+export function removeManualEntity(workspace, entityId) {
+  return {
+    ...workspace,
+    manualEntities: (workspace.manualEntities ?? []).filter((entity) => entity.id !== entityId),
+    manualEdges: (workspace.manualEdges ?? []).filter((edge) => edge.sourceId !== entityId && edge.targetId !== entityId),
+    redactedItemIds: (workspace.redactedItemIds ?? []).filter((id) => id !== entityId),
+  };
+}
+
+export function addManualEdge(workspace, sourceId, targetId, label = "related to") {
+  if (!sourceId || !targetId || sourceId === targetId) return workspace;
+  const edge = {
+    id: nextId("manual-edge", workspace.manualEdges ?? []),
+    sourceId,
+    targetId,
+    label: String(label ?? "").trim() || "related to",
+    style: "solid",
+    classification: "analyst chart link",
+    evidenceStatus: "not evidence",
+  };
+  return {
+    ...workspace,
+    manualEdges: [...(workspace.manualEdges ?? []), edge],
+  };
+}
+
+export function editManualEdge(workspace, edgeId, updates = {}) {
+  return {
+    ...workspace,
+    manualEdges: (workspace.manualEdges ?? []).map((edge) => edge.id === edgeId
+      ? {
+          ...edge,
+          label: String(updates.label ?? edge.label).trim() || edge.label,
+          style: String(updates.style ?? edge.style).trim() || edge.style,
+        }
+      : edge),
+  };
+}
+
+export function removeManualEdge(workspace, edgeId) {
+  return {
+    ...workspace,
+    manualEdges: (workspace.manualEdges ?? []).filter((edge) => edge.id !== edgeId),
+    redactedItemIds: (workspace.redactedItemIds ?? []).filter((id) => id !== edgeId),
+  };
+}
+
+export function redactChartItem(workspace, itemId) {
+  if (!itemId) return workspace;
+  return {
+    ...workspace,
+    redactedItemIds: unique([...(workspace.redactedItemIds ?? []), itemId]),
+  };
+}
+
+export function restoreRedactions(workspace) {
+  return { ...workspace, redactedItemIds: [] };
+}
+
 export function saveLayout(workspace, name, graphView) {
   const clean = String(name ?? "").trim() || `Layout ${workspace.savedLayouts.length + 1}`;
   const layout = {
@@ -222,14 +318,76 @@ export function selectedLayout(workspace) {
 
 export function semanticChartRows(workspace, source) {
   const nodeIds = unique([...workspace.pinnedNodeIds, ...workspace.expandedNodeIds, ...workspace.pathNodeIds]);
-  return nodeIds.map((id) => {
+  const redacted = new Set(workspace.redactedItemIds ?? []);
+  const sourceRows = nodeIds.map((id) => {
     const node = source.nodeById(id);
     return {
       id,
-      label: node?.label ?? id,
+      label: redacted.has(id) ? "Redacted chart item" : node?.label ?? id,
       type: node?.type ?? "unknown",
       role: node?.role ?? "not assigned",
       noteCount: workspace.annotations.filter((note) => note.targetId === id).length,
+      redacted: redacted.has(id),
+      classification: "source projection item",
     };
   });
+  const manualRows = (workspace.manualEntities ?? []).map((entity) => ({
+    ...entity,
+    label: redacted.has(entity.id) ? "Redacted chart item" : entity.label,
+    noteCount: workspace.annotations.filter((note) => note.targetId === entity.id).length,
+    redacted: redacted.has(entity.id),
+  }));
+  return [...sourceRows, ...manualRows];
+}
+
+export function exportBriefingChart(workspace, source, settings) {
+  const redacted = new Set(workspace.redactedItemIds ?? []);
+  const pathDependencies = explainPath(workspace, source, settings)
+    .filter((step) => !redacted.has(step.id))
+    .map((step) => ({
+      id: step.id,
+      label: step.label,
+      source: step.source,
+      confidence: step.confidence,
+    }));
+  const manualEntities = (workspace.manualEntities ?? []).map((entity) => ({
+    id: entity.id,
+    label: redacted.has(entity.id) ? "Redacted chart item" : entity.label,
+    type: entity.type,
+    evidenceStatus: entity.evidenceStatus,
+    redacted: redacted.has(entity.id),
+  }));
+  const manualEdges = (workspace.manualEdges ?? []).map((edge) => ({
+    id: edge.id,
+    sourceId: edge.sourceId,
+    targetId: edge.targetId,
+    label: redacted.has(edge.id) ? "Redacted chart link" : edge.label,
+    style: edge.style,
+    evidenceStatus: edge.evidenceStatus,
+    redacted: redacted.has(edge.id),
+  }));
+  const unsupportedClaims = [
+    ...manualEntities.filter((entity) => entity.evidenceStatus !== "evidence").map((entity) => entity.id),
+    ...manualEdges.filter((edge) => edge.evidenceStatus !== "evidence").map((edge) => edge.id),
+  ];
+  return {
+    contract: "BriefingChartExportV1",
+    generatedAt: "training-session",
+    status: unsupportedClaims.length ? "blocked-for-factual-claims" : "ready",
+    redactionCount: redacted.size,
+    provenance: {
+      sourceProjection: "current authorized visible graph",
+      pathDependencies,
+      manualItemCount: manualEntities.length + manualEdges.length,
+      noteCount: (workspace.annotations ?? []).length,
+      warning: "Manual chart items and analyst annotations are not evidence.",
+    },
+    manualEntities,
+    manualEdges,
+    annotations: (workspace.annotations ?? []).map((note) => ({
+      ...note,
+      text: redacted.has(note.targetId) ? "Redacted analyst note" : note.text,
+    })),
+    unsupportedClaims,
+  };
 }

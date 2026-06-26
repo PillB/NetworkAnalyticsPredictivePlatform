@@ -128,6 +128,24 @@ Retrospective questions:
   notes rather than evidence?
 - Can redaction be verified without comparing hidden counts or layout holes?
 
+Current implementation evidence:
+
+- Implemented manual chart entities, manual chart links, link styling,
+  briefing annotations, redacted chart rows, briefing JSON export metadata, and
+  unsupported-claim blocking for manual items.
+- Tests cover reducer add/edit/remove entity, add/edit/remove edge, annotation,
+  redaction, undo/redo, briefing export provenance, local Pages preview, and
+  main browser journey.
+
+Remaining gaps:
+
+- Redacted chart views are still browser-session training artifacts, not
+  persisted server-side review packets.
+- Manual chart entities are listed in the semantic workspace, but not yet drawn
+  as a separate editable chart canvas with independent coordinates.
+- Redaction needs production authorization, dissemination policy, and export
+  retention controls before operational use.
+
 ### Step 3 — Linkurious-style investigation workspace parity
 
 Goal: make investigations collaborative, searchable, and case-oriented.
