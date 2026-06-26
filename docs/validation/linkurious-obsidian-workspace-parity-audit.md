@@ -1,6 +1,6 @@
 # Linkurious / Obsidian Workspace Parity Playwright Audit
 
-Generated: 2026-06-26T18:50:36.577Z
+Generated: 2026-06-26T19:20:59.807Z
 
 ## Scope
 
@@ -24,7 +24,7 @@ Screenshots captured:
 
 Reference text captured:
 
-- Linkurious combined text length: 23139
+- Linkurious combined text length: 21860
 - Obsidian text length: 4414
 
 ## NAPP Evidence
