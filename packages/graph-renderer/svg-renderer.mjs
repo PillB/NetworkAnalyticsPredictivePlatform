@@ -74,6 +74,7 @@ export function renderGraph(svg, model, options = {}) {
     positions = {},
     rotation = 0,
     nodeVisuals = {},
+    visualStyle = "classic",
     onSelect = () => {},
     onNodeMoveStart = () => {},
     onNodeMovePreview = () => {},
@@ -82,6 +83,8 @@ export function renderGraph(svg, model, options = {}) {
   svg.replaceChildren();
   svg.setAttribute("viewBox", "0 0 100 100");
   svg.setAttribute("role", "img");
+  svg.classList.toggle("graph-style-boardroom", visualStyle === "boardroom");
+  svg.classList.toggle("graph-style-classic", visualStyle !== "boardroom");
 
   if (showCommunities) {
     const hull = svgElement("ellipse", {

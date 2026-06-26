@@ -23,6 +23,15 @@ import {
   previewTransactionImport,
 } from "../../packages/guided-workflow/transaction-import.mjs";
 import {
+  answerGraphQuestion,
+  draftNeutralReport,
+  redTeamReview,
+} from "../../packages/ai-assistant/analyst-copilot.mjs";
+import {
+  enableCandidate,
+  evaluatePredictiveModelCandidates,
+} from "../../packages/predictive/model-gates.mjs";
+import {
   loadWorkbenchBootstrap,
 } from "../../packages/api-client/workbench-client.mjs";
 import {
@@ -70,6 +79,8 @@ let graphView = { positions: {}, rotation: 0, nodeVisuals: {}, undo: [], redo: [
 let chartWorkspace = createChartWorkspace();
 let importPreview = null;
 let importedFraudWorkflow = null;
+let assistantDraft = null;
+const modelEvaluation = evaluatePredictiveModelCandidates();
 
 const elements = Object.fromEntries(
   [
@@ -77,7 +88,7 @@ const elements = Object.fromEntries(
     "useCaseMode", "caseId", "caseRange", "caseKnownAt", "question-title",
     "graphHeading", "communityHeading", "aliasControlLabel", "aliasControlHelp",
     "nextStep", "scopeToggle", "scopeDrawer", "comparisonMode", "relationFilter",
-    "windowDays", "labelDensity", "visualControls", "visualPopover", "spacing",
+    "windowDays", "labelDensity", "visualStyle", "visualControls", "visualPopover", "spacing",
     "spacingOutput", "showCommunities", "highContrast", "rotateLeft", "rotateRight",
     "graphUndo", "graphRedo", "resetLayout", "resetAnalysis", "beforeGraph",
     "nodeVisualTarget", "nodeIconPreset", "nodeImageUpload", "resetNodeVisual",
@@ -93,6 +104,9 @@ const elements = Object.fromEntries(
     "manualEdgeLabel", "manualEdgeStyle", "addManualEdge", "redactChartItem", "restoreRedactions", "exportChart",
     "transactionImportPanel", "transactionFormat", "transactionCsv", "loadSampleCsv",
     "loadSampleJson", "previewImport", "applyImport", "importPreview", "mappingControls",
+    "scopePurpose", "scopePeriod", "scopeFocus", "scopeReason", "beforePeriodLabel",
+    "afterPeriodLabel", "beforeKnownAt", "afterKnownAt", "modelGatePanel", "assistantPrompt",
+    "askAssistant", "draftReport", "redTeamDraft", "assistantOutput",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -137,6 +151,17 @@ function activeWorkflow() {
         confidenceLabel: "Review priority",
         aliasLabel: "Include infrastructure events",
         aliasHelp: "Recommended: include, but treat as supporting context",
+        periodLabels: {
+          before: "Imported collection phase",
+          after: "Imported fan-out/support phase",
+          knownAt: (importedFraudWorkflow.case.knownAt ?? "import known-at").replace("T", " · ").replace("Z", ""),
+        },
+        scopeDefaults: {
+          purpose: "Training financial transaction review",
+          period: importedFraudWorkflow.case.eventRange ?? "Imported transaction range",
+          focus: "Accepted imported rows only",
+          reason: "Imported rows are split by transaction order/time to separate collection from fan-out.",
+        },
       };
     }
     return {
@@ -163,6 +188,17 @@ function activeWorkflow() {
       confidenceLabel: "Review priority",
       aliasLabel: "Include infrastructure events",
       aliasHelp: "Recommended: include, but treat as supporting context",
+      periodLabels: {
+        before: "Apr 1 · 09:12–11:06",
+        after: "Apr 1 · 12:18–Apr 2 · 08:19",
+        knownAt: "Known by Apr 4 · 18:00",
+      },
+      scopeDefaults: {
+        purpose: "Training financial transaction review",
+        period: "April 1–4, 2026",
+        focus: "72-hour transaction window",
+        reason: "This split separates collection into Acct 777 from later fan-out and support events.",
+      },
     };
   }
   return {
@@ -191,6 +227,17 @@ function activeWorkflow() {
     confidenceLabel: "Confidence",
     aliasLabel: "Include disputed Elena Voss alias",
     aliasHelp: "Recommended: include, but mark distinctly",
+    periodLabels: {
+      before: "Jan 18–Feb 16",
+      after: "Feb 17–Mar 18",
+      knownAt: "Known by Mar 18 · 23:59",
+    },
+    scopeDefaults: {
+      purpose: "Training investigation",
+      period: "January 1–March 31, 2026",
+      focus: "30 days before shipment",
+      reason: "Equal adjacent windows make change easier to compare.",
+    },
   };
 }
 
@@ -259,6 +306,14 @@ function renderControls() {
   elements["question-title"].textContent = workflow.question;
   elements.graphHeading.textContent = workflow.graphHeading;
   elements.communityHeading.textContent = workflow.communityHeading;
+  elements.scopePurpose.textContent = workflow.scopeDefaults.purpose;
+  elements.scopePeriod.textContent = workflow.scopeDefaults.period;
+  elements.scopeFocus.textContent = workflow.scopeDefaults.focus;
+  elements.scopeReason.textContent = workflow.scopeDefaults.reason;
+  elements.beforePeriodLabel.textContent = workflow.periodLabels.before;
+  elements.afterPeriodLabel.textContent = workflow.periodLabels.after;
+  elements.beforeKnownAt.textContent = workflow.periodLabels.knownAt;
+  elements.afterKnownAt.textContent = workflow.periodLabels.knownAt;
   elements.aliasControlLabel.textContent = workflow.aliasLabel;
   elements.aliasControlHelp.textContent = workflow.aliasHelp;
   const currentRelation = String(state.settings.relationFilter);
@@ -273,6 +328,7 @@ function renderControls() {
     relationFilter: state.settings.relationFilter,
     windowDays: state.settings.windowDays,
     labelDensity: state.settings.labelDensity,
+    visualStyle: state.settings.visualStyle ?? "classic",
     spacing: state.settings.spacing,
     showCommunities: state.settings.showCommunities,
     highContrast: state.settings.highContrast,
@@ -294,6 +350,7 @@ function renderControls() {
     : workflow.nodes[0]?.id ?? "";
   elements.nodeIconPreset.value = graphView.nodeVisuals[elements.nodeVisualTarget.value]?.icon ?? "default";
   document.documentElement.dataset.contrast = state.settings.highContrast ? "high" : "standard";
+  document.documentElement.dataset.visualStyle = state.settings.visualStyle ?? "classic";
   document.querySelector(".version-chip").textContent = `Analysis v${state.analysisVersion}`;
 }
 
@@ -362,6 +419,7 @@ function renderGraphs() {
     positions: graphView.positions,
     rotation: graphView.rotation,
     nodeVisuals: graphView.nodeVisuals,
+    visualStyle: state.settings.visualStyle ?? "classic",
     onSelect: selectRelationship,
     onNodeMoveStart: pushLayoutHistory,
     onNodeMovePreview: previewNodeMove,
@@ -533,6 +591,29 @@ function renderPrioritization() {
   }).join("");
 }
 
+function renderModelGates() {
+  elements.modelGatePanel.innerHTML = modelEvaluation.candidates.map((candidate) => {
+    const attempt = enableCandidate(modelEvaluation, candidate.id);
+    return `
+      <div class="workspace-item">
+        <b>${escapeHtml(candidate.label)}</b>
+        <small>${escapeHtml(candidate.family)} · ${escapeHtml(candidate.gateStatus)} · precision@budget ${candidate.metrics.precisionAtBudget.toFixed(2)}</small>
+        <small>${escapeHtml(attempt.reason)}</small>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderAssistant() {
+  if (elements.assistantOutput.innerHTML) return;
+  elements.assistantOutput.innerHTML = `
+    <div class="workspace-item">
+      <b>Assistant ready</b>
+      <small>Answers must cite visible local evidence and remain draft-only.</small>
+    </div>
+  `;
+}
+
 function renderTable() {
   const rows = semanticRows(state.settings, graphSource());
   elements.tableCount.textContent = `${rows.length} relationships · select a row to inspect`;
@@ -626,6 +707,8 @@ function render() {
   renderCommunity();
   renderReport();
   renderPrioritization();
+  renderModelGates();
+  renderAssistant();
   renderChartWorkspace();
   renderTable();
 }
@@ -816,7 +899,7 @@ elements.visualControls.addEventListener("click", () => {
   elements.visualControls.setAttribute("aria-expanded", String(!elements.visualPopover.hidden));
 });
 
-["comparisonMode", "relationFilter", "windowDays", "labelDensity"].forEach((id) => {
+["comparisonMode", "relationFilter", "windowDays", "labelDensity", "visualStyle"].forEach((id) => {
   elements[id].addEventListener("change", (event) => {
     const value = id === "windowDays" ? Number(event.target.value) : event.target.value;
     changeSetting(id, value);
@@ -1072,6 +1155,47 @@ elements.exportReport.addEventListener("click", () => {
   link.click();
   URL.revokeObjectURL(url);
   setStatus("Accessible HTML training report exported");
+});
+
+elements.askAssistant.addEventListener("click", () => {
+  const answer = answerGraphQuestion({
+    prompt: elements.assistantPrompt.value,
+    source: graphSource(),
+    settings: state.settings,
+    report: activeWorkflow().reportModel(state),
+  });
+  assistantDraft = answer;
+  elements.assistantOutput.innerHTML = answer.refused
+    ? `<div class="workspace-item"><b>Refused</b><small>${escapeHtml(answer.reason)}</small></div>`
+    : `<div class="workspace-item"><b>Source-grounded answer</b><small>${escapeHtml(answer.answer)}</small></div>
+       <div class="workspace-item"><b>Citations</b><small>${answer.citations.map((item) => `${escapeHtml(item.id)} · ${escapeHtml(item.source)}`).join("<br>")}</small></div>
+       <div class="workspace-item"><b>Uncertainty</b><small>${answer.uncertainty.map(escapeHtml).join("<br>")}</small></div>`;
+  setStatus(answer.refused ? "Assistant refused unsupported request" : "Assistant answer generated with exact citations");
+});
+
+elements.draftReport.addEventListener("click", () => {
+  assistantDraft = draftNeutralReport({
+    source: graphSource(),
+    settings: state.settings,
+    report: activeWorkflow().reportModel(state),
+  });
+  elements.assistantOutput.innerHTML = `
+    <div class="workspace-item"><b>Neutral report draft</b><small>${escapeHtml(assistantDraft.text).replaceAll("\n", "<br>")}</small></div>
+    <div class="workspace-item"><b>Saved as</b><small>${escapeHtml(assistantDraft.savedAs)} · AI text is not evidence.</small></div>
+  `;
+  setStatus("AI report copilot draft generated as analyst draft, not evidence");
+});
+
+elements.redTeamDraft.addEventListener("click", () => {
+  const text = assistantDraft?.text ?? assistantDraft?.answer ?? elements.assistantPrompt.value;
+  const citations = assistantDraft?.citations?.map((item) => typeof item === "string" ? item : item.id) ?? [];
+  const review = redTeamReview(text, citations);
+  elements.assistantOutput.innerHTML += `
+    <div class="workspace-item"><b>Red-team review: ${review.passed ? "passed" : "needs revision"}</b>
+      <small>${review.flags.map(escapeHtml).join("<br>") || "No risky language flags found."}</small>
+    </div>
+  `;
+  setStatus(review.passed ? "AI red-team review passed" : "AI red-team review flagged risky language");
 });
 
 elements.helpButton.addEventListener("click", () => elements.helpDialog.showModal());

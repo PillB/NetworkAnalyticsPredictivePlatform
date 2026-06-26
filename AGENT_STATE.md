@@ -121,6 +121,7 @@
 - 101 | Implemented Step 2 chart authoring/export slice | Added manual chart entities, manual chart links, link styling, redacted chart rows, briefing export metadata, unsupported manual-claim blocking, report export warning, reducer tests, static assertions, Pages browser flow, and main Playwright coverage | Status: Success
 - 102 | Deployed and remotely verified Step 2 charting slice | Pushed commit bc98558 to main; public GitHub Actions run 28219037642 completed successfully; remote HTTPS Playwright passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ including chart authoring, redaction, export, fraud workflow, and report preflight | Status: Success
 - 103 | Hardened transaction import validation and benchmark evaluation | Added direction, entity identity, duplicate-ID, self-transfer, negative-amount, and zero-amount context validation plus an extended hard-negative benchmark with uncalibrated precision, false-positive, abstention, explanation-coverage, and overreliance warning metrics; npm test, make test, and local Pages Playwright passed | Status: Success
+- 104 | Implemented boardroom graph style and first Step 8/9 AI MVP slice | Corrected fraud workflow period labels away from the Harbor Lantern Feb 16 split, added a presentation-only boardroom graph style, deterministic predictive model gates, source-grounded assistant answers, AI report drafts, citation checking, red-team review, refusal policies, and browser coverage; npm test, make test, and local Pages Playwright passed | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -198,12 +199,14 @@
 - Git push and public Actions inspection worked, but `gh auth status` reports an invalid PillB token; future GitHub connector/CLI workflows that require authenticated `gh` need reauthentication even though HTTPS push succeeded this turn.
 - Step 2 chart authoring now proves briefing metadata and redaction semantics, but manual items remain session-local and are not yet drawn on an independent editable canvas or persisted as governed review packets.
 - Extended transaction benchmark metrics are synthetic, local, and uncalibrated. They improve detector feedback and overreliance warnings, but do not satisfy server-side authorized import, operational calibration, representative analyst overreliance testing, or production fraud-risk validation.
+- The Feb 16 before/after split belongs to the Harbor Lantern temporal-community case; the cuentas-mulas workflow uses April 1-4 transaction phases. Shared graph headers caused user confusion and were corrected with workflow-specific period/scope labels.
+- The Step 8/9 AI MVP is deterministic and local. It proves the UX, citations, refusal policy, and gating contracts, but it is not an external LLM integration and does not satisfy production AI audit, prompt-injection, provider, retrieval-service, or human-factor gates.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
   - Test 1: Continue transaction import with server-side authorized upload/persistence, malware/content scanning, actor/purpose audit, schema-versioned persistence, larger calibrated hard-negative benchmarks, and representative analyst overreliance tests; local CSV/JSON support, explicit mapping UI, timezone/currency/direction/entity validation, and synthetic hard-negative benchmark metrics are complete.
   - Test 2: Extend Phase B chart workspace with persisted visualization presets, weighted/evidence-aware temporal paths, independent editable chart coordinates, and accessibility coverage for workspace actions.
-  - Test 3: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
+  - Test 3: Continue AI-critical MVP work: persist assistant/model audit metadata, add authorized retrieval service boundaries, implement role hypotheses and temporal motifs, broaden predictive leakage/calibration harnesses, and run representative overreliance/accessibility evaluations; deterministic model gates and source-grounded assistant UI are complete locally.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
   - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.
   - Test 2: Iterate against failed gates and contradictory evidence.

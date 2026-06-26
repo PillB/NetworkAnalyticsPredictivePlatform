@@ -69,3 +69,19 @@ test("financial transaction import controls are present", async () => {
   assert.match(html, /id="applyImport"/);
   assert.match(html, /rejected-row reporting|rejected rows|Training import/i);
 });
+
+test("boardroom graph style and AI decision-support panels are present", async () => {
+  const html = await readFile(`${repoRoot}apps/web/index.html`, "utf8");
+  const app = await readFile(`${repoRoot}apps/web/app.mjs`, "utf8");
+  const css = await readFile(`${repoRoot}apps/web/styles.css`, "utf8");
+  assert.match(html, /id="visualStyle"/);
+  assert.match(html, /Boardroom/);
+  assert.match(html, /id="modelGatePanel"/);
+  assert.match(html, /id="assistantPrompt"/);
+  assert.match(html, /id="askAssistant"/);
+  assert.match(html, /id="draftReport"/);
+  assert.match(html, /id="redTeamDraft"/);
+  assert.match(app, /evaluatePredictiveModelCandidates/);
+  assert.match(app, /answerGraphQuestion/);
+  assert.match(css, /graph-style-boardroom/);
+});

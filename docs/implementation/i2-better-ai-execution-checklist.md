@@ -100,6 +100,14 @@ Retrospective questions:
 - Does the semantic mirror still expose the graph without relying on custom
   icons or images?
 
+Current implementation evidence:
+
+- Added a presentation-only boardroom graph style for financial-institution
+  demos alongside the more colorful analyst style.
+- Corrected workflow-specific period and scope labels so the Harbor Lantern
+  Feb 16 comparison boundary is not shown as the cuentas-mulas split. The fraud
+  workflow now labels its April collection/fan-out phases explicitly.
+
 ### Step 2 — i2-class visual charting parity
 
 Goal: close the core link-analysis charting gap.
@@ -344,6 +352,23 @@ Retrospective questions:
 - Did any candidate win on easy random negatives but fail hard negatives?
 - Did calibration or explanation fail even when ranking metrics improved?
 
+Current implementation evidence:
+
+- Added a deterministic model-gate panel comparing recency/frequency,
+  EdgeBank-style, calibrated GBM, and TGN/TGAT-style candidates.
+- Candidate outputs remain disabled by default and expose gate failures for
+  baseline lift, calibration, hard-negative false positives, explanation
+  coverage, robustness, latency, and analyst-overreliance evidence.
+- Browser coverage verifies the panel displays blocked candidates before report
+  export.
+
+Remaining gaps:
+
+- This is an executable gate scaffold, not a trained neural model. Full TGNN/GNN
+  training, temporal folds, leakage detectors, calibration curves, and
+  representative analyst-overreliance studies remain required before any
+  predictive display can be enabled.
+
 ### Step 9 — Further AI functionality research and implementation
 
 Goal: add high-value AI assistance that improves analyst work without replacing
@@ -400,6 +425,26 @@ Retrospective questions:
 
 - Did fluent text reduce analyst skepticism?
 - Are citations exact enough to reconstruct every factual claim?
+
+Current implementation evidence:
+
+- Added a deterministic GraphRAG-style analyst assistant that answers from the
+  visible graph/report evidence only and returns exact local source citations.
+- Added AI report-copilot draft generation, citation checking, red-team review,
+  and prompt-policy refusal for unsupported accusations, protected-attribute
+  inference, and operational enforcement prompts.
+- AI output is displayed as draft/analyst-assistance content only, never
+  evidence, and includes audit metadata in the assistant contracts.
+- Unit tests cover prompt policy, citation checking, assistant dependencies,
+  red-team flags, and model-gate blocking. Browser tests cover ask, refusal,
+  draft, red-team review, and report preflight.
+
+Remaining gaps:
+
+- No external LLM is wired yet. Production AI still needs model/provider
+  configuration, prompt-injection isolation, persisted audit records,
+  authorized retrieval services, human usability measurements, and live
+  red-team evaluation before release.
 
 ### Phase A — Current MVP stabilization and deployment validation
 

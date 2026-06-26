@@ -84,10 +84,10 @@
           </button>
           <div class="scope-drawer" id="scopeDrawer" hidden>
             <dl>
-              <div><dt>Purpose</dt><dd>Training investigation</dd></div>
-              <div><dt>Permitted period</dt><dd>January 1–March 31, 2026</dd></div>
-              <div><dt>Focus window</dt><dd>30 days before shipment</dd></div>
-              <div><dt>Why this default?</dt><dd>Equal adjacent windows make change easier to compare.</dd></div>
+              <div><dt>Purpose</dt><dd id="scopePurpose">Training investigation</dd></div>
+              <div><dt>Permitted period</dt><dd id="scopePeriod">January 1–March 31, 2026</dd></div>
+              <div><dt>Focus window</dt><dd id="scopeFocus">30 days before shipment</dd></div>
+              <div><dt>Why this default?</dt><dd id="scopeReason">Equal adjacent windows make change easier to compare.</dd></div>
             </dl>
           </div>
         </section>
@@ -167,6 +167,13 @@
               <option value="minimal">Minimal</option>
             </select>
           </label>
+          <label>
+            <span>Style</span>
+            <select id="visualStyle">
+              <option value="classic">Classic analyst</option>
+              <option value="boardroom">Boardroom</option>
+            </select>
+          </label>
           <button class="control-button" id="visualControls" type="button" aria-expanded="false">
             Customize view
           </button>
@@ -238,15 +245,15 @@
             <div class="graph-comparison" id="graphComparison">
               <article class="graph-panel" data-period="before">
                 <header>
-                  <div><span>Before</span><b>Jan 18–Feb 16</b></div>
-                  <small>Known by Mar 18 · 23:59</small>
+                  <div><span>Before</span><b id="beforePeriodLabel">Jan 18–Feb 16</b></div>
+                  <small id="beforeKnownAt">Known by Mar 18 · 23:59</small>
                 </header>
                 <svg id="beforeGraph" aria-label="Network before the comparison boundary"></svg>
               </article>
               <article class="graph-panel" data-period="after">
                 <header>
-                  <div><span>After</span><b>Feb 17–Mar 18</b></div>
-                  <small>Known by Mar 18 · 23:59</small>
+                  <div><span>After</span><b id="afterPeriodLabel">Feb 17–Mar 18</b></div>
+                  <small id="afterKnownAt">Known by Mar 18 · 23:59</small>
                 </header>
                 <svg id="afterGraph" aria-label="Network after the comparison boundary"></svg>
               </article>
@@ -428,6 +435,43 @@
             criminality, dangerousness, or future conduct.
           </p>
           <div id="priorityQueue" class="priority-list"></div>
+        </section>
+
+        <section class="ai-grid" aria-label="AI decision-support panels">
+          <article class="model-card" aria-labelledby="model-gates-title">
+            <div class="card-heading">
+              <div>
+                <p class="kicker">Step 8 · Predictive graph intelligence</p>
+                <h2 id="model-gates-title">Model gate status</h2>
+              </div>
+              <span class="status-chip">Predictions disabled</span>
+            </div>
+            <p class="priority-warning">
+              Candidates can rank review hypotheses only after leakage, hard-negative,
+              calibration, explanation, latency, and overreliance gates pass.
+            </p>
+            <div id="modelGatePanel" class="workspace-list"></div>
+          </article>
+
+          <article class="assistant-card" aria-labelledby="assistant-title">
+            <div class="card-heading">
+              <div>
+                <p class="kicker">Step 9 · Source-grounded AI</p>
+                <h2 id="assistant-title">Analyst assistant</h2>
+              </div>
+              <span class="status-chip">Draft only</span>
+            </div>
+            <div class="assistant-tools">
+              <label>
+                <span>Question or drafting prompt</span>
+                <input id="assistantPrompt" type="text" value="Why is Acct 777 important?" />
+              </label>
+              <button class="button secondary" id="askAssistant" type="button">Ask</button>
+              <button class="button secondary" id="draftReport" type="button">Draft report</button>
+              <button class="button secondary" id="redTeamDraft" type="button">Red-team</button>
+            </div>
+            <div id="assistantOutput" class="assistant-output" aria-live="polite"></div>
+          </article>
         </section>
 
         <section class="table-card" aria-labelledby="table-title">

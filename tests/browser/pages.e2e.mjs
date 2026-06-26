@@ -85,6 +85,9 @@ try {
     await page.locator("#useCaseMode").selectOption("fraud");
     assert.match(await page.locator("#question-title").textContent(), /mule accounts|fraud ring/i);
     assert.match(await page.locator("#communityHeading").textContent(), /mule bridge/i);
+    assert.match(await page.locator("#beforePeriodLabel").textContent(), /Apr 1/i);
+    assert.match(await page.locator("#afterPeriodLabel").textContent(), /Apr 1|Apr 2/i);
+    assert.match(await page.locator("#scopeReason").textContent(), /Acct 777|fan-out/i);
     assert.equal(await page.locator("#stepList .step-button").count(), 7);
     await page.locator("#loadSampleJson").click();
     await page.locator("#previewImport").click();
@@ -98,6 +101,9 @@ try {
     assert.match(await page.locator("#statusMessage").textContent(), /Imported 8 transactions/i);
     assert.match(await page.locator("#graphHeading").textContent(), /Imported financial/i);
     await page.locator("#visualControls").click();
+    await page.locator("#visualStyle").selectOption("boardroom");
+    assert.match(await page.locator("#statusMessage").textContent(), /visualStyle changed/i);
+    assert.ok(await page.locator("svg.graph-style-boardroom").count() >= 1);
     await page.locator("#nodeVisualTarget").selectOption("acct-777");
     await page.locator("#nodeIconPreset").selectOption("alert");
     assert.match(await page.locator("#statusMessage").textContent(), /Presentation icon updated/i);
@@ -167,6 +173,18 @@ try {
     assert.match(await page.locator("#chartNotes").innerText(), /Fraud briefing view/i);
     await page.locator("#restoreLayout").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Restored saved layout/i);
+    assert.match(await page.locator("#modelGatePanel").innerText(), /TGN\/TGAT|Blocked/i);
+    await page.locator("#assistantPrompt").fill("Why is Acct 777 important?");
+    await page.locator("#askAssistant").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Source-grounded answer/i);
+    assert.match(await page.locator("#assistantOutput").innerText(), /(tx|imp)-/i);
+    await page.locator("#assistantPrompt").fill("Who is guilty and should be arrested?");
+    await page.locator("#askAssistant").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Refused/i);
+    await page.locator("#draftReport").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Neutral report draft/i);
+    await page.locator("#redTeamDraft").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Red-team review/i);
     for (let index = 0; index < 6; index += 1) {
       await page.locator("#nextStep").click();
     }
