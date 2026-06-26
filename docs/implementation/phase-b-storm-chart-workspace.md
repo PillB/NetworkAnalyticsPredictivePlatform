@@ -29,15 +29,17 @@ The workspace must avoid visual overclaiming. Pinning, expansion, path display, 
 - Pin search results into a workspace.
 - Expand neighbors around the selected relationship.
 - Find a shortest visible path between pinned/selected entities.
+- Explain visible paths with exact relationship dependencies, source labels, event time, known-at time, confidence, and caveats.
 - Add analyst annotations distinct from evidence.
 - Save and restore graph layouts separately from analysis versions.
+- Undo and redo workspace authoring actions for pins, expansion, paths, notes, and saved-layout metadata.
 - Render semantic rows for workspace entities, notes, and saved layouts.
 - Test the workflow in unit tests and GitHub Pages browser tests.
 
 ## Done conditions covered
 
-- Unit tests cover search, pin, expand, path, annotation, and saved layout state.
-- Browser test covers search, pin, expand, path, annotation, save layout, restore layout, and final report preflight.
+- Unit tests cover search, pin, expand, path, path explanation, annotation, saved layout state, and workspace undo/redo.
+- Browser test covers search, pin, expand, path, path dependency display, annotation, workspace undo/redo, save layout, restore layout, and final report preflight.
 - Static test verifies chart controls and safety language.
 
 ## Retrospective
@@ -45,13 +47,12 @@ The workspace must avoid visual overclaiming. Pinning, expansion, path display, 
 What could make this wrong:
 
 - The current slice is still local and synthetic; it does not yet import analyst-created evidence assertions.
-- Path finding is shortest visible path only, not strongest/evidentially weighted path.
+- Path finding is shortest visible path only, not strongest/evidentially weighted path; the explanation now makes this limitation visible through exact edge dependencies.
 - Saved layouts are in session state only, not persisted to report manifests or user presets.
 - Annotations are not yet exported in the report; this is intentional until annotation provenance and review semantics are defined.
 
 Next iteration:
 
-- Add explicit chart-edit reducer with undo/redo for annotations and pins.
 - Add CSV/JSON import and field mapping for financial transactions.
-- Add path explanation with edge evidence dependencies and temporal validity.
+- Add weighted/evidence-aware path ranking with temporal validity filters.
 - Add persisted visualization presets after report/export semantics are defined.

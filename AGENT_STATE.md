@@ -107,6 +107,9 @@
 - 087 | Applied STORM to Phase B chart workspace | Synthesized analyst workflow, architecture/data-contract, and reviewer/safety perspectives; documented conclusions and retrospective in docs/implementation/phase-b-storm-chart-workspace.md | Status: Success
 - 088 | Implemented first i2-class chart workspace slice | Added authorized graph search, pinning, bounded expansion, visible-path finding, analyst annotations, saved/restored layouts, semantic workspace rows, safety copy, and Pages browser coverage | Status: Success
 - 089 | Verified Phase B chart workspace slice | 30 frontend/static module tests passed and local GitHub Pages Playwright passed for search, pin, expand, path, annotation, save/restore layout, guided completion, and report preflight | Status: Success
+- 090 | Deployed and remotely verified Phase B slice | Pushed commit 5fceb34; GitHub Pages workflow 28210556810 succeeded; remote Playwright verified the live URL including chart workspace, fraud workflow, guided completion, and report preflight | Status: Success
+- 091 | Extended chart workspace reducer and path explanations | Added workspace undo/redo for pins, expansion, paths, annotations, and saved-layout metadata; visible paths now expose exact relationship dependencies, source labels, event time, known-at, confidence, and caveats | Status: Success
+- 092 | Verified extended chart workspace locally | 31 frontend/static module tests passed and local GitHub Pages Playwright passed for path dependency display, workspace undo/redo, save/restore layout, guided completion, and report preflight | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -176,10 +179,11 @@
 - “Feature-complete i2 but better with AI” requires chart authoring/search/import/timeline/map/case-management parity plus differentiators; current MVP is strong in governed temporal semantics and two guided use cases but still needs chart authoring, import UI, map/timeline UI, AI assistant, and production pilot controls.
 - Full automated evidence is passing, but human-factor evidence remains unrun; do not mark Gate L or operational value complete until representative novice, analyst, accessibility, and overreliance sessions pass.
 - Phase B chart workspace proves search/pin/expand/path/annotation/layout semantics, but paths are unweighted visible-graph paths, annotations are not report-exported, and saved layouts are session-only until persistence/export semantics are defined.
+- Workspace undo/redo now covers authoring metadata but not graph layout coordinates; graph layout history remains separate by design to preserve the analysis/workspace/view-state boundary.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
-  - Test 1: Extend Phase B chart workspace with reducer-level undo/redo for pins/notes, path explanations with exact edge dependencies, persisted visualization presets, and report/export semantics.
+  - Test 1: Extend Phase B chart workspace with persisted visualization presets, annotation/report export semantics, weighted/evidence-aware temporal paths, and accessibility coverage for workspace actions.
   - Test 2: Promote financial fraud-ring workflow from synthetic module to importable transaction-analysis module with CSV/JSON field mapping, validation, larger benchmark, and calibration/overreliance tests.
   - Test 3: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation

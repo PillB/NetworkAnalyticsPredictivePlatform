@@ -8,6 +8,8 @@ export function createChartWorkspace() {
     annotations: [],
     savedLayouts: [],
     selectedSavedLayoutId: "",
+    undoStack: [],
+    redoStack: [],
   };
 }
 
@@ -17,6 +19,45 @@ function normalized(value) {
 
 function unique(values) {
   return [...new Set(values)];
+}
+
+function withoutHistory(workspace) {
+  const {
+    undoStack: _undoStack,
+    redoStack: _redoStack,
+    ...rest
+  } = workspace;
+  return structuredClone(rest);
+}
+
+export function commitWorkspaceChange(workspace, nextWorkspace) {
+  return {
+    ...nextWorkspace,
+    undoStack: [...(workspace.undoStack ?? []), withoutHistory(workspace)].slice(-30),
+    redoStack: [],
+  };
+}
+
+export function undoWorkspaceChange(workspace) {
+  const undoStack = workspace.undoStack ?? [];
+  if (!undoStack.length) return workspace;
+  const previous = undoStack.at(-1);
+  return {
+    ...previous,
+    undoStack: undoStack.slice(0, -1),
+    redoStack: [...(workspace.redoStack ?? []), withoutHistory(workspace)].slice(-30),
+  };
+}
+
+export function redoWorkspaceChange(workspace) {
+  const redoStack = workspace.redoStack ?? [];
+  if (!redoStack.length) return workspace;
+  const next = redoStack.at(-1);
+  return {
+    ...next,
+    undoStack: [...(workspace.undoStack ?? []), withoutHistory(workspace)].slice(-30),
+    redoStack: redoStack.slice(0, -1),
+  };
 }
 
 export function searchGraph(query, source, settings) {
@@ -114,6 +155,32 @@ export function setPath(workspace, source, settings, startId, endId) {
     pathNodeIds: path.nodeIds,
     pathRelationshipIds: path.relationshipIds,
   };
+}
+
+export function explainPath(workspace, source, settings) {
+  const relationships = source.visibleRelationships(settings);
+  return workspace.pathRelationshipIds.map((id) => {
+    const relationship = relationships.find((item) => item.id === id);
+    if (!relationship) {
+      return {
+        id,
+        label: id,
+        source: "Relationship is not visible in the current authorized projection",
+        caveat: "Hidden or filtered relationships cannot support a visible path explanation.",
+      };
+    }
+    const subject = source.nodeById(relationship.subject);
+    const object = source.nodeById(relationship.object);
+    return {
+      id,
+      label: `${subject?.label ?? relationship.subject} ${relationship.predicate} ${object?.label ?? relationship.object}`,
+      source: relationship.source,
+      eventTime: relationship.eventTime,
+      knownAt: relationship.knownAt,
+      confidence: relationship.confidence,
+      caveat: relationship.caveat,
+    };
+  });
 }
 
 export function addAnnotation(workspace, text, targetId) {

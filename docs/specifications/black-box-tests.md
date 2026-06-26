@@ -409,7 +409,8 @@ records the expansion as reversible workspace state.
 
 Path finding operates over the currently visible authorized graph. The path is
 displayed as an exploratory chart aid, not proof of relationship strength or
-criminal association.
+criminal association. Every displayed path exposes exact visible relationship
+dependencies, source labels, event time, known-at time, confidence, and caveats.
 
 ### BB-CHART-004 — Analyst annotations
 
@@ -420,3 +421,9 @@ source evidence or model output.
 
 Saved and restored layouts preserve visual positions/rotation separately from
 analytical versions and evidence dependencies.
+
+### BB-CHART-006 — Workspace undo and redo
+
+Workspace authoring actions, including pins, expansion, paths, annotations, and
+saved-layout metadata, can be undone and redone without changing evidence
+assertions, analytical versions, or report dependencies.

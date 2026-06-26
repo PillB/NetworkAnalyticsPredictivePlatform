@@ -3,14 +3,18 @@ import assert from "node:assert/strict";
 
 import {
   addAnnotation,
+  commitWorkspaceChange,
   createChartWorkspace,
   expandNeighbors,
+  explainPath,
   pinSearchResult,
+  redoWorkspaceChange,
   saveLayout,
   searchGraph,
   selectedLayout,
   semanticChartRows,
   setPath,
+  undoWorkspaceChange,
 } from "../../packages/graph-renderer/chart-workspace.mjs";
 import {
   DEFAULT_SETTINGS,
@@ -43,6 +47,9 @@ test("path finding records path nodes and relationships separately", () => {
   assert.ok(workspace.pathNodeIds.includes("northstar"));
   assert.ok(workspace.pathNodeIds.includes("halcyon"));
   assert.ok(workspace.pathRelationshipIds.length >= 1);
+  const explanation = explainPath(workspace, source, DEFAULT_SETTINGS);
+  assert.equal(explanation.length, workspace.pathRelationshipIds.length);
+  assert.ok(explanation.every((step) => step.source && step.eventTime && step.knownAt));
 });
 
 test("annotations are analyst commentary and layouts are separate visual state", () => {
@@ -55,4 +62,20 @@ test("annotations are analyst commentary and layouts are separate visual state",
   assert.equal(workspace.annotations[0].classification, "analyst annotation");
   assert.equal(selectedLayout(workspace).name, "Briefing view");
   assert.deepEqual(selectedLayout(workspace).positions.northstar, { x: 40, y: 44 });
+});
+
+test("workspace undo and redo reverse chart authoring without evidence mutation", () => {
+  let workspace = createChartWorkspace();
+  const result = searchGraph("Northstar", source, DEFAULT_SETTINGS)[0];
+  workspace = commitWorkspaceChange(workspace, pinSearchResult(workspace, result, source, DEFAULT_SETTINGS));
+  assert.ok(workspace.pinnedNodeIds.length >= 1);
+  assert.equal(workspace.undoStack.length, 1);
+
+  const undone = undoWorkspaceChange(workspace);
+  assert.deepEqual(undone.pinnedNodeIds, []);
+  assert.equal(undone.redoStack.length, 1);
+
+  const redone = redoWorkspaceChange(undone);
+  assert.deepEqual(redone.pinnedNodeIds, workspace.pinnedNodeIds);
+  assert.equal(redone.redoStack.length, 0);
 });

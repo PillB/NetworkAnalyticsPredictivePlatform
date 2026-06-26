@@ -93,9 +93,14 @@ try {
     assert.match(await page.locator("#statusMessage").textContent(), /Expanded selected/i);
     await page.locator("#findPath").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Path added|No path found/i);
+    assert.match(await page.locator("#chartRows").innerText(), /Path explanation|Acct 777/i);
     await page.locator("#annotationText").fill("Review transaction timing before briefing");
     await page.locator("#addAnnotation").click();
     assert.match(await page.locator("#chartNotes").innerText(), /analyst annotation/i);
+    await page.locator("#workspaceUndo").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /workspace undo/i);
+    await page.locator("#workspaceRedo").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /workspace redo/i);
     await page.locator("#layoutName").fill("Fraud briefing view");
     await page.locator("#saveLayout").click();
     assert.match(await page.locator("#chartNotes").innerText(), /Fraud briefing view/i);

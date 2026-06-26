@@ -25,14 +25,18 @@ import {
 import { renderGraph } from "../../packages/graph-renderer/svg-renderer.mjs";
 import {
   addAnnotation,
+  commitWorkspaceChange,
   createChartWorkspace,
   expandNeighbors,
+  explainPath,
   pinSearchResult,
+  redoWorkspaceChange,
   saveLayout,
   searchGraph,
   selectedLayout,
   semanticChartRows,
   setPath,
+  undoWorkspaceChange,
 } from "../../packages/graph-renderer/chart-workspace.mjs";
 
 const workbenchBootstrap = await loadWorkbenchBootstrap();
@@ -60,7 +64,7 @@ const elements = Object.fromEntries(
     "priorityQueue", "evidenceRows", "tableCount", "statusMessage", "helpButton",
     "helpDialog", "closeHelp", "chartSearch", "pinFirstResult", "expandSelected",
     "findPath", "annotationText", "addAnnotation", "layoutName", "saveLayout",
-    "restoreLayout", "chartSearchResults", "chartRows", "chartNotes",
+    "restoreLayout", "workspaceUndo", "workspaceRedo", "chartSearchResults", "chartRows", "chartNotes",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -447,8 +451,11 @@ function chartSearchResults() {
 function renderChartWorkspace() {
   const results = chartSearchResults();
   const rows = semanticChartRows(chartWorkspace, graphSource());
+  const pathSteps = explainPath(chartWorkspace, graphSource(), state.settings);
   elements.chartSearch.value = chartWorkspace.query;
   elements.restoreLayout.disabled = !selectedLayout(chartWorkspace);
+  elements.workspaceUndo.disabled = !(chartWorkspace.undoStack ?? []).length;
+  elements.workspaceRedo.disabled = !(chartWorkspace.redoStack ?? []).length;
   elements.chartSearchResults.innerHTML = results.length
     ? results.map((result, index) => `
       <button class="workspace-item" type="button" data-chart-result="${index}">
@@ -457,7 +464,7 @@ function renderChartWorkspace() {
       </button>
     `).join("")
     : `<div class="workspace-item">No search results pinned yet.<small>Search keeps data authorized and local to this projection.</small></div>`;
-  elements.chartRows.innerHTML = rows.length
+  const rowHtml = rows.length
     ? rows.map((row) => `
       <div class="workspace-item">
         <b>${escapeHtml(row.label)}</b>
@@ -465,6 +472,10 @@ function renderChartWorkspace() {
       </div>
     `).join("")
     : `<div class="workspace-item">No chart rows yet.<small>Pin a result or expand the selected relationship.</small></div>`;
+  const pathHtml = pathSteps.length
+    ? `<div class="workspace-item"><b>Path explanation · ${pathSteps.length} exact dependencies</b><small>${pathSteps.map((step) => `${escapeHtml(step.label)} · ${escapeHtml(step.source)} · ${escapeHtml(step.confidence ?? "unknown")} confidence`).join("<br>")}</small></div>`
+    : "";
+  elements.chartRows.innerHTML = `${pathHtml}${rowHtml}`;
   const notes = chartWorkspace.annotations.map((note) => `
     <div class="workspace-item">
       <b>${escapeHtml(note.classification)}</b>
@@ -650,7 +661,7 @@ elements.chartSearchResults.addEventListener("click", (event) => {
   const button = event.target.closest("[data-chart-result]");
   if (!button) return;
   const result = chartSearchResults()[Number(button.dataset.chartResult)];
-  chartWorkspace = pinSearchResult(chartWorkspace, result, graphSource(), state.settings);
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, pinSearchResult(chartWorkspace, result, graphSource(), state.settings));
   renderChartWorkspace();
   setStatus(`Pinned ${result.label} to the chart workspace`);
 });
@@ -660,7 +671,7 @@ elements.pinFirstResult.addEventListener("click", () => {
     setStatus("No search result to pin");
     return;
   }
-  chartWorkspace = pinSearchResult(chartWorkspace, result, graphSource(), state.settings);
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, pinSearchResult(chartWorkspace, result, graphSource(), state.settings));
   renderChartWorkspace();
   setStatus(`Pinned ${result.label} to the chart workspace`);
 });
@@ -668,8 +679,8 @@ elements.expandSelected.addEventListener("click", () => {
   const workflow = activeWorkflow();
   const relationship = workflow.relationshipById(state.selectedId);
   if (!relationship) return;
-  chartWorkspace = expandNeighbors(chartWorkspace, graphSource(), state.settings, relationship.subject);
-  chartWorkspace = expandNeighbors(chartWorkspace, graphSource(), state.settings, relationship.object);
+  const expandedOnce = expandNeighbors(chartWorkspace, graphSource(), state.settings, relationship.subject);
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, expandNeighbors(expandedOnce, graphSource(), state.settings, relationship.object));
   renderChartWorkspace();
   setStatus("Expanded selected relationship endpoints in the chart workspace");
 });
@@ -678,7 +689,7 @@ elements.findPath.addEventListener("click", () => {
   const relationship = workflow.relationshipById(state.selectedId);
   const startId = chartWorkspace.pinnedNodeIds[0] ?? relationship?.subject;
   const endId = chartWorkspace.pinnedNodeIds.at(-1) ?? relationship?.object;
-  chartWorkspace = setPath(chartWorkspace, graphSource(), state.settings, startId, endId);
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, setPath(chartWorkspace, graphSource(), state.settings, startId, endId));
   renderChartWorkspace();
   setStatus(chartWorkspace.pathNodeIds.length ? "Path added to chart workspace" : "No path found in visible authorized graph");
 });
@@ -687,13 +698,13 @@ elements.addAnnotation.addEventListener("click", () => {
   const relationship = workflow.relationshipById(state.selectedId);
   const targetId = relationship?.id ?? state.selectedId;
   const before = chartWorkspace.annotations.length;
-  chartWorkspace = addAnnotation(chartWorkspace, elements.annotationText.value, targetId);
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, addAnnotation(chartWorkspace, elements.annotationText.value, targetId));
   elements.annotationText.value = "";
   renderChartWorkspace();
   setStatus(chartWorkspace.annotations.length > before ? "Analyst annotation added without changing evidence" : "Annotation text was empty");
 });
 elements.saveLayout.addEventListener("click", () => {
-  chartWorkspace = saveLayout(chartWorkspace, elements.layoutName.value, graphView);
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, saveLayout(chartWorkspace, elements.layoutName.value, graphView));
   elements.layoutName.value = "";
   renderChartWorkspace();
   setStatus("Visual layout saved separately from analysis");
@@ -705,6 +716,16 @@ elements.restoreLayout.addEventListener("click", () => {
   graphView = { ...graphView, positions: structuredClone(layout.positions), rotation: layout.rotation };
   render();
   setStatus(`Restored saved layout: ${layout.name}`);
+});
+elements.workspaceUndo.addEventListener("click", () => {
+  chartWorkspace = undoWorkspaceChange(chartWorkspace);
+  renderChartWorkspace();
+  setStatus("Chart workspace undo applied");
+});
+elements.workspaceRedo.addEventListener("click", () => {
+  chartWorkspace = redoWorkspaceChange(chartWorkspace);
+  renderChartWorkspace();
+  setStatus("Chart workspace redo applied");
 });
 elements.resetAnalysis.addEventListener("click", () => {
   if (activeUseCase === "fraud") {
