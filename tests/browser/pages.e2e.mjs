@@ -85,6 +85,22 @@ try {
     assert.match(await page.locator("#statusMessage").textContent(), /undo/i);
     await page.locator("#resetLayout").click();
     assert.match(await page.locator("#statusMessage").textContent(), /layout reset/i);
+    await page.locator("#chartSearch").fill("Acct 777");
+    assert.match(await page.locator("#chartSearchResults").innerText(), /Acct 777/i);
+    await page.locator("#pinFirstResult").click();
+    assert.match(await page.locator("#chartRows").innerText(), /Acct 777/i);
+    await page.locator("#expandSelected").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /Expanded selected/i);
+    await page.locator("#findPath").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /Path added|No path found/i);
+    await page.locator("#annotationText").fill("Review transaction timing before briefing");
+    await page.locator("#addAnnotation").click();
+    assert.match(await page.locator("#chartNotes").innerText(), /analyst annotation/i);
+    await page.locator("#layoutName").fill("Fraud briefing view");
+    await page.locator("#saveLayout").click();
+    assert.match(await page.locator("#chartNotes").innerText(), /Fraud briefing view/i);
+    await page.locator("#restoreLayout").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /Restored saved layout/i);
     for (let index = 0; index < 6; index += 1) {
       await page.locator("#nextStep").click();
     }

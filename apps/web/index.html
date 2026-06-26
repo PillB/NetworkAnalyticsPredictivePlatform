@@ -208,6 +208,54 @@
           </aside>
         </section>
 
+        <section class="chart-workspace-card" aria-labelledby="chart-workspace-title">
+          <div class="card-heading">
+            <div>
+              <p class="kicker">i2-class chart workspace</p>
+              <h2 id="chart-workspace-title">Search, expand, path, annotate</h2>
+            </div>
+            <span class="status-chip">Evidence-safe authoring</span>
+          </div>
+          <p class="priority-warning">
+            Chart workspace actions create visual pins or analyst annotations.
+            They do not create evidence, change analysis versions, or determine guilt.
+          </p>
+          <div class="chart-tools">
+            <label>
+              <span>Search entities, accounts, sources, or relationships</span>
+              <input id="chartSearch" type="search" placeholder="Try Northstar, Acct 777, transfer, device..." />
+            </label>
+            <button class="button secondary" id="pinFirstResult" type="button">Pin first result</button>
+            <button class="button secondary" id="expandSelected" type="button">Expand selected</button>
+            <button class="button secondary" id="findPath" type="button">Find path</button>
+            <label>
+              <span>Annotation for selected item</span>
+              <input id="annotationText" type="text" maxlength="140" placeholder="Add a neutral analyst note..." />
+            </label>
+            <button class="button secondary" id="addAnnotation" type="button">Add note</button>
+            <label>
+              <span>Layout name</span>
+              <input id="layoutName" type="text" maxlength="50" placeholder="Saved view name" />
+            </label>
+            <button class="button secondary" id="saveLayout" type="button">Save layout</button>
+            <button class="button secondary" id="restoreLayout" type="button">Restore layout</button>
+          </div>
+          <div class="chart-workspace-grid">
+            <article>
+              <h3>Search results</h3>
+              <div id="chartSearchResults" class="workspace-list" aria-live="polite"></div>
+            </article>
+            <article>
+              <h3>Workspace rows</h3>
+              <div id="chartRows" class="workspace-list" aria-live="polite"></div>
+            </article>
+            <article>
+              <h3>Notes and saved layouts</h3>
+              <div id="chartNotes" class="workspace-list" aria-live="polite"></div>
+            </article>
+          </div>
+        </section>
+
         <section class="lower-grid">
           <article class="community-card">
             <div class="card-heading">

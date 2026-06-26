@@ -37,4 +37,15 @@ test("mandatory interpretation safeguards are present", async () => {
   assert.match(html, /Fictional training data/i);
   assert.match(html, /does not estimate guilt/i);
   assert.match(html, /Uncalibrated baseline/i);
+  assert.match(html, /They do not create evidence/i);
+});
+
+test("i2-class chart workspace controls are present", async () => {
+  const html = await readFile(`${repoRoot}apps/web/index.html`, "utf8");
+  assert.match(html, /id="chartSearch"/);
+  assert.match(html, /id="expandSelected"/);
+  assert.match(html, /id="findPath"/);
+  assert.match(html, /id="addAnnotation"/);
+  assert.match(html, /id="saveLayout"/);
+  assert.match(html, /id="restoreLayout"/);
 });

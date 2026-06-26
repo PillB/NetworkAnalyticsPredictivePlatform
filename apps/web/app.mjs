@@ -23,6 +23,17 @@ import {
   semanticRows,
 } from "../../packages/graph-renderer/graph-model.mjs";
 import { renderGraph } from "../../packages/graph-renderer/svg-renderer.mjs";
+import {
+  addAnnotation,
+  createChartWorkspace,
+  expandNeighbors,
+  pinSearchResult,
+  saveLayout,
+  searchGraph,
+  selectedLayout,
+  semanticChartRows,
+  setPath,
+} from "../../packages/graph-renderer/chart-workspace.mjs";
 
 const workbenchBootstrap = await loadWorkbenchBootstrap();
 configureWorkbenchBootstrap(workbenchBootstrap);
@@ -31,6 +42,7 @@ let activeUseCase = "harbor";
 let state = createInitialState();
 let activeInspectorTab = "evidence";
 let graphView = { positions: {}, rotation: 0, undo: [], redo: [] };
+let chartWorkspace = createChartWorkspace();
 
 const elements = Object.fromEntries(
   [
@@ -46,7 +58,9 @@ const elements = Object.fromEntries(
     "aliasIncluded", "communityCount", "membershipCount", "coverageValue", "reportPreview",
     "reportStatus", "markFinding", "runPreflight", "preflightResults", "exportReport",
     "priorityQueue", "evidenceRows", "tableCount", "statusMessage", "helpButton",
-    "helpDialog", "closeHelp",
+    "helpDialog", "closeHelp", "chartSearch", "pinFirstResult", "expandSelected",
+    "findPath", "annotationText", "addAnnotation", "layoutName", "saveLayout",
+    "restoreLayout", "chartSearchResults", "chartRows", "chartNotes",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -426,6 +440,48 @@ function renderTable() {
   `).join("");
 }
 
+function chartSearchResults() {
+  return searchGraph(chartWorkspace.query, graphSource(), state.settings);
+}
+
+function renderChartWorkspace() {
+  const results = chartSearchResults();
+  const rows = semanticChartRows(chartWorkspace, graphSource());
+  elements.chartSearch.value = chartWorkspace.query;
+  elements.restoreLayout.disabled = !selectedLayout(chartWorkspace);
+  elements.chartSearchResults.innerHTML = results.length
+    ? results.map((result, index) => `
+      <button class="workspace-item" type="button" data-chart-result="${index}">
+        <b>${escapeHtml(result.label)}</b>
+        <small>${escapeHtml(result.kind)} · ${escapeHtml(result.detail)}</small>
+      </button>
+    `).join("")
+    : `<div class="workspace-item">No search results pinned yet.<small>Search keeps data authorized and local to this projection.</small></div>`;
+  elements.chartRows.innerHTML = rows.length
+    ? rows.map((row) => `
+      <div class="workspace-item">
+        <b>${escapeHtml(row.label)}</b>
+        <small>${escapeHtml(row.type)} · ${escapeHtml(row.role)} · ${row.noteCount} notes</small>
+      </div>
+    `).join("")
+    : `<div class="workspace-item">No chart rows yet.<small>Pin a result or expand the selected relationship.</small></div>`;
+  const notes = chartWorkspace.annotations.map((note) => `
+    <div class="workspace-item">
+      <b>${escapeHtml(note.classification)}</b>
+      <small>${escapeHtml(note.targetId)} · ${escapeHtml(note.text)}</small>
+    </div>
+  `).join("");
+  const layouts = chartWorkspace.savedLayouts.map((layout) => `
+    <div class="workspace-item">
+      <b>${escapeHtml(layout.name)}</b>
+      <small>${Object.keys(layout.positions).length} moved nodes · ${layout.rotation}° rotation</small>
+    </div>
+  `).join("");
+  elements.chartNotes.innerHTML = notes || layouts
+    ? `${notes}${layouts}`
+    : `<div class="workspace-item">No annotations or saved layouts.<small>Notes are analyst commentary, not evidence.</small></div>`;
+}
+
 function render() {
   renderSteps();
   renderCoach();
@@ -435,6 +491,7 @@ function render() {
   renderCommunity();
   renderReport();
   renderPrioritization();
+  renderChartWorkspace();
   renderTable();
 }
 
@@ -549,6 +606,7 @@ elements.useCaseMode.addEventListener("change", (event) => {
   state = activeUseCase === "fraud" ? financialInitialState() : createInitialState();
   activeInspectorTab = "evidence";
   resetGraphView();
+  chartWorkspace = createChartWorkspace();
   render();
   setStatus(activeUseCase === "fraud"
     ? "Cuentas mulas and fraud-ring training case loaded"
@@ -583,6 +641,70 @@ elements.resetLayout.addEventListener("click", () => {
   graphView = { ...graphView, positions: {}, rotation: 0 };
   render();
   setStatus("Graph layout reset to the recommended baseline");
+});
+elements.chartSearch.addEventListener("input", (event) => {
+  chartWorkspace = { ...chartWorkspace, query: event.target.value };
+  renderChartWorkspace();
+});
+elements.chartSearchResults.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-chart-result]");
+  if (!button) return;
+  const result = chartSearchResults()[Number(button.dataset.chartResult)];
+  chartWorkspace = pinSearchResult(chartWorkspace, result, graphSource(), state.settings);
+  renderChartWorkspace();
+  setStatus(`Pinned ${result.label} to the chart workspace`);
+});
+elements.pinFirstResult.addEventListener("click", () => {
+  const result = chartSearchResults()[0];
+  if (!result) {
+    setStatus("No search result to pin");
+    return;
+  }
+  chartWorkspace = pinSearchResult(chartWorkspace, result, graphSource(), state.settings);
+  renderChartWorkspace();
+  setStatus(`Pinned ${result.label} to the chart workspace`);
+});
+elements.expandSelected.addEventListener("click", () => {
+  const workflow = activeWorkflow();
+  const relationship = workflow.relationshipById(state.selectedId);
+  if (!relationship) return;
+  chartWorkspace = expandNeighbors(chartWorkspace, graphSource(), state.settings, relationship.subject);
+  chartWorkspace = expandNeighbors(chartWorkspace, graphSource(), state.settings, relationship.object);
+  renderChartWorkspace();
+  setStatus("Expanded selected relationship endpoints in the chart workspace");
+});
+elements.findPath.addEventListener("click", () => {
+  const workflow = activeWorkflow();
+  const relationship = workflow.relationshipById(state.selectedId);
+  const startId = chartWorkspace.pinnedNodeIds[0] ?? relationship?.subject;
+  const endId = chartWorkspace.pinnedNodeIds.at(-1) ?? relationship?.object;
+  chartWorkspace = setPath(chartWorkspace, graphSource(), state.settings, startId, endId);
+  renderChartWorkspace();
+  setStatus(chartWorkspace.pathNodeIds.length ? "Path added to chart workspace" : "No path found in visible authorized graph");
+});
+elements.addAnnotation.addEventListener("click", () => {
+  const workflow = activeWorkflow();
+  const relationship = workflow.relationshipById(state.selectedId);
+  const targetId = relationship?.id ?? state.selectedId;
+  const before = chartWorkspace.annotations.length;
+  chartWorkspace = addAnnotation(chartWorkspace, elements.annotationText.value, targetId);
+  elements.annotationText.value = "";
+  renderChartWorkspace();
+  setStatus(chartWorkspace.annotations.length > before ? "Analyst annotation added without changing evidence" : "Annotation text was empty");
+});
+elements.saveLayout.addEventListener("click", () => {
+  chartWorkspace = saveLayout(chartWorkspace, elements.layoutName.value, graphView);
+  elements.layoutName.value = "";
+  renderChartWorkspace();
+  setStatus("Visual layout saved separately from analysis");
+});
+elements.restoreLayout.addEventListener("click", () => {
+  const layout = selectedLayout(chartWorkspace);
+  if (!layout) return;
+  pushLayoutHistory();
+  graphView = { ...graphView, positions: structuredClone(layout.positions), rotation: layout.rotation };
+  render();
+  setStatus(`Restored saved layout: ${layout.name}`);
 });
 elements.resetAnalysis.addEventListener("click", () => {
   if (activeUseCase === "fraud") {

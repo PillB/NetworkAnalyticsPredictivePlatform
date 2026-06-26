@@ -391,3 +391,32 @@ explanation, authorization, and human-factor gates pass.
 Dragging nodes, rotating/spinning the graph, undo/redo, and layout reset change
 only visualization state. They do not create analytical versions or alter
 evidence dependencies.
+
+## 17. i2-class chart workspace
+
+### BB-CHART-001 — Search and pin
+
+Searching the visible authorized graph returns matching entities and
+relationships without querying unauthorized data. Pinning a result creates a
+workspace reference, not an evidence assertion.
+
+### BB-CHART-002 — Bounded expansion
+
+Expanding from the selected item adds visible authorized neighbors only and
+records the expansion as reversible workspace state.
+
+### BB-CHART-003 — Path finding
+
+Path finding operates over the currently visible authorized graph. The path is
+displayed as an exploratory chart aid, not proof of relationship strength or
+criminal association.
+
+### BB-CHART-004 — Analyst annotations
+
+Annotations are stored and labeled as analyst commentary. They do not become
+source evidence or model output.
+
+### BB-CHART-005 — Saved layouts
+
+Saved and restored layouts preserve visual positions/rotation separately from
+analytical versions and evidence dependencies.
