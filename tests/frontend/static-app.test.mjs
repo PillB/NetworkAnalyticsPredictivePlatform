@@ -62,6 +62,23 @@ test("i2-class chart workspace controls are present", async () => {
   assert.match(html, /id="resetNodeVisual"/);
 });
 
+test("Linkurious-style investigation workspace controls are present", async () => {
+  const html = await readFile(`${repoRoot}apps/web/index.html`, "utf8");
+  assert.match(html, /id="saveSearch"/);
+  assert.match(html, /id="workspaceComment"/);
+  assert.match(html, /id="addWorkspaceComment"/);
+  assert.match(html, /id="caseNoteText"/);
+  assert.match(html, /id="addCaseNote"/);
+  assert.match(html, /id="taskLabel"/);
+  assert.match(html, /id="taskStatus"/);
+  assert.match(html, /id="setTaskStatus"/);
+  assert.match(html, /id="reviewStatus"/);
+  assert.match(html, /id="setReviewStatus"/);
+  assert.match(html, /id="saveWorkspaceSnapshot"/);
+  assert.match(html, /id="restoreWorkspaceSnapshot"/);
+  assert.match(html, /id="prepareCasePacket"/);
+});
+
 test("financial transaction import controls are present", async () => {
   const html = await readFile(`${repoRoot}apps/web/index.html`, "utf8");
   assert.match(html, /id="transactionCsv"/);

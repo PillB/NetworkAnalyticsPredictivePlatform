@@ -72,6 +72,7 @@ try {
     page.on("pageerror", (error) => errors.push(error.message));
 
     await page.goto(`${baseURL}/`, { waitUntil: "networkidle" });
+    await page.evaluate(() => localStorage.clear());
     assert.equal(new URL(page.url()).pathname, `/${repository}/apps/web/`);
     assert.equal(await page.locator("#stepList .step-button").count(), 7);
     assert.match(
@@ -133,14 +134,39 @@ try {
     await page.locator("#resetLayout").click();
     assert.match(await page.locator("#statusMessage").textContent(), /layout reset/i);
     await page.locator("#chartSearch").fill("Acct 777");
+    await page.locator("#saveSearch").click();
+    assert.match(await page.locator("#chartNotes").innerText(), /Saved search/i);
     assert.match(await page.locator("#chartSearchResults").innerText(), /Acct 777/i);
     await page.locator("#pinFirstResult").click();
     assert.match(await page.locator("#chartRows").innerText(), /Acct 777/i);
     await page.locator("#expandSelected").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Expanded selected/i);
+    assert.match(await page.locator("#chartNotes").innerText(), /Expansion boundary/i);
     await page.locator("#findPath").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Path added|No path found/i);
     assert.match(await page.locator("#chartRows").innerText(), /Path explanation|Acct 777/i);
+    await page.locator("#workspaceComment").fill("Reviewer should validate source timing");
+    await page.locator("#addWorkspaceComment").click();
+    assert.match(await page.locator("#chartNotes").innerText(), /analyst comment/i);
+    assert.match(await page.locator("#chartNotes").innerText(), /not evidence/i);
+    await page.locator("#caseNoteText").fill("Prepare neutral review packet");
+    await page.locator("#addCaseNote").click();
+    assert.match(await page.locator("#chartNotes").innerText(), /case note/i);
+    await page.locator("#taskLabel").fill("Verify KYC records");
+    await page.locator("#taskStatus").selectOption("in-progress");
+    await page.locator("#setTaskStatus").click();
+    assert.match(await page.locator("#chartNotes").innerText(), /Verify KYC records/i);
+    await page.locator("#reviewStatus").selectOption("ready-for-review");
+    await page.locator("#setReviewStatus").click();
+    assert.match(await page.locator("#chartNotes").innerText(), /ready-for-review/i);
+    await page.locator("#layoutName").fill("Reviewer handoff");
+    await page.locator("#saveWorkspaceSnapshot").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /Workspace saved/i);
+    await page.reload({ waitUntil: "networkidle" });
+    await page.locator("#useCaseMode").selectOption("fraud");
+    await page.locator("#restoreWorkspaceSnapshot").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /Workspace reloaded/i);
+    assert.match(await page.locator("#chartNotes").innerText(), /Reviewer handoff|Verify KYC records|ready-for-review/i);
     await page.locator("#annotationText").fill("Review transaction timing before briefing");
     await page.locator("#addAnnotation").click();
     assert.match(await page.locator("#chartNotes").innerText(), /analyst annotation/i);
@@ -151,10 +177,15 @@ try {
     assert.match(await page.locator("#statusMessage").textContent(), /Manual chart entity added/i);
     assert.match(await page.locator("#chartRows").innerText(), /Briefing only account/i);
     assert.ok(await page.locator('.manual-chart-node.style-accent[data-manual-entity-id="manual-entity-1"]').count() >= 1);
+    await page.locator("#manualEntityLabel").fill("Briefing target account");
+    await page.locator("#manualEntityType").selectOption("account");
+    await page.locator("#manualEntityStyle").selectOption("slate");
+    await page.locator("#addManualEntity").click();
+    assert.ok(await page.locator('.manual-chart-node.style-slate[data-manual-entity-id="manual-entity-2"]').count() >= 1);
     await page.locator("#moveManualEntity").click();
     assert.match(await page.locator("#statusMessage").textContent(), /presentation coordinates/i);
     await page.locator("#manualEdgeSource").selectOption("manual-entity-1");
-    await page.locator("#manualEdgeTarget").selectOption("acct-777");
+    await page.locator("#manualEdgeTarget").selectOption("manual-entity-2");
     await page.locator("#manualEdgeLabel").fill("briefing-only link");
     await page.locator("#manualEdgeStyle").selectOption("dashed");
     await page.locator("#addManualEdge").click();
@@ -170,6 +201,12 @@ try {
     ]);
     assert.match(chartDownload.suggestedFilename(), /chart-packet/i);
     assert.match(await page.locator("#statusMessage").textContent(), /manual items remain outside evidence/i);
+    const [caseDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      page.locator("#prepareCasePacket").click(),
+    ]);
+    assert.match(caseDownload.suggestedFilename(), /case-packet/i);
+    assert.match(await page.locator("#statusMessage").textContent(), /review aid only/i);
     await page.locator("#workspaceUndo").click();
     assert.match(await page.locator("#statusMessage").textContent(), /workspace undo/i);
     await page.locator("#workspaceRedo").click();

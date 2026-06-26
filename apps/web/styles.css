@@ -552,11 +552,11 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 .chart-workspace-card { margin-top: 16px; padding: 18px; }
 .chart-tools {
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) repeat(3, max-content) minmax(180px, 1fr) max-content minmax(150px, .8fr) repeat(2, max-content);
+  grid-template-columns: minmax(220px, 1.4fr) repeat(4, max-content) minmax(180px, 1fr) max-content minmax(150px, .8fr) repeat(2, max-content);
   gap: 9px;
   align-items: end;
 }
-.chart-tools label > span {
+.chart-tools label > span, .case-workspace-tools label > span {
   display: block;
   margin-bottom: 4px;
   color: var(--muted);
@@ -565,7 +565,8 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-.chart-tools input, .chart-authoring-tools input, .chart-authoring-tools select {
+.chart-tools input, .chart-authoring-tools input, .chart-authoring-tools select,
+.case-workspace-tools input, .case-workspace-tools select {
   width: 100%;
   min-height: 34px;
   padding: 7px 9px;
@@ -574,6 +575,15 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
   background: var(--surface-strong);
   color: var(--ink);
   font-size: 11px;
+}
+.case-workspace-tools {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) max-content minmax(170px, 1.1fr) max-content minmax(140px, .9fr) minmax(110px, .7fr) max-content minmax(130px, .8fr) repeat(4, max-content);
+  gap: 9px;
+  align-items: end;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
 }
 .chart-authoring-tools {
   display: grid;
@@ -716,7 +726,7 @@ dialog p, dialog li { line-height: 1.55; }
   .priority-list { grid-template-columns: 1fr; }
   .import-preview, .mapping-grid { grid-template-columns: 1fr; }
   .import-toolbar { align-items: stretch; }
-  .chart-tools, .chart-authoring-tools, .chart-workspace-grid { grid-template-columns: 1fr; }
+  .chart-tools, .case-workspace-tools, .chart-authoring-tools, .chart-workspace-grid { grid-template-columns: 1fr; }
   .change-ribbon { grid-template-columns: 1fr; }
   .lineage-children { gap: 8px; width: 100%; }
   .lineage-node { min-width: 0; flex: 1; }

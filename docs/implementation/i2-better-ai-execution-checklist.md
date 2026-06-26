@@ -187,6 +187,34 @@ Retrospective questions:
 - Did collaboration metadata become confused with evidence?
 - Are saved searches replayable against the same authorized projection contract?
 
+Implementation evidence:
+
+- Added saved searches with result counts and an explicit "current authorized
+  visible graph projection" boundary.
+- Added analyst comments, case notes, task states, and neutral review status to
+  the workspace reducer and UI.
+- Added deterministic audit-log entries for saved searches, comments, case
+  notes, task updates, review updates, workspace save, and workspace restore.
+- Added browser-local training snapshots so the Playwright flow can save,
+  reload, and restore the investigation workspace.
+- Added neutral case-packet export with warning language that packets are review
+  aids only and do not imply guilt, criminality, or enforcement action.
+- Added expansion explanations stating that hidden neighbors are not counted and
+  only authorized visible relationships are used.
+- Added Linkurious/Obsidian Playwright comparison audit in
+  `docs/validation/linkurious-obsidian-workspace-parity-audit.md`.
+
+Retrospective:
+
+- Comments, case notes, and tasks remain analyst workspace metadata with
+  `evidenceStatus: not evidence`; they are included in case packets only as
+  review context.
+- Saved workspace snapshots are browser-local training artifacts. Production
+  still needs server-side persistence, actor/purpose audit, retention,
+  dissemination controls, and multi-user concurrency.
+- Public Linkurious/Obsidian pages support feature-class comparison only; they
+  cannot prove complete proprietary parity or pixel-perfect replication.
+
 ### Step 4 — Maltego-style transform workflow
 
 Goal: add one-click investigative expansion with source/provenance clarity.

@@ -49,6 +49,8 @@ import {
 import { renderGraph } from "../../packages/graph-renderer/svg-renderer.mjs";
 import {
   addAnnotation,
+  addCaseNote,
+  addComment,
   addManualEdge,
   addManualEntity,
   commitWorkspaceChange,
@@ -56,17 +58,24 @@ import {
   editManualEdge,
   expandNeighbors,
   exportBriefingChart,
+  exportCasePacket,
+  explainExpansion,
   explainPath,
   moveManualEntity,
   pinSearchResult,
   redactChartItem,
   redoWorkspaceChange,
   restoreRedactions,
+  restoreWorkspaceSnapshot,
   saveLayout,
+  saveSearch,
+  saveWorkspaceSnapshot,
   searchGraph,
   selectedLayout,
   semanticChartRows,
+  setReviewStatus,
   setPath,
+  setTaskState,
   undoWorkspaceChange,
 } from "../../packages/graph-renderer/chart-workspace.mjs";
 
@@ -82,6 +91,7 @@ let importPreview = null;
 let importedFraudWorkflow = null;
 let assistantDraft = null;
 const modelEvaluation = evaluatePredictiveModelCandidates();
+const workspaceStorageKey = "napp-investigation-workspace-v1";
 
 const elements = Object.fromEntries(
   [
@@ -98,9 +108,11 @@ const elements = Object.fromEntries(
     "aliasIncluded", "communityCount", "membershipCount", "coverageValue", "reportPreview",
     "reportStatus", "markFinding", "runPreflight", "preflightResults", "exportReport",
     "priorityQueue", "evidenceRows", "tableCount", "statusMessage", "helpButton",
-    "helpDialog", "closeHelp", "chartSearch", "pinFirstResult", "expandSelected",
+    "helpDialog", "closeHelp", "chartSearch", "pinFirstResult", "saveSearch", "expandSelected",
     "findPath", "annotationText", "addAnnotation", "layoutName", "saveLayout",
     "restoreLayout", "workspaceUndo", "workspaceRedo", "chartSearchResults", "chartRows", "chartNotes",
+    "workspaceComment", "addWorkspaceComment", "caseNoteText", "addCaseNote", "taskLabel", "taskStatus",
+    "setTaskStatus", "reviewStatus", "setReviewStatus", "saveWorkspaceSnapshot", "restoreWorkspaceSnapshot", "prepareCasePacket",
     "manualEntityLabel", "manualEntityType", "addManualEntity", "manualEdgeSource", "manualEdgeTarget",
     "manualEntityStyle", "moveManualEntity", "manualEdgeLabel", "manualEdgeStyle", "addManualEdge", "redactChartItem", "restoreRedactions", "exportChart",
     "transactionImportPanel", "transactionFormat", "transactionCsv", "loadSampleCsv",
@@ -639,6 +651,24 @@ function chartSearchResults() {
   return searchGraph(chartWorkspace.query, graphSource(), state.settings);
 }
 
+function persistWorkspaceSnapshot() {
+  try {
+    localStorage.setItem(workspaceStorageKey, JSON.stringify(chartWorkspace.savedWorkspaceSnapshot));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function readWorkspaceSnapshot() {
+  try {
+    const raw = localStorage.getItem(workspaceStorageKey);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 function chartNodePoint(id) {
   const manual = (chartWorkspace.manualEntities ?? []).find((entity) => entity.id === id);
   if (manual) return { x: Number(manual.x ?? 50), y: Number(manual.y ?? 50), label: manual.label };
@@ -672,9 +702,12 @@ function renderChartWorkspace() {
   const results = chartSearchResults();
   const rows = semanticChartRows(chartWorkspace, graphSource());
   const pathSteps = explainPath(chartWorkspace, graphSource(), state.settings);
+  const expansion = explainExpansion(chartWorkspace, graphSource(), state.settings);
   const briefing = exportBriefingChart(chartWorkspace, graphSource(), state.settings);
   elements.chartSearch.value = chartWorkspace.query;
+  elements.reviewStatus.value = chartWorkspace.reviewStatus ?? "triage";
   elements.restoreLayout.disabled = !selectedLayout(chartWorkspace);
+  elements.restoreWorkspaceSnapshot.disabled = !(chartWorkspace.savedWorkspaceSnapshot || readWorkspaceSnapshot());
   elements.workspaceUndo.disabled = !(chartWorkspace.undoStack ?? []).length;
   elements.workspaceRedo.disabled = !(chartWorkspace.redoStack ?? []).length;
   const selectableRows = rows.length ? rows : activeWorkflow().nodes.slice(0, 6).map((node) => ({ id: node.id, label: node.label }));
@@ -715,16 +748,51 @@ function renderChartWorkspace() {
       <small>${escapeHtml(note.targetId)} · ${escapeHtml(note.text)}</small>
     </div>
   `).join("");
+  const savedSearches = (chartWorkspace.savedSearches ?? []).map((search) => `
+    <div class="workspace-item">
+      <b>Saved search · ${escapeHtml(search.name)}</b>
+      <small>${escapeHtml(search.query)} · ${search.resultCount} visible results · ${escapeHtml(search.boundedTo)}</small>
+    </div>
+  `).join("");
+  const comments = (chartWorkspace.comments ?? []).map((comment) => `
+    <div class="workspace-item">
+      <b>${escapeHtml(comment.classification)}</b>
+      <small>${escapeHtml(comment.targetId)} · ${escapeHtml(comment.text)} · ${escapeHtml(comment.evidenceStatus)}</small>
+    </div>
+  `).join("");
+  const caseNotes = (chartWorkspace.caseNotes ?? []).map((note) => `
+    <div class="workspace-item">
+      <b>${escapeHtml(note.classification)}</b>
+      <small>${escapeHtml(note.text)} · ${escapeHtml(note.evidenceStatus)}</small>
+    </div>
+  `).join("");
+  const tasks = (chartWorkspace.taskStates ?? []).map((task) => `
+    <div class="workspace-item">
+      <b>Task · ${escapeHtml(task.label)}</b>
+      <small>${escapeHtml(task.status)} · ${escapeHtml(task.classification)}</small>
+    </div>
+  `).join("");
+  const audit = (chartWorkspace.auditLog ?? []).slice(-4).map((entry) => `
+    <div class="workspace-item">
+      <b>Audit · ${escapeHtml(entry.action)}</b>
+      <small>${escapeHtml(entry.id)} · ${escapeHtml(entry.actor)} · ${escapeHtml(JSON.stringify(entry.detail))}</small>
+    </div>
+  `).join("");
   const layouts = chartWorkspace.savedLayouts.map((layout) => `
     <div class="workspace-item">
       <b>${escapeHtml(layout.name)}</b>
       <small>${Object.keys(layout.positions).length} moved nodes · ${Object.keys(layout.nodeVisuals ?? {}).length} custom visuals · ${layout.rotation}° rotation</small>
     </div>
   `).join("");
-  const hasBriefingState = notes || layouts || briefing.provenance.manualItemCount || briefing.redactionCount || pathSteps.length;
+  const expansionHtml = `<div class="workspace-item"><b>Expansion boundary</b><small>${expansion.visibleNodeCount} nodes · ${expansion.visibleRelationshipCount} visible relationships · ${escapeHtml(expansion.explanation)}</small></div>`;
+  const reviewHtml = `<div class="workspace-item"><b>Review status</b><small>${escapeHtml(chartWorkspace.reviewStatus ?? "triage")} · comments and notes are not evidence</small></div>`;
+  const snapshotHtml = chartWorkspace.savedWorkspaceSnapshot
+    ? `<div class="workspace-item"><b>Saved workspace</b><small>${escapeHtml(chartWorkspace.savedWorkspaceSnapshot.name)} · browser-local training snapshot</small></div>`
+    : "";
+  const hasBriefingState = notes || savedSearches || comments || caseNotes || tasks || audit || layouts || snapshotHtml || briefing.provenance.manualItemCount || briefing.redactionCount || pathSteps.length;
   const briefingHtml = `<div class="workspace-item"><b>Briefing export</b><small>${escapeHtml(briefing.status)} · ${briefing.redactionCount} redactions · ${briefing.unsupportedClaims.length} unsupported manual claims blocked</small></div>`;
   elements.chartNotes.innerHTML = hasBriefingState
-    ? `${notes}${layouts}${briefingHtml}`
+    ? `${reviewHtml}${expansionHtml}${savedSearches}${comments}${caseNotes}${tasks}${notes}${layouts}${snapshotHtml}${audit}${briefingHtml}`
     : `<div class="workspace-item">No annotations or saved layouts.<small>Notes are analyst commentary, not evidence.</small></div>`;
 }
 
@@ -1017,6 +1085,12 @@ elements.pinFirstResult.addEventListener("click", () => {
   renderChartWorkspace();
   setStatus(`Pinned ${result.label} to the chart workspace`);
 });
+elements.saveSearch.addEventListener("click", () => {
+  const before = chartWorkspace.savedSearches.length;
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, saveSearch(chartWorkspace, chartWorkspace.query, graphSource(), state.settings));
+  renderChartWorkspace();
+  setStatus(chartWorkspace.savedSearches.length > before ? "Search saved with authorized projection bounds" : "Enter a search before saving");
+});
 elements.expandSelected.addEventListener("click", () => {
   const workflow = activeWorkflow();
   const relationship = workflow.relationshipById(state.selectedId);
@@ -1044,6 +1118,34 @@ elements.addAnnotation.addEventListener("click", () => {
   elements.annotationText.value = "";
   renderChartWorkspace();
   setStatus(chartWorkspace.annotations.length > before ? "Analyst annotation added without changing evidence" : "Annotation text was empty");
+});
+elements.addWorkspaceComment.addEventListener("click", () => {
+  const workflow = activeWorkflow();
+  const relationship = workflow.relationshipById(state.selectedId);
+  const before = chartWorkspace.comments.length;
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, addComment(chartWorkspace, elements.workspaceComment.value, relationship?.id ?? state.selectedId));
+  elements.workspaceComment.value = "";
+  renderChartWorkspace();
+  setStatus(chartWorkspace.comments.length > before ? "Workspace comment added as analyst note, not evidence" : "Comment text was empty");
+});
+elements.addCaseNote.addEventListener("click", () => {
+  const before = chartWorkspace.caseNotes.length;
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, addCaseNote(chartWorkspace, elements.caseNoteText.value));
+  elements.caseNoteText.value = "";
+  renderChartWorkspace();
+  setStatus(chartWorkspace.caseNotes.length > before ? "Case note added without changing evidence" : "Case note text was empty");
+});
+elements.setTaskStatus.addEventListener("click", () => {
+  const before = JSON.stringify(chartWorkspace.taskStates);
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, setTaskState(chartWorkspace, elements.taskLabel.value, elements.taskStatus.value));
+  elements.taskLabel.value = "";
+  renderChartWorkspace();
+  setStatus(JSON.stringify(chartWorkspace.taskStates) !== before ? "Workspace task state updated" : "Task label was empty");
+});
+elements.setReviewStatus.addEventListener("click", () => {
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, setReviewStatus(chartWorkspace, elements.reviewStatus.value));
+  renderChartWorkspace();
+  setStatus(`Review status set to ${chartWorkspace.reviewStatus}; no guilt or enforcement claim added`);
 });
 elements.addManualEntity.addEventListener("click", () => {
   const before = chartWorkspace.manualEntities.length;
@@ -1102,6 +1204,30 @@ elements.exportChart.addEventListener("click", () => {
   link.click();
   URL.revokeObjectURL(url);
   setStatus(`Briefing chart export ${packet.status}; manual items remain outside evidence`);
+});
+elements.saveWorkspaceSnapshot.addEventListener("click", () => {
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, saveWorkspaceSnapshot(chartWorkspace, elements.layoutName.value || "Investigation workspace"));
+  const persisted = persistWorkspaceSnapshot();
+  elements.layoutName.value = "";
+  renderChartWorkspace();
+  setStatus(persisted ? "Workspace saved locally for reload and review" : "Workspace snapshot saved in session only");
+});
+elements.restoreWorkspaceSnapshot.addEventListener("click", () => {
+  const snapshot = chartWorkspace.savedWorkspaceSnapshot ?? readWorkspaceSnapshot();
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, restoreWorkspaceSnapshot(chartWorkspace, snapshot));
+  renderChartWorkspace();
+  setStatus(snapshot ? "Workspace reloaded from saved snapshot" : "No saved workspace snapshot found");
+});
+elements.prepareCasePacket.addEventListener("click", () => {
+  const packet = exportCasePacket(chartWorkspace, graphSource(), state.settings);
+  const blob = new Blob([JSON.stringify(packet, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${activeWorkflow().exportName}-case-packet-v${state.analysisVersion}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  setStatus(`Case packet ${packet.status}; review aid only and not a guilt determination`);
 });
 elements.saveLayout.addEventListener("click", () => {
   chartWorkspace = commitWorkspaceChange(chartWorkspace, saveLayout(chartWorkspace, elements.layoutName.value, graphView));

@@ -280,8 +280,8 @@
         <section class="chart-workspace-card" aria-labelledby="chart-workspace-title">
           <div class="card-heading">
             <div>
-              <p class="kicker">i2-class chart workspace</p>
-              <h2 id="chart-workspace-title">Search, expand, path, annotate</h2>
+              <p class="kicker">Investigation workspace</p>
+              <h2 id="chart-workspace-title">Search, expand, comment, review</h2>
             </div>
             <span class="status-chip">Evidence-safe authoring</span>
           </div>
@@ -295,6 +295,7 @@
               <input id="chartSearch" type="search" placeholder="Try Northstar, Acct 777, transfer, device..." />
             </label>
             <button class="button secondary" id="pinFirstResult" type="button">Pin first result</button>
+            <button class="button secondary" id="saveSearch" type="button">Save search</button>
             <button class="button secondary" id="expandSelected" type="button">Expand selected</button>
             <button class="button secondary" id="findPath" type="button">Find path</button>
             <label>
@@ -310,6 +311,46 @@
             <button class="button secondary" id="restoreLayout" type="button">Restore layout</button>
             <button class="button secondary" id="workspaceUndo" type="button">Undo workspace</button>
             <button class="button secondary" id="workspaceRedo" type="button">Redo workspace</button>
+          </div>
+          <div class="case-workspace-tools">
+            <label>
+              <span>Comment</span>
+              <input id="workspaceComment" type="text" maxlength="140" placeholder="Comment for the selected item..." />
+            </label>
+            <button class="button secondary" id="addWorkspaceComment" type="button">Add comment</button>
+            <label>
+              <span>Case note</span>
+              <input id="caseNoteText" type="text" maxlength="160" placeholder="Neutral case note..." />
+            </label>
+            <button class="button secondary" id="addCaseNote" type="button">Add case note</button>
+            <label>
+              <span>Task</span>
+              <input id="taskLabel" type="text" maxlength="80" placeholder="Task label..." />
+            </label>
+            <label>
+              <span>Task status</span>
+              <select id="taskStatus">
+                <option value="todo">To do</option>
+                <option value="in-progress">In progress</option>
+                <option value="blocked">Blocked</option>
+                <option value="done">Done</option>
+              </select>
+            </label>
+            <button class="button secondary" id="setTaskStatus" type="button">Set task</button>
+            <label>
+              <span>Review status</span>
+              <select id="reviewStatus">
+                <option value="triage">Triage</option>
+                <option value="in-review">In review</option>
+                <option value="ready-for-review">Ready for review</option>
+                <option value="needs-more-evidence">Needs more evidence</option>
+                <option value="closed-training">Closed training</option>
+              </select>
+            </label>
+            <button class="button secondary" id="setReviewStatus" type="button">Apply review</button>
+            <button class="button secondary" id="saveWorkspaceSnapshot" type="button">Save workspace</button>
+            <button class="button secondary" id="restoreWorkspaceSnapshot" type="button">Reload workspace</button>
+            <button class="button primary" id="prepareCasePacket" type="button">Prepare packet</button>
           </div>
           <div class="chart-authoring-tools">
             <label>
@@ -377,7 +418,7 @@
               <div id="chartRows" class="workspace-list" aria-live="polite"></div>
             </article>
             <article>
-              <h3>Notes and saved layouts</h3>
+              <h3>Notes, tasks, audit</h3>
               <div id="chartNotes" class="workspace-list" aria-live="polite"></div>
             </article>
           </div>

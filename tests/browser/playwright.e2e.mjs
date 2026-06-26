@@ -109,7 +109,7 @@ async function assertPageLandmarks(page) {
     assert.match(await page.locator("#statusMessage").textContent(), /Authorized service projection loaded/);
     assert.equal(await page.locator("#priorityQueue .priority-item").count(), 7);
     assert.match(await page.locator("#priorityQueue").innerText(), /evidence review priority/i);
-    assert.match(await page.locator(".priority-warning").innerText(), /does not estimate guilt/i);
+    assert.match(await page.locator(".priority-card").innerText(), /does not estimate guilt/i);
     assert.ok(await page.locator("#priorityQueue .priority-item.is-abstained").count() >= 1);
   } else {
     assert.match(await page.locator("#priorityQueue").innerText(), /No ordering shown in static fallback mode/i);

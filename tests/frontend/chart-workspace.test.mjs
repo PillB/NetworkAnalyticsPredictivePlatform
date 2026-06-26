@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   addAnnotation,
+  addCaseNote,
+  addComment,
   addManualEdge,
   addManualEntity,
   commitWorkspaceChange,
@@ -11,6 +13,8 @@ import {
   editManualEntity,
   expandNeighbors,
   exportBriefingChart,
+  exportCasePacket,
+  explainExpansion,
   explainPath,
   moveManualEntity,
   pinSearchResult,
@@ -19,11 +23,16 @@ import {
   removeManualEdge,
   removeManualEntity,
   restoreRedactions,
+  restoreWorkspaceSnapshot,
   saveLayout,
+  saveSearch,
+  saveWorkspaceSnapshot,
   searchGraph,
   selectedLayout,
   semanticChartRows,
+  setReviewStatus,
   setPath,
+  setTaskState,
   undoWorkspaceChange,
 } from "../../packages/graph-renderer/chart-workspace.mjs";
 import {
@@ -144,4 +153,58 @@ test("briefing chart export blocks unsupported factual claims and preserves prov
   assert.equal(exported.manualEntities[0].x, null);
   assert.equal(exported.manualEntities[0].style, "redacted");
   assert.match(exported.provenance.warning, /not evidence/i);
+});
+
+test("Linkurious-style workspace state covers saved search, comments, tasks, review, save, and restore", () => {
+  let workspace = createChartWorkspace();
+  workspace = { ...workspace, query: "Northstar" };
+  workspace = saveSearch(workspace, "Northstar search", source, DEFAULT_SETTINGS);
+  workspace = addComment(workspace, "Ask reviewer to verify source timing", "r2");
+  workspace = addCaseNote(workspace, "Prepare neutral briefing packet");
+  workspace = setTaskState(workspace, "Verify KYC records", "in-progress");
+  workspace = setReviewStatus(workspace, "ready-for-review");
+  workspace = saveWorkspaceSnapshot(workspace, "Reviewer handoff");
+
+  assert.equal(workspace.savedSearches[0].boundedTo, "current authorized visible graph projection");
+  assert.equal(workspace.comments[0].evidenceStatus, "not evidence");
+  assert.equal(workspace.caseNotes[0].evidenceStatus, "not evidence");
+  assert.equal(workspace.taskStates[0].status, "in-progress");
+  assert.equal(workspace.reviewStatus, "ready-for-review");
+  assert.ok(workspace.auditLog.length >= 5);
+
+  const modified = setTaskState(workspace, "Verify KYC records", "done");
+  const restored = restoreWorkspaceSnapshot(modified, workspace.savedWorkspaceSnapshot);
+  assert.equal(restored.taskStates[0].status, "in-progress");
+  assert.equal(restored.auditLog.at(-1).action, "workspace-snapshot-restored");
+});
+
+test("expansion is bounded to authorized visible projection and explained", () => {
+  let workspace = createChartWorkspace();
+  const restrictedSettings = { ...DEFAULT_SETTINGS, aliasIncluded: false };
+  const result = searchGraph("Northstar", source, restrictedSettings)[0];
+  workspace = pinSearchResult(workspace, result, source, restrictedSettings);
+  workspace = expandNeighbors(workspace, source, restrictedSettings, workspace.pinnedNodeIds[0]);
+
+  const visibleIds = new Set(source.visibleRelationships(restrictedSettings).map((relationship) => relationship.id));
+  assert.ok(workspace.pathRelationshipIds.every((id) => visibleIds.has(id)));
+  const explanation = explainExpansion(workspace, source, restrictedSettings);
+  assert.match(explanation.explanation, /authorized projection/i);
+});
+
+test("case packet is neutral and treats comments as analyst notes, not evidence", () => {
+  let workspace = createChartWorkspace();
+  workspace = { ...workspace, query: "Northstar" };
+  workspace = saveSearch(workspace, "Northstar search", source, DEFAULT_SETTINGS);
+  workspace = addComment(workspace, "Reviewer comment", "r2");
+  workspace = addCaseNote(workspace, "Case note only");
+  workspace = setTaskState(workspace, "Review contrary evidence", "todo");
+  workspace = setReviewStatus(workspace, "in-review");
+
+  const packet = exportCasePacket(workspace, source, DEFAULT_SETTINGS);
+  assert.equal(packet.contract, "InvestigationCasePacketV1");
+  assert.equal(packet.comments[0].evidenceStatus, "not evidence");
+  assert.equal(packet.caseNotes[0].evidenceStatus, "not evidence");
+  assert.match(packet.safety.warning, /do not imply guilt/i);
+  assert.equal(packet.status, "needs-review");
+  assert.ok(packet.auditLog.length >= 1);
 });

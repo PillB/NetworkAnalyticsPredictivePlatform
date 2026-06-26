@@ -127,6 +127,8 @@
 - 107 | Closed the Step 2 independent chart-canvas gap | Added manual briefing chart coordinates, node style, move controls, SVG chart canvas, styled analyst-created links, redacted coordinate suppression in exports, and unit/static/Pages browser coverage; npm test, make test, and local Pages Playwright passed | Status: Success
 - 108 | Deployed and remotely verified Step 2 chart-canvas slice | Pushed commit c4ef3d5 to main; public GitHub Actions run 28256357995 completed successfully; remote HTTPS Playwright passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ including manual chart canvas create/link/style/move/redact/export/restore, guided MVP, and report preflight | Status: Success
 - 109 | Added Playwright i2 parity audit | Added npm run audit:i2, public i2 Analyst's Notebook screenshot/text capture, live NAPP chart/AI screenshots, feature-class parity matrix, and docs/validation/i2-parity-playwright-audit.md; audit:i2, npm test, and Pages Playwright passed | Status: Success
+- 110 | Implemented Step 3 investigation workspace parity | Added saved searches, comments, case notes, task states, review status, audit log, workspace save/reload snapshots, neutral case packets, bounded expansion explanations, UI controls, reducer tests, static assertions, and Pages browser flow | Status: Success
+- 111 | Validated Step 3 against Linkurious and Obsidian public references | Added npm run audit:workspace and docs/validation/linkurious-obsidian-workspace-parity-audit.md with public-page screenshots/text capture, NAPP workspace/reload screenshots, feature-class parity matrix, and explicit proprietary/pixel-perfect caveats; audit:workspace and make test-all passed | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -208,6 +210,8 @@
 - The Feb 16 before/after split belongs to the Harbor Lantern temporal-community case; the cuentas-mulas workflow uses April 1-4 transaction phases. Shared graph headers caused user confusion and were corrected with workflow-specific period/scope labels.
 - The Step 8/9 AI MVP is deterministic and local. It proves the UX, citations, refusal policy, and gating contracts, but it is not an external LLM integration and does not satisfy production AI audit, prompt-injection, provider, retrieval-service, or human-factor gates.
 - The i2 parity audit validates public feature-class parity and NAPP differentiators only; it cannot prove complete proprietary i2 replication or pixel-perfect equivalence from public screenshots/demos.
+- Step 3 workspace snapshots use browser localStorage for the GitHub Pages training build. Production still needs server-side shared workspace persistence, actor/purpose audit, retention, dissemination controls, and multi-user concurrency.
+- The Linkurious/Obsidian audit validates public feature-class parity only. It cannot prove complete proprietary behavior or pixel-perfect replication from public pages and docs.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development

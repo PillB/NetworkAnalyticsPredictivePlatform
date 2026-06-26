@@ -8,6 +8,13 @@ export function createChartWorkspace() {
     manualEntities: [],
     manualEdges: [],
     annotations: [],
+    comments: [],
+    caseNotes: [],
+    savedSearches: [],
+    taskStates: [],
+    reviewStatus: "triage",
+    auditLog: [],
+    savedWorkspaceSnapshot: null,
     redactedItemIds: [],
     savedLayouts: [],
     selectedSavedLayoutId: "",
@@ -26,6 +33,30 @@ function normalized(value) {
 
 function unique(values) {
   return [...new Set(values)];
+}
+
+const REVIEW_STATUSES = new Set(["triage", "in-review", "ready-for-review", "needs-more-evidence", "closed-training"]);
+const TASK_STATUSES = new Set(["todo", "in-progress", "blocked", "done"]);
+
+function cleanText(value, fallback = "") {
+  return String(value ?? "").trim() || fallback;
+}
+
+function recordAudit(workspace, action, detail = {}) {
+  const auditLog = workspace.auditLog ?? [];
+  return {
+    ...workspace,
+    auditLog: [
+      ...auditLog,
+      {
+        id: `audit-${auditLog.length + 1}`,
+        at: "training-session",
+        actor: "training-analyst",
+        action,
+        detail,
+      },
+    ],
+  };
 }
 
 function clampCoordinate(value, fallback) {
@@ -211,6 +242,121 @@ export function addAnnotation(workspace, text, targetId) {
       },
     ],
   };
+}
+
+export function saveSearch(workspace, name, source, settings) {
+  const query = cleanText(workspace.query);
+  if (!query) return workspace;
+  const results = searchGraph(query, source, settings);
+  const savedSearch = {
+    id: nextId("saved-search", workspace.savedSearches ?? []),
+    name: cleanText(name, query),
+    query,
+    resultCount: results.length,
+    boundedTo: "current authorized visible graph projection",
+    explanation: `Search replay is capped at ${results.length} visible result${results.length === 1 ? "" : "s"} from the current authorized projection.`,
+  };
+  return recordAudit({
+    ...workspace,
+    savedSearches: [...(workspace.savedSearches ?? []), savedSearch],
+  }, "saved-search", { id: savedSearch.id, query: savedSearch.query, resultCount: savedSearch.resultCount });
+}
+
+export function addComment(workspace, text, targetId = "workspace") {
+  const clean = cleanText(text);
+  if (!clean) return workspace;
+  const comment = {
+    id: nextId("comment", workspace.comments ?? []),
+    targetId,
+    text: clean,
+    classification: "analyst comment",
+    evidenceStatus: "not evidence",
+  };
+  return recordAudit({
+    ...workspace,
+    comments: [...(workspace.comments ?? []), comment],
+  }, "comment-added", { id: comment.id, targetId: comment.targetId });
+}
+
+export function addCaseNote(workspace, text) {
+  const clean = cleanText(text);
+  if (!clean) return workspace;
+  const note = {
+    id: nextId("case-note", workspace.caseNotes ?? []),
+    text: clean,
+    classification: "case note",
+    evidenceStatus: "not evidence",
+  };
+  return recordAudit({
+    ...workspace,
+    caseNotes: [...(workspace.caseNotes ?? []), note],
+  }, "case-note-added", { id: note.id });
+}
+
+export function setTaskState(workspace, label, status = "todo") {
+  const clean = cleanText(label);
+  if (!clean) return workspace;
+  const normalizedStatus = TASK_STATUSES.has(status) ? status : "todo";
+  const existing = (workspace.taskStates ?? []).find((task) => normalized(task.label) === normalized(clean));
+  const task = existing
+    ? { ...existing, status: normalizedStatus }
+    : {
+        id: nextId("task", workspace.taskStates ?? []),
+        label: clean,
+        status: normalizedStatus,
+        classification: "workspace task",
+      };
+  const taskStates = existing
+    ? (workspace.taskStates ?? []).map((item) => item.id === task.id ? task : item)
+    : [...(workspace.taskStates ?? []), task];
+  return recordAudit({ ...workspace, taskStates }, "task-state-updated", { id: task.id, status: task.status });
+}
+
+export function setReviewStatus(workspace, status = "triage") {
+  const reviewStatus = REVIEW_STATUSES.has(status) ? status : "triage";
+  return recordAudit({ ...workspace, reviewStatus }, "review-status-updated", { reviewStatus });
+}
+
+export function explainExpansion(workspace, source, settings) {
+  const visibleIds = new Set(source.visibleRelationships(settings).map((relationship) => relationship.id));
+  const relationships = workspace.pathRelationshipIds
+    .filter((id) => visibleIds.has(id))
+    .map((id) => {
+      const relationship = source.visibleRelationships(settings).find((item) => item.id === id);
+      return {
+        id,
+        source: relationship?.source ?? "visible relationship",
+        confidence: relationship?.confidence ?? "unknown",
+      };
+    });
+  return {
+    boundedTo: "current authorized visible graph projection",
+    visibleNodeCount: unique([...(workspace.pinnedNodeIds ?? []), ...(workspace.expandedNodeIds ?? [])]).length,
+    visibleRelationshipCount: relationships.length,
+    relationships,
+    explanation: "Expansion uses only relationships returned by the active authorized projection; hidden neighbors are not counted.",
+  };
+}
+
+export function saveWorkspaceSnapshot(workspace, name = "Workspace snapshot") {
+  const snapshot = {
+    contract: "InvestigationWorkspaceSnapshotV1",
+    name: cleanText(name, "Workspace snapshot"),
+    savedAt: "training-session",
+    workspace: withoutHistory(workspace),
+  };
+  return recordAudit({ ...workspace, savedWorkspaceSnapshot: snapshot }, "workspace-snapshot-saved", { name: snapshot.name });
+}
+
+export function restoreWorkspaceSnapshot(workspace, snapshot = workspace.savedWorkspaceSnapshot) {
+  if (!snapshot?.workspace) return workspace;
+  const restored = {
+    ...structuredClone(snapshot.workspace),
+    savedWorkspaceSnapshot: structuredClone(snapshot),
+    undoStack: [],
+    redoStack: [],
+  };
+  return recordAudit(restored, "workspace-snapshot-restored", { name: snapshot.name });
 }
 
 export function addManualEntity(workspace, label, type = "entity", options = {}) {
@@ -414,5 +560,28 @@ export function exportBriefingChart(workspace, source, settings) {
       text: redacted.has(note.targetId) ? "Redacted analyst note" : note.text,
     })),
     unsupportedClaims,
+  };
+}
+
+export function exportCasePacket(workspace, source, settings) {
+  const chart = exportBriefingChart(workspace, source, settings);
+  const expansion = explainExpansion(workspace, source, settings);
+  const openTasks = (workspace.taskStates ?? []).filter((task) => task.status !== "done");
+  return {
+    contract: "InvestigationCasePacketV1",
+    generatedAt: "training-session",
+    status: chart.status === "ready" && !openTasks.length ? "ready-for-review" : "needs-review",
+    reviewStatus: workspace.reviewStatus ?? "triage",
+    safety: {
+      language: "review aid only",
+      warning: "Case packets summarize analyst workspace activity and do not imply guilt, criminality, or enforcement action.",
+    },
+    savedSearches: structuredClone(workspace.savedSearches ?? []),
+    comments: (workspace.comments ?? []).map((comment) => ({ ...comment, evidenceStatus: "not evidence" })),
+    caseNotes: (workspace.caseNotes ?? []).map((note) => ({ ...note, evidenceStatus: "not evidence" })),
+    taskStates: structuredClone(workspace.taskStates ?? []),
+    expansion,
+    chart,
+    auditLog: structuredClone(workspace.auditLog ?? []),
   };
 }

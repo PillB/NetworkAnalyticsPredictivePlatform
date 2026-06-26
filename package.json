@@ -8,6 +8,7 @@
     "test:browser": "node tests/browser/playwright.e2e.mjs",
     "test:pages": "node tests/browser/pages.e2e.mjs",
     "audit:i2": "node tests/browser/i2-parity-audit.mjs",
+    "audit:workspace": "node tests/browser/workspace-parity-audit.mjs",
     "build:pages": "node scripts/build-pages.mjs",
     "demo": "node scripts/serve-web.mjs"
   },
