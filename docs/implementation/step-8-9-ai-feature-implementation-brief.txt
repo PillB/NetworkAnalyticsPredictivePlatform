@@ -1,0 +1,85 @@
+### 8. SOTA cognitive/adaptive predictive graph intelligence layer
+
+Goal: add the “wow” predictive graph capability, gated by serious evaluation. Research and use Stanford storm subagents and loop engineering for prompts to improve implementation and validation from user flows and ml and stats methodology.
+
+Done conditions:
+
+- Evaluation harness compares deterministic baselines, classical ML, and TGNN/GNN candidates.
+- Candidate methods include recency/frequency/EdgeBank-style baselines, temporal motifs, calibrated logistic/GBM,
+  TGAT, TGN, GraphMixer/DyGFormer, CAWN, JODIE, EvolveGCN, transaction-specific GNNs, and dynamic community
+  methods.
+- Models predict relationships, events, subgraphs, communities, or review hypotheses; never person-level guilt.
+- Models stay disabled unless they beat baselines on hard negatives with calibration, robustness, latency,
+  explainability, and overreliance gates.
+
+Tests:
+
+- Unit: leakage detector rejects future labels/features/scalers/events.
+- Unit: temporal folds replay memory models deterministically.
+- Integration: model harness runs baseline vs candidate on synthetic benchmark.
+- Black-box: uncalibrated models cannot display production predictions.
+- Red-team: evasion patterns, legitimate high-degree actors, missing data, delayed reports, duplicated entities,
+  smurfing, circular flows.
+- Playwright: open model comparison panel → see baseline/candidate/gate status → attempt to enable failed model →
+  blocked with reasons → inspect model card.
+
+### 9. Further AI functionality research and implementation
+
+Goal: add high-value AI assistance that improves analyst work without replacing evidence discipline.
+
+Candidate AI features to research and add:
+
+- GraphRAG analyst assistant:
+  - Answers questions using graph + report + evidence retrieval.
+  - Supports multi-hop questions like “why is this account important?” or “what contradicts this hypothesis?”
+  - Must cite exact local evidence dependencies.
+
+- AI report copilot:
+  - Drafts neutral summaries, briefing bullets, uncertainty sections, and redaction-aware exports.
+  - Cannot invent claims or omit contrary evidence.
+
+- AI query/copilot:
+  - Translates plain English into safe graph searches, filters, path queries, import mappings, and visualization
+    presets.
+  - Shows preview before execution.
+
+- AI entity-resolution assistant:
+  - Suggests possible duplicate persons/accounts/organizations with reasons and contrary evidence.
+  - Requires analyst confirmation.
+  - Keeps merge suggestions separate from identity truth.
+
+- AI contradiction and gap finder:
+  - Finds missing corroboration, inconsistent dates, unsupported claims, stale analysis, and suspiciously
+    overconfident findings.
+
+- AI tutorial coach:
+  - Explains ELI5 workflow steps, why defaults are chosen, what could go wrong, and what option to pick next.
+  - Adapts to novice/expert mode.
+
+- AI red-team reviewer:
+  - Checks report language for overclaiming, criminality implication, unsupported inference, privacy/security
+    leakage, and automation bias.
+
+- AI active-learning feedback loop:
+  - Suggests the next most useful analyst label/review action to improve a model or resolve uncertainty.
+  - Tracks whether feedback improves real evaluation metrics.
+
+Done conditions:
+
+- AI answers cite exact evidence/report/graph dependencies.
+- AI refuses unsupported accusation, protected-attribute inference, and operational enforcement prompts.
+- AI-generated text is saved only as analyst note or draft, never as evidence.
+- Every AI action has audit metadata: prompt, retrieved sources, output, model/config version, user decision.
+- AI features measurably reduce task time or error without increasing unsupported conclusions.
+
+Tests:
+
+- Unit: prompt policy rejects prohibited request classes.
+- Unit: citation checker rejects uncited factual claims.
+- Unit: GraphRAG retriever returns authorized-only evidence.
+- Integration: assistant answer includes dependencies and uncertainty.
+- Black-box: AI cannot access restricted graph nodes through summaries, counts, or hidden relationships.
+- Red-team: hallucination, prompt injection, protected inference, unsupported accusation, stale evidence,
+  misleading source, overconfident draft.
+- Playwright: ask assistant for explanation → inspect citations → request unsupported accusation → refused →
+  generate report draft → red-team review flags risky language → save as analyst note.

@@ -114,9 +114,15 @@ test("boardroom graph style and AI decision-support panels are present", async (
   assert.match(html, /id="modelGatePanel"/);
   assert.match(html, /id="assistantPrompt"/);
   assert.match(html, /id="askAssistant"/);
+  assert.match(html, /id="previewAiQuery"/);
   assert.match(html, /id="draftReport"/);
   assert.match(html, /id="redTeamDraft"/);
+  assert.match(html, /id="findAiGaps"/);
+  assert.match(html, /id="coachAiStep"/);
+  assert.match(html, /id="suggestAiReview"/);
+  assert.match(html, /id="saveAiNote"/);
   assert.match(app, /evaluatePredictiveModelCandidates/);
   assert.match(app, /answerGraphQuestion/);
+  assert.match(app, /suggestNextReviewAction/);
   assert.match(css, /graph-style-boardroom/);
 });

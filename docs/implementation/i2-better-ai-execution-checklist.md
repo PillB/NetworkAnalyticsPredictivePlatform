@@ -427,13 +427,26 @@ Current implementation evidence:
   coverage, robustness, latency, and analyst-overreliance evidence.
 - Browser coverage verifies the panel displays blocked candidates before report
   export.
+- Expanded the deterministic evaluation harness to compare recency/frequency,
+  EdgeBank-style, temporal motifs, calibrated logistic, calibrated GBM, TGAT,
+  TGN, GraphMixer/DyGFormer, CAWN, JODIE, EvolveGCN, transaction-specific GNN,
+  and dynamic-community candidates.
+- Added structured leakage detection for future events, known-at values, labels,
+  and scaler/transform fit times.
+- Added deterministic rolling temporal folds with replay seeds, hard-negative
+  benchmark simulation, red-team scenario gates, and model cards covering
+  target, population, horizon, feature families, leakage, baseline lift,
+  calibration, hard negatives, explanation coverage, and prohibited uses.
+- Used a STORM-inspired implementation loop with dedicated subagents for Step 8
+  model/evaluation design and Step 9 assistant workflow design, then integrated
+  their recommendations into executable local code.
 
 Remaining gaps:
 
-- This is an executable gate scaffold, not a trained neural model. Full TGNN/GNN
-  training, temporal folds, leakage detectors, calibration curves, and
-  representative analyst-overreliance studies remain required before any
-  predictive display can be enabled.
+- This remains a deterministic simulation and evaluation contract, not a trained
+  neural model. Full TGNN/GNN training, real calibration curves, external
+  retrieval/model providers, and representative analyst-overreliance studies
+  remain required before any predictive display can be enabled.
 
 ### Step 9 — Further AI functionality research and implementation
 
@@ -504,6 +517,19 @@ Current implementation evidence:
 - Unit tests cover prompt policy, citation checking, assistant dependencies,
   red-team flags, and model-gate blocking. Browser tests cover ask, refusal,
   draft, red-team review, and report preflight.
+- Added authorized-only GraphRAG retrieval with retrieved source IDs, event
+  times, known-at times, confidence, caveats, path dependencies, expansion
+  context, and report dependency context.
+- Added AI audit metadata: prompt, policy decision, retrieved source IDs,
+  output summary hash, model/config version, user decision, and saved flag.
+- Added AI query/copilot preview, entity-resolution suggestions, contradiction
+  and gap finder, tutorial coach, active-learning next-review suggestion, and
+  red-team-gated save-as-note flow.
+- AI-generated text is saved only through the analyst note path with "AI draft;
+  not evidence" language and AI audit detail.
+- Browser coverage now exercises query preview, gap/entity review, coach,
+  active-learning suggestion, cited answer, refusal, neutral report draft,
+  save-as-note, and red-team review.
 
 Remaining gaps:
 

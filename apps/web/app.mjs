@@ -24,8 +24,15 @@ import {
 } from "../../packages/guided-workflow/transaction-import.mjs";
 import {
   answerGraphQuestion,
+  coachNextStep,
   draftNeutralReport,
+  findEvidenceGaps,
+  prepareAssistantNote,
   redTeamReview,
+  retrieveGraphEvidence,
+  suggestEntityResolutions,
+  suggestNextReviewAction,
+  suggestSafeQuery,
 } from "../../packages/ai-assistant/analyst-copilot.mjs";
 import {
   enableCandidate,
@@ -126,7 +133,8 @@ const elements = Object.fromEntries(
     "loadSampleJson", "previewImport", "applyImport", "importPreview", "mappingControls",
     "scopePurpose", "scopePeriod", "scopeFocus", "scopeReason", "beforePeriodLabel",
     "afterPeriodLabel", "beforeKnownAt", "afterKnownAt", "modelGatePanel", "assistantPrompt",
-    "askAssistant", "draftReport", "redTeamDraft", "assistantOutput", "manualChartCanvas",
+    "askAssistant", "previewAiQuery", "draftReport", "redTeamDraft", "findAiGaps",
+    "coachAiStep", "suggestAiReview", "saveAiNote", "assistantOutput", "manualChartCanvas",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -625,11 +633,24 @@ function renderPrioritization() {
 function renderModelGates() {
   elements.modelGatePanel.innerHTML = modelEvaluation.candidates.map((candidate) => {
     const attempt = enableCandidate(modelEvaluation, candidate.id);
+    const card = candidate.modelCard;
     return `
       <div class="workspace-item">
         <b>${escapeHtml(candidate.label)}</b>
         <small>${escapeHtml(candidate.family)} · ${escapeHtml(candidate.gateStatus)} · precision@budget ${candidate.metrics.precisionAtBudget.toFixed(2)}</small>
         <small>${escapeHtml(attempt.reason)}</small>
+        <details>
+          <summary>Model card</summary>
+          <small>
+            Target: ${escapeHtml(card.target)}<br>
+            Population: ${escapeHtml(card.population)}<br>
+            Horizon: ${escapeHtml(card.horizon)} · folds ${card.foldCount}<br>
+            Features: ${card.featureFamilies.map(escapeHtml).join(", ")}<br>
+            Baseline lift: ${card.baselineLift.toFixed(2)} · calibration ${card.calibration.expectedCalibrationError.toFixed(2)}<br>
+            Hard-negative FPR: ${card.hardNegative.falsePositiveRate.toFixed(2)} · red-team ${card.redTeam.passed ? "passed" : "failed"}<br>
+            ${escapeHtml(card.prohibitedUse)}
+          </small>
+        </details>
       </div>
     `;
   }).join("");
@@ -1482,6 +1503,16 @@ elements.askAssistant.addEventListener("click", () => {
   setStatus(answer.refused ? "Assistant refused unsupported request" : "Assistant answer generated with exact citations");
 });
 
+elements.previewAiQuery.addEventListener("click", () => {
+  const preview = suggestSafeQuery(elements.assistantPrompt.value, graphSource());
+  assistantDraft = preview;
+  elements.assistantOutput.innerHTML = preview.refused
+    ? `<div class="workspace-item"><b>Query preview refused</b><small>${escapeHtml(preview.reason)}</small></div>`
+    : `<div class="workspace-item"><b>Safe query preview</b><small>${escapeHtml(preview.preview.operation)} · ${escapeHtml(preview.preview.phrase ?? preview.preview.query ?? preview.preview.presetId ?? "preview required")} · analyst confirmation required</small></div>
+       <div class="workspace-item"><b>AI audit</b><small>${escapeHtml(preview.audit.action)} · ${escapeHtml(preview.audit.policyDecision)} · ${escapeHtml(preview.audit.configVersion)}</small></div>`;
+  setStatus(preview.refused ? "AI query preview refused" : "AI query preview generated without execution");
+});
+
 elements.draftReport.addEventListener("click", () => {
   assistantDraft = draftNeutralReport({
     source: graphSource(),
@@ -1495,6 +1526,61 @@ elements.draftReport.addEventListener("click", () => {
   setStatus("AI report copilot draft generated as analyst draft, not evidence");
 });
 
+elements.findAiGaps.addEventListener("click", () => {
+  const gaps = findEvidenceGaps({
+    source: graphSource(),
+    settings: state.settings,
+    report: activeWorkflow().reportModel(state),
+    workspace: chartWorkspace,
+  });
+  assistantDraft = gaps;
+  const entitySuggestions = suggestEntityResolutions({ source: graphSource(), settings: state.settings });
+  const retrieval = retrieveGraphEvidence({
+    prompt: elements.assistantPrompt.value,
+    source: graphSource(),
+    settings: state.settings,
+    workspace: chartWorkspace,
+    report: activeWorkflow().reportModel(state),
+  });
+  elements.assistantOutput.innerHTML = `
+    <div class="workspace-item"><b>Gap finder: ${escapeHtml(gaps.status)}</b><small>${gaps.gaps.map((gap) => `${escapeHtml(gap.severity)} · ${escapeHtml(gap.issue)}`).join("<br>") || "No high-severity gaps found."}</small></div>
+    <div class="workspace-item"><b>Entity-resolution suggestions</b><small>${entitySuggestions.suggestions.map((item) => `${escapeHtml(item.label)} · ${item.reasons.map(escapeHtml).join("; ")}`).join("<br>") || "No duplicate suggestions in the visible projection."}</small></div>
+    <div class="workspace-item"><b>Retrieved authorized evidence</b><small>${retrieval.rows.map((row) => `${escapeHtml(row.id)} · ${escapeHtml(row.source)}`).join("<br>")}</small></div>
+  `;
+  setStatus("AI contradiction, gap, and entity-resolution review generated");
+});
+
+elements.coachAiStep.addEventListener("click", () => {
+  const coach = coachNextStep({
+    step: activeWorkflow().steps[state.stepIndex],
+    state,
+    workspace: chartWorkspace,
+    mode: "novice",
+  });
+  assistantDraft = coach;
+  elements.assistantOutput.innerHTML = `
+    <div class="workspace-item"><b>Coach · ${escapeHtml(coach.mode)}</b><small>${escapeHtml(coach.explanation)}</small></div>
+    <div class="workspace-item"><b>Next action</b><small>${escapeHtml(coach.recommendedNextAction)}</small></div>
+    <div class="workspace-item"><b>What could go wrong</b><small>${escapeHtml(coach.couldGoWrong)}</small></div>
+  `;
+  setStatus("AI tutorial coach generated a next-step explanation");
+});
+
+elements.suggestAiReview.addEventListener("click", () => {
+  const suggestion = suggestNextReviewAction({
+    source: graphSource(),
+    settings: state.settings,
+    workspace: chartWorkspace,
+    modelEvaluation,
+  });
+  assistantDraft = suggestion;
+  elements.assistantOutput.innerHTML = `
+    <div class="workspace-item"><b>Next useful review action</b><small>${escapeHtml(suggestion.action)} · ${escapeHtml(suggestion.label)}</small></div>
+    <div class="workspace-item"><b>Metric target</b><small>${escapeHtml(suggestion.expectedMetric)} · ${escapeHtml(suggestion.reason)}</small></div>
+  `;
+  setStatus("AI active-learning review suggestion generated");
+});
+
 elements.redTeamDraft.addEventListener("click", () => {
   const text = assistantDraft?.text ?? assistantDraft?.answer ?? elements.assistantPrompt.value;
   const citations = assistantDraft?.citations?.map((item) => typeof item === "string" ? item : item.id) ?? [];
@@ -1505,6 +1591,37 @@ elements.redTeamDraft.addEventListener("click", () => {
     </div>
   `;
   setStatus(review.passed ? "AI red-team review passed" : "AI red-team review flagged risky language");
+});
+
+elements.saveAiNote.addEventListener("click", () => {
+  const citations = assistantDraft?.citations?.map((item) => typeof item === "string" ? item : item.id) ?? assistantDraft?.audit?.retrievedSourceIds ?? [];
+  const notePreview = prepareAssistantNote(assistantDraft, citations);
+  if (!notePreview.allowed) {
+    elements.assistantOutput.innerHTML += `
+      <div class="workspace-item"><b>Save blocked</b><small>${notePreview.review.flags.map(escapeHtml).join("<br>")}</small></div>
+    `;
+    setStatus("AI note save blocked by red-team review");
+    return;
+  }
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, addCaseNote(chartWorkspace, notePreview.note.slice(0, 160)));
+  chartWorkspace = {
+    ...chartWorkspace,
+    auditLog: [
+      ...(chartWorkspace.auditLog ?? []),
+      {
+        id: `audit-${(chartWorkspace.auditLog ?? []).length + 1}`,
+        at: "training-session",
+        actor: "training-analyst",
+        action: "ai-note-saved",
+        detail: notePreview.audit,
+      },
+    ],
+  };
+  renderChartWorkspace();
+  elements.assistantOutput.innerHTML += `
+    <div class="workspace-item"><b>Saved as analyst note</b><small>AI draft; not evidence · ${escapeHtml(notePreview.audit.outputSummary.hash)}</small></div>
+  `;
+  setStatus("AI draft saved as analyst note, not evidence");
 });
 
 elements.helpButton.addEventListener("click", () => elements.helpDialog.showModal());

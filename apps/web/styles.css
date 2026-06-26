@@ -416,7 +416,7 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 }
 .assistant-tools {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) repeat(3, max-content);
+  grid-template-columns: minmax(220px, 1fr) repeat(8, max-content);
   gap: 8px;
   align-items: end;
   margin-top: 12px;

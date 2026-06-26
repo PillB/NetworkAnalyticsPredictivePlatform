@@ -233,7 +233,18 @@ try {
     assert.match(await page.locator("#chartNotes").innerText(), /Fraud briefing view/i);
     await page.locator("#restoreLayout").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Restored saved layout/i);
-    assert.match(await page.locator("#modelGatePanel").innerText(), /TGN\/TGAT|Blocked/i);
+    assert.match(await page.locator("#modelGatePanel").innerText(), /TGN event-stream|Blocked/i);
+    await page.locator("#modelGatePanel details").first().click();
+    assert.match(await page.locator("#modelGatePanel").innerText(), /Model card|Hard-negative FPR|Never person-level guilt/i);
+    await page.locator("#assistantPrompt").fill("show path between Acct 100 and Acct 777");
+    await page.locator("#previewAiQuery").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Safe query preview|analyst confirmation required/i);
+    await page.locator("#findAiGaps").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Gap finder|Entity-resolution suggestions|Retrieved authorized evidence/i);
+    await page.locator("#coachAiStep").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Coach|What could go wrong/i);
+    await page.locator("#suggestAiReview").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Next useful review action|Metric target/i);
     await page.locator("#assistantPrompt").fill("Why is Acct 777 important?");
     await page.locator("#askAssistant").click();
     assert.match(await page.locator("#assistantOutput").innerText(), /Source-grounded answer/i);
@@ -243,6 +254,9 @@ try {
     assert.match(await page.locator("#assistantOutput").innerText(), /Refused/i);
     await page.locator("#draftReport").click();
     assert.match(await page.locator("#assistantOutput").innerText(), /Neutral report draft/i);
+    await page.locator("#saveAiNote").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /AI draft saved as analyst note/i);
+    assert.match(await page.locator("#chartNotes").innerText(), /AI draft; not evidence/i);
     await page.locator("#redTeamDraft").click();
     assert.match(await page.locator("#assistantOutput").innerText(), /Red-team review/i);
     for (let index = 0; index < 6; index += 1) {
