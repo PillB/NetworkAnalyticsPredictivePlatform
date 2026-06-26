@@ -78,6 +78,11 @@ import {
   setTaskState,
   undoWorkspaceChange,
 } from "../../packages/graph-renderer/chart-workspace.mjs";
+import {
+  applyScenePreset,
+  executeGraphPhrase,
+  graphRuleLegend,
+} from "../../packages/graph-renderer/bloom-exploration.mjs";
 
 const workbenchBootstrap = await loadWorkbenchBootstrap();
 configureWorkbenchBootstrap(workbenchBootstrap);
@@ -90,6 +95,7 @@ let chartWorkspace = createChartWorkspace();
 let importPreview = null;
 let importedFraudWorkflow = null;
 let assistantDraft = null;
+let bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
 const modelEvaluation = evaluatePredictiveModelCandidates();
 const workspaceStorageKey = "napp-investigation-workspace-v1";
 
@@ -113,6 +119,7 @@ const elements = Object.fromEntries(
     "restoreLayout", "workspaceUndo", "workspaceRedo", "chartSearchResults", "chartRows", "chartNotes",
     "workspaceComment", "addWorkspaceComment", "caseNoteText", "addCaseNote", "taskLabel", "taskStatus",
     "setTaskStatus", "reviewStatus", "setReviewStatus", "saveWorkspaceSnapshot", "restoreWorkspaceSnapshot", "prepareCasePacket",
+    "bloomPhrase", "runBloomPhrase", "scenePreset", "applyScenePreset", "resetScenePreset", "bloomExplanation",
     "manualEntityLabel", "manualEntityType", "addManualEntity", "manualEdgeSource", "manualEdgeTarget",
     "manualEntityStyle", "moveManualEntity", "manualEdgeLabel", "manualEdgeStyle", "addManualEdge", "redactChartItem", "restoreRedactions", "exportChart",
     "transactionImportPanel", "transactionFormat", "transactionCsv", "loadSampleCsv",
@@ -261,6 +268,17 @@ function graphSource() {
     nodeById: workflow.nodeById,
     visibleRelationships: workflow.visibleRelationships,
   };
+}
+
+function bloomUseCase() {
+  return activeUseCase === "fraud" && importedFraudWorkflow ? "imported-fraud" : activeUseCase;
+}
+
+function bloomCanSeeInfrastructure() {
+  return graphSource().visibleRelationships(state.settings).some((relationship) =>
+    ["device", "place"].includes(graphSource().nodeById(relationship.subject)?.type)
+      || ["device", "place"].includes(graphSource().nodeById(relationship.object)?.type),
+  );
 }
 
 function snapshotLayout() {
@@ -706,6 +724,8 @@ function renderChartWorkspace() {
   const briefing = exportBriefingChart(chartWorkspace, graphSource(), state.settings);
   elements.chartSearch.value = chartWorkspace.query;
   elements.reviewStatus.value = chartWorkspace.reviewStatus ?? "triage";
+  elements.bloomPhrase.value = bloomExploration.phrase;
+  elements.scenePreset.value = bloomExploration.presetId;
   elements.restoreLayout.disabled = !selectedLayout(chartWorkspace);
   elements.restoreWorkspaceSnapshot.disabled = !(chartWorkspace.savedWorkspaceSnapshot || readWorkspaceSnapshot());
   elements.workspaceUndo.disabled = !(chartWorkspace.undoStack ?? []).length;
@@ -794,6 +814,36 @@ function renderChartWorkspace() {
   elements.chartNotes.innerHTML = hasBriefingState
     ? `${reviewHtml}${expansionHtml}${savedSearches}${comments}${caseNotes}${tasks}${notes}${layouts}${snapshotHtml}${audit}${briefingHtml}`
     : `<div class="workspace-item">No annotations or saved layouts.<small>Notes are analyst commentary, not evidence.</small></div>`;
+  renderBloomExploration();
+}
+
+function renderBloomExploration() {
+  const result = bloomExploration.result;
+  const dependencies = result?.dependencies ?? [];
+  const dependencyHtml = dependencies.length
+    ? dependencies.slice(0, 5).map((dependency) =>
+      `${escapeHtml(dependency.id)} · ${escapeHtml(dependency.source)} · event ${escapeHtml(dependency.eventTime ?? "n/a")} · known ${escapeHtml(dependency.knownAt ?? "n/a")} · ${escapeHtml(dependency.confidence ?? "unknown")} confidence`,
+    ).join("<br>")
+    : "No evidence dependency added yet.";
+  const rows = result?.rows ?? [];
+  const rowHtml = rows.length
+    ? rows.map((row) => `${escapeHtml(row.label)} · ${escapeHtml(row.type)}`).join("<br>")
+    : "No graph phrase result rows yet.";
+  const legend = graphRuleLegend(bloomExploration.ruleStyle).map(escapeHtml).join("<br>");
+  elements.bloomExplanation.innerHTML = `
+    <div class="workspace-item">
+      <b>${escapeHtml(result?.parsed?.label ?? "Graph phrase preview")}</b>
+      <small>${escapeHtml(result?.explanation ?? "Supported phrases include: show accounts connected to Acct 777; paths between Acct 100 and Acct 901.")}</small>
+    </div>
+    <div class="workspace-item">
+      <b>Evidence dependencies and cutoff</b>
+      <small>${dependencyHtml}<br>Cutoff: ${escapeHtml(activeWorkflow().periodLabels.knownAt)}</small>
+    </div>
+    <div class="workspace-item">
+      <b>Rule styling and visible rows</b>
+      <small>${legend}<br>${rowHtml}</small>
+    </div>
+  `;
 }
 
 function render() {
@@ -889,6 +939,19 @@ function changeSetting(key, value) {
   setStatus(analytical ? `New analysis v${state.analysisVersion}: ${key} changed` : `View customized: ${key} changed`);
 }
 
+function applyExplorationScene(settings) {
+  const analyticalKeys = ["relationFilter", "includeInfrastructure"];
+  const analyticalChanged = analyticalKeys.some((key) =>
+    Object.hasOwn(settings, key) && String(state.settings[key]) !== String(settings[key]),
+  );
+  state = {
+    ...state,
+    settings: { ...state.settings, ...settings },
+    analysisVersion: state.analysisVersion + (analyticalChanged ? 1 : 0),
+    preflightRun: analyticalChanged ? false : state.preflightRun,
+  };
+}
+
 function changeStep(nextIndex) {
   const steps = activeWorkflow().steps;
   state = { ...state, stepIndex: Math.max(0, Math.min(steps.length - 1, nextIndex)) };
@@ -936,6 +999,7 @@ elements.useCaseMode.addEventListener("change", (event) => {
   activeInspectorTab = "evidence";
   resetGraphView();
   chartWorkspace = createChartWorkspace();
+  bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
   render();
   setStatus(activeUseCase === "fraud"
     ? "Cuentas mulas and fraud-ring training case loaded"
@@ -990,6 +1054,7 @@ elements.applyImport.addEventListener("click", () => {
   activeInspectorTab = "evidence";
   resetGraphView();
   chartWorkspace = createChartWorkspace();
+  bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
   render();
   setStatus(`Imported ${importPreview.summary.accepted} transactions into the fraud-ring workflow`);
 });
@@ -1257,6 +1322,78 @@ elements.workspaceRedo.addEventListener("click", () => {
   chartWorkspace = redoWorkspaceChange(chartWorkspace);
   renderChartWorkspace();
   setStatus("Chart workspace redo applied");
+});
+elements.runBloomPhrase.addEventListener("click", () => {
+  const phrase = elements.bloomPhrase.value;
+  const result = executeGraphPhrase(chartWorkspace, phrase, graphSource(), state.settings);
+  bloomExploration = {
+    ...bloomExploration,
+    phrase,
+    result,
+  };
+  if (result.ok) {
+    chartWorkspace = commitWorkspaceChange(chartWorkspace, result.workspace);
+    renderChartWorkspace();
+    setStatus("Graph phrase executed against the authorized visible projection");
+  } else {
+    renderBloomExploration();
+    setStatus(result.explanation);
+  }
+});
+elements.applyScenePreset.addEventListener("click", () => {
+  const presetId = elements.scenePreset.value;
+  const applied = applyScenePreset(presetId, {
+    useCase: bloomUseCase(),
+    canSeeInfrastructure: bloomCanSeeInfrastructure(),
+  });
+  bloomExploration = {
+    ...bloomExploration,
+    presetId,
+    ruleStyle: applied.ruleStyle ?? bloomExploration.ruleStyle,
+    result: applied.valid
+      ? {
+          parsed: { label: `${applied.preset.label} scene` },
+          explanation: applied.explanation,
+          dependencies: [],
+          rows: [],
+        }
+      : {
+          parsed: { label: "Scene preset refused" },
+          explanation: applied.reason,
+          dependencies: [],
+          rows: [],
+        },
+  };
+  if (!applied.valid) {
+    renderBloomExploration();
+    setStatus(applied.reason);
+    return;
+  }
+  applyExplorationScene(applied.settings);
+  render();
+  setStatus(`Scene preset applied: ${applied.preset.label}`);
+});
+elements.resetScenePreset.addEventListener("click", () => {
+  const defaults = activeWorkflow().defaults;
+  const changed = ["relationFilter", "includeInfrastructure"].some((key) =>
+    String(state.settings[key]) !== String(defaults[key]),
+  );
+  state = {
+    ...state,
+    settings: {
+      ...state.settings,
+      relationFilter: defaults.relationFilter,
+      includeInfrastructure: defaults.includeInfrastructure,
+      labelDensity: defaults.labelDensity,
+      visualStyle: defaults.visualStyle ?? "classic",
+      showCommunities: defaults.showCommunities,
+    },
+    analysisVersion: state.analysisVersion + (changed ? 1 : 0),
+    preflightRun: changed ? false : state.preflightRun,
+  };
+  bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
+  render();
+  setStatus("Scene preset reset to the workflow default");
 });
 elements.resetAnalysis.addEventListener("click", () => {
   if (activeUseCase === "fraud") {

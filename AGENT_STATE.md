@@ -130,6 +130,8 @@
 - 110 | Implemented Step 3 investigation workspace parity | Added saved searches, comments, case notes, task states, review status, audit log, workspace save/reload snapshots, neutral case packets, bounded expansion explanations, UI controls, reducer tests, static assertions, and Pages browser flow | Status: Success
 - 111 | Validated Step 3 against Linkurious and Obsidian public references | Added npm run audit:workspace and docs/validation/linkurious-obsidian-workspace-parity-audit.md with public-page screenshots/text capture, NAPP workspace/reload screenshots, feature-class parity matrix, and explicit proprietary/pixel-perfect caveats; audit:workspace and make test-all passed | Status: Success
 - 112 | Deployed and remotely verified Step 3 workspace parity | Pushed commit d58432f to main; public GitHub Actions run 28259994034 completed successfully; remote HTTPS Pages Playwright and remote Linkurious/Obsidian workspace audit passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ | Status: Success
+- 113 | Implemented Step 5 Bloom-style graph exploration | Added deterministic graph phrase parsing/execution, scene preset validation, evidence-class/entity/community/time-window rule legends, workspace UI, evidence dependency/cutoff display, unit/static tests, and Pages Playwright coverage | Status: Success
+- 114 | Validated Step 5 against Neo4j Bloom and STORM public references | Added npm run audit:bloom and docs/validation/neo4j-bloom-parity-audit.md with public-reference screenshots/text capture, NAPP phrase/scene/path screenshots, feature-class parity matrix, and explicit proprietary/pixel-perfect caveats; npm test, test:pages, audit:bloom, and make test-all passed | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -213,11 +215,14 @@
 - The i2 parity audit validates public feature-class parity and NAPP differentiators only; it cannot prove complete proprietary i2 replication or pixel-perfect equivalence from public screenshots/demos.
 - Step 3 workspace snapshots use browser localStorage for the GitHub Pages training build. Production still needs server-side shared workspace persistence, actor/purpose audit, retention, dissemination controls, and multi-user concurrency.
 - The Linkurious/Obsidian audit validates public feature-class parity only. It cannot prove complete proprietary behavior or pixel-perfect replication from public pages and docs.
+- Step 5 graph phrases are deliberately narrow and deterministic; unsupported natural-language requests are refused rather than guessed or converted into broad graph actions.
+- Bloom-style scene presets define the visible projection as well as the styling. A path visible under all relationships may correctly disappear under a transfer-only financial scene, so browser tests now verify a path inside the selected scene.
+- The Neo4j Bloom/STORM audit validates public feature-class parity only. It cannot prove complete proprietary behavior, private product workflows, or pixel-perfect replication from public documentation.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
   - Test 1: Continue transaction import with server-side authorized upload/persistence, malware/content scanning, actor/purpose audit, schema-versioned persistence, larger calibrated hard-negative benchmarks, and representative analyst overreliance tests; local CSV/JSON support, explicit mapping UI, timezone/currency/direction/entity validation, and synthetic hard-negative benchmark metrics are complete.
-  - Test 2: Extend Phase B chart workspace with persisted visualization presets, weighted/evidence-aware temporal paths, independent editable chart coordinates, and accessibility coverage for workspace actions.
+  - Test 2: Extend Phase B chart workspace with persisted visualization presets, weighted/evidence-aware temporal paths, independent editable chart coordinates, and accessibility coverage for workspace actions; deterministic Bloom-style phrases, scene presets, rule legends, evidence-linked path explanations, and public-reference audit are complete locally.
   - Test 3: Continue AI-critical MVP work: persist assistant/model audit metadata, add authorized retrieval service boundaries, implement role hypotheses and temporal motifs, broaden predictive leakage/calibration harnesses, and run representative overreliance/accessibility evaluations; deterministic model gates and source-grounded assistant UI are complete locally.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
   - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.

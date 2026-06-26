@@ -266,6 +266,37 @@ Retrospective questions:
 - Did natural-language query support execute anything without preview?
 - Are unsupported phrases refused clearly instead of guessed?
 
+Implementation evidence:
+
+- Added deterministic Bloom-style graph phrase parsing for supported analyst
+  questions including "show accounts connected to Acct 777," "paths between
+  Acct 100 and Acct 901," and community views.
+- Added scene presets for financial flow, infrastructure review, community
+  uncertainty, and time-window review. Presets are validated against the active
+  authorized workflow and visible infrastructure before application.
+- Added rule-style explanations for evidence class, entity type, community
+  uncertainty, and time-window/known-at review.
+- Added a workspace UI for graph phrases, scene presets, reset, exact evidence
+  dependencies, cutoff, visible result rows, and rule legend.
+- Added unit tests for parser operations, refused unsupported phrases, preset
+  validation, path dependencies, community hypothesis wording, and rule legends.
+- Added browser coverage for phrase execution, scene application, boardroom
+  styling, evidence-linked path explanation, and scene reset.
+- Added Neo4j Bloom/STORM Playwright audit in
+  `docs/validation/neo4j-bloom-parity-audit.md`.
+
+Retrospective:
+
+- Phrase support is deliberately narrow and deterministic. Unsupported natural
+  language is refused rather than guessed.
+- Scene presets define the visible graph projection. A path that exists under
+  "all" relationships may correctly disappear under a transfer-only financial
+  scene; tests now use a path visible inside the selected scene.
+- Public Neo4j Bloom documentation supports feature-class comparison only. It
+  cannot prove complete proprietary behavior or pixel-perfect replication.
+- Production saved perspectives still need server-side authorization-aware
+  persistence, actor/purpose audit, retention, and multi-user sharing.
+
 ### Step 6 — Financial crime / cuentas mulas escalation
 
 Goal: turn the fraud-ring workflow into a reusable transaction-analysis

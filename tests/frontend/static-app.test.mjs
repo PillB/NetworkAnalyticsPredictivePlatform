@@ -79,6 +79,21 @@ test("Linkurious-style investigation workspace controls are present", async () =
   assert.match(html, /id="prepareCasePacket"/);
 });
 
+test("Neo4j Bloom-style graph exploration controls are present", async () => {
+  const html = await readFile(`${repoRoot}apps/web/index.html`, "utf8");
+  const app = await readFile(`${repoRoot}apps/web/app.mjs`, "utf8");
+  const css = await readFile(`${repoRoot}apps/web/styles.css`, "utf8");
+  assert.match(html, /id="bloomPhrase"/);
+  assert.match(html, /id="runBloomPhrase"/);
+  assert.match(html, /id="scenePreset"/);
+  assert.match(html, /id="applyScenePreset"/);
+  assert.match(html, /id="resetScenePreset"/);
+  assert.match(html, /id="bloomExplanation"/);
+  assert.match(app, /executeGraphPhrase/);
+  assert.match(app, /applyScenePreset/);
+  assert.match(css, /bloom-tools/);
+});
+
 test("financial transaction import controls are present", async () => {
   const html = await readFile(`${repoRoot}apps/web/index.html`, "utf8");
   assert.match(html, /id="transactionCsv"/);

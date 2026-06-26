@@ -352,6 +352,25 @@
             <button class="button secondary" id="restoreWorkspaceSnapshot" type="button">Reload workspace</button>
             <button class="button primary" id="prepareCasePacket" type="button">Prepare packet</button>
           </div>
+          <div class="bloom-tools" aria-label="Natural graph exploration">
+            <label>
+              <span>Graph phrase</span>
+              <input id="bloomPhrase" type="search" placeholder="show accounts connected to Acct 777" />
+            </label>
+            <button class="button secondary" id="runBloomPhrase" type="button">Run phrase</button>
+            <label>
+              <span>Scene preset</span>
+              <select id="scenePreset">
+                <option value="financial-flow">Financial flow</option>
+                <option value="infrastructure-review">Infrastructure review</option>
+                <option value="community-uncertainty">Community uncertainty</option>
+                <option value="time-window-review">Time window review</option>
+              </select>
+            </label>
+            <button class="button secondary" id="applyScenePreset" type="button">Apply scene</button>
+            <button class="button secondary" id="resetScenePreset" type="button">Reset scene</button>
+          </div>
+          <div id="bloomExplanation" class="workspace-list bloom-explanation" aria-live="polite"></div>
           <div class="chart-authoring-tools">
             <label>
               <span>Manual entity</span>
