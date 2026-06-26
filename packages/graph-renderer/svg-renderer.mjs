@@ -1,3 +1,9 @@
+import {
+  BUILT_IN_NODE_ICONS,
+  nodePoint,
+  unprojectPoint,
+} from "./layout-model.mjs";
+
 const NS = "http://www.w3.org/2000/svg";
 
 function svgElement(name, attributes = {}) {
@@ -6,23 +12,8 @@ function svgElement(name, attributes = {}) {
   return element;
 }
 
-function rotateAroundCenter(pointValue, degrees) {
-  const radians = (Number(degrees) * Math.PI) / 180;
-  const dx = pointValue.x - 50;
-  const dy = pointValue.y - 50;
-  return {
-    x: 50 + dx * Math.cos(radians) - dy * Math.sin(radians),
-    y: 50 + dx * Math.sin(radians) + dy * Math.cos(radians),
-  };
-}
-
 function point(node, spacing, positions = {}, rotation = 0) {
-  const base = positions[node.id] ?? { x: node.x, y: node.y };
-  const scale = 0.82 + Number(spacing) * 0.18;
-  return rotateAroundCenter({
-    x: 50 + (base.x - 50) * scale,
-    y: 50 + (base.y - 50) * scale,
-  }, rotation);
+  return nodePoint(node, spacing, positions, rotation);
 }
 
 function svgPoint(svg, event) {
@@ -45,6 +36,34 @@ function nodeShape(node, x, y) {
   return svgElement("circle", { cx: x, cy: y, r: 4.6 });
 }
 
+function decorateNode(group, node, x, y, visual) {
+  if (visual?.image?.dataUrl) {
+    const image = svgElement("image", {
+      href: visual.image.dataUrl,
+      x: x - 4.8,
+      y: y - 4.8,
+      width: 9.6,
+      height: 9.6,
+      class: "node-image",
+      preserveAspectRatio: "xMidYMid slice",
+    });
+    group.append(image);
+    return;
+  }
+  const glyph = BUILT_IN_NODE_ICONS[visual?.icon] || "";
+  if (glyph) {
+    const icon = svgElement("text", {
+      x,
+      y: y + 1.6,
+      "text-anchor": "middle",
+      class: "node-icon",
+      "aria-hidden": "true",
+    });
+    icon.textContent = glyph;
+    group.append(icon);
+  }
+}
+
 export function renderGraph(svg, model, options = {}) {
   const {
     selectedId,
@@ -54,9 +73,11 @@ export function renderGraph(svg, model, options = {}) {
     showCommunities = true,
     positions = {},
     rotation = 0,
+    nodeVisuals = {},
     onSelect = () => {},
     onNodeMoveStart = () => {},
-    onNodeMove = () => {},
+    onNodeMovePreview = () => {},
+    onNodeMoveEnd = () => {},
   } = options;
   svg.replaceChildren();
   svg.setAttribute("viewBox", "0 0 100 100");
@@ -95,6 +116,7 @@ export function renderGraph(svg, model, options = {}) {
 
   model.nodes.forEach((node) => {
     const { x, y } = point(node, spacing, positions, rotation);
+    const visual = nodeVisuals[node.id] ?? {};
     const group = svgElement("g", {
       class: `graph-node type-${node.type}`,
       tabindex: 0,
@@ -102,6 +124,7 @@ export function renderGraph(svg, model, options = {}) {
       "aria-label": `${node.label}. Drag to reposition this node in the visualization only.`,
     });
     group.append(nodeShape(node, x, y));
+    decorateNode(group, node, x, y, visual);
     if (labelDensity !== "minimal" || node.id === "northstar") {
       const label = svgElement("text", {
         x,
@@ -112,6 +135,8 @@ export function renderGraph(svg, model, options = {}) {
       label.textContent = node.label;
       group.append(label);
     }
+    let pendingFrame = 0;
+    let lastPosition = { x, y };
     group.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       group.setPointerCapture(event.pointerId);
@@ -120,10 +145,21 @@ export function renderGraph(svg, model, options = {}) {
     group.addEventListener("pointermove", (event) => {
       if (!group.hasPointerCapture(event.pointerId)) return;
       const next = svgPoint(svg, event);
-      onNodeMove(node.id, { x: next.x, y: next.y });
+      lastPosition = next;
+      if (pendingFrame) return;
+      pendingFrame = requestAnimationFrame(() => {
+        pendingFrame = 0;
+        group.setAttribute("transform", `translate(${lastPosition.x - x} ${lastPosition.y - y})`);
+        onNodeMovePreview(node.id, unprojectPoint(lastPosition, spacing, rotation));
+      });
     });
     group.addEventListener("pointerup", (event) => {
+      if (pendingFrame) {
+        cancelAnimationFrame(pendingFrame);
+        pendingFrame = 0;
+      }
       if (group.hasPointerCapture(event.pointerId)) group.releasePointerCapture(event.pointerId);
+      onNodeMoveEnd(node.id, unprojectPoint(lastPosition, spacing, rotation));
     });
     svg.append(group);
   });

@@ -104,12 +104,27 @@
             GitHub Pages import is synthetic and local to your browser session.
             Operational ingestion still requires authorization, retention, audit, and policy controls.
           </p>
+          <div class="import-toolbar">
+            <label>
+              <span>Format</span>
+              <select id="transactionFormat">
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+              </select>
+            </label>
+            <button class="button secondary" id="loadSampleCsv" type="button">Load sample CSV</button>
+            <button class="button secondary" id="loadSampleJson" type="button">Load sample JSON</button>
+          </div>
           <label class="import-input">
-            <span>CSV transactions</span>
+            <span>Transactions</span>
             <textarea id="transactionCsv" rows="7" spellcheck="false"></textarea>
           </label>
+          <details class="mapping-panel">
+            <summary>Explicit field mapping</summary>
+            <p>Choose columns when inference is wrong. Unset fields use safe inference.</p>
+            <div id="mappingControls" class="mapping-grid" aria-live="polite"></div>
+          </details>
           <div class="report-actions">
-            <button class="button secondary" id="loadSampleCsv" type="button">Load sample CSV</button>
             <button class="button secondary" id="previewImport" type="button">Preview import</button>
             <button class="button primary" id="applyImport" type="button" disabled>Use imported transactions</button>
           </div>
@@ -177,6 +192,29 @@
               <button class="button secondary" id="graphUndo" type="button">Undo layout</button>
               <button class="button secondary" id="graphRedo" type="button">Redo layout</button>
               <button class="button secondary" id="resetLayout" type="button">Reset layout</button>
+            </div>
+            <div class="node-visual-controls" aria-label="Presentation-only node visuals">
+              <label>
+                <span>Node</span>
+                <select id="nodeVisualTarget"></select>
+              </label>
+              <label>
+                <span>Icon</span>
+                <select id="nodeIconPreset">
+                  <option value="default">Default</option>
+                  <option value="account">Account</option>
+                  <option value="alert">Alert</option>
+                  <option value="device">Device</option>
+                  <option value="person">Person</option>
+                  <option value="place">Place</option>
+                  <option value="organization">Organization</option>
+                </select>
+              </label>
+              <label>
+                <span>Image</span>
+                <input id="nodeImageUpload" type="file" accept="image/png,image/jpeg,image/webp" />
+              </label>
+              <button class="button secondary" id="resetNodeVisual" type="button">Reset visual</button>
             </div>
             <p>Styling changes do not create a new analysis version. Evidence and uncertainty markers remain visible.</p>
           </div>

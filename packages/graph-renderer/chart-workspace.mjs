@@ -207,6 +207,7 @@ export function saveLayout(workspace, name, graphView) {
     name: clean,
     positions: structuredClone(graphView.positions ?? {}),
     rotation: Number(graphView.rotation ?? 0),
+    nodeVisuals: structuredClone(graphView.nodeVisuals ?? {}),
   };
   return {
     ...workspace,

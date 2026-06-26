@@ -48,11 +48,18 @@ test("i2-class chart workspace controls are present", async () => {
   assert.match(html, /id="addAnnotation"/);
   assert.match(html, /id="saveLayout"/);
   assert.match(html, /id="restoreLayout"/);
+  assert.match(html, /id="nodeVisualTarget"/);
+  assert.match(html, /id="nodeIconPreset"/);
+  assert.match(html, /id="nodeImageUpload"/);
+  assert.match(html, /id="resetNodeVisual"/);
 });
 
 test("financial transaction import controls are present", async () => {
   const html = await readFile(`${repoRoot}apps/web/index.html`, "utf8");
   assert.match(html, /id="transactionCsv"/);
+  assert.match(html, /id="transactionFormat"/);
+  assert.match(html, /id="loadSampleJson"/);
+  assert.match(html, /id="mappingControls"/);
   assert.match(html, /id="previewImport"/);
   assert.match(html, /id="applyImport"/);
   assert.match(html, /rejected-row reporting|rejected rows|Training import/i);

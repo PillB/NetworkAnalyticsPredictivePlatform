@@ -17,6 +17,122 @@ imp-007,2026-05-01T12:21:00Z,acct-777,account,acct-902,account,1480,USD,cash-out
 imp-008,2026-05-02T08:14:00Z,device-7,device,acct-777,account,0,N/A,login event,Shared device context
 bad-009,not-a-date,victim-x,person,acct-999,account,12,USD,transfer,Invalid row example`;
 
+export const SAMPLE_TRANSACTION_JSON = JSON.stringify([
+  {
+    transaction_id: "json-001",
+    timestamp: "2026-05-03T09:05:00-05:00",
+    origin_id: "victim-j1",
+    origin_kind: "person",
+    destination_id: "acct-200",
+    destination_kind: "account",
+    amount: 900,
+    currency: "USD",
+    type: "fraud complaint transfer",
+    description: "Invoice callback",
+  },
+  {
+    transaction_id: "json-002",
+    timestamp: "2026-05-03T10:05:00-05:00",
+    origin_id: "acct-200",
+    origin_kind: "account",
+    destination_id: "acct-777",
+    destination_kind: "account",
+    amount: 900,
+    currency: "USD",
+    type: "internal transfer",
+    description: "Consolidation",
+  },
+  {
+    transaction_id: "json-003",
+    timestamp: "2026-05-03T11:15:00-05:00",
+    origin_id: "acct-777",
+    origin_kind: "account",
+    destination_id: "acct-903",
+    destination_kind: "account",
+    amount: 875,
+    currency: "USD",
+    type: "cash-out transfer",
+    description: "Wallet withdrawal",
+  },
+  {
+    transaction_id: "json-bad-004",
+    timestamp: "2026-05-03T12:00:00",
+    origin_id: "acct-777",
+    origin_kind: "account",
+    destination_id: "acct-904",
+    destination_kind: "account",
+    amount: 25,
+    currency: "DOGE",
+    type: "transfer",
+    description: "Invalid timezone and currency example",
+  },
+], null, 2);
+
+export const LEGITIMATE_PROCESSOR_BENCHMARK_JSON = JSON.stringify({
+  transactions: [
+    {
+      transaction_id: "legit-001",
+      timestamp: "2026-05-04T09:00:00Z",
+      origin_id: "employer-a",
+      origin_kind: "organization",
+      destination_id: "payroll-hub",
+      destination_kind: "account",
+      amount: 5000,
+      currency: "USD",
+      type: "payroll batch funding",
+      description: "Payroll provider omnibus settlement",
+    },
+    {
+      transaction_id: "legit-002",
+      timestamp: "2026-05-04T09:03:00Z",
+      origin_id: "payroll-hub",
+      origin_kind: "account",
+      destination_id: "employee-1",
+      destination_kind: "person",
+      amount: 2500,
+      currency: "USD",
+      type: "payroll batch payout",
+      description: "Salary disbursement",
+    },
+    {
+      transaction_id: "legit-003",
+      timestamp: "2026-05-04T09:04:00Z",
+      origin_id: "payroll-hub",
+      origin_kind: "account",
+      destination_id: "employee-2",
+      destination_kind: "person",
+      amount: 2500,
+      currency: "USD",
+      type: "payroll batch payout",
+      description: "Salary disbursement",
+    },
+    {
+      transaction_id: "legit-004",
+      timestamp: "2026-05-04T10:10:00Z",
+      origin_id: "merchant-processor",
+      origin_kind: "account",
+      destination_id: "customer-a",
+      destination_kind: "person",
+      amount: 120,
+      currency: "USD",
+      type: "refund",
+      description: "Card refund from legitimate payment processor",
+    },
+    {
+      transaction_id: "legit-005",
+      timestamp: "2026-05-04T10:15:00Z",
+      origin_id: "device-shared-branch",
+      origin_kind: "device",
+      destination_id: "payroll-hub",
+      destination_kind: "account",
+      amount: 0,
+      currency: "N/A",
+      type: "shared branch login event",
+      description: "Shared infrastructure only",
+    },
+  ],
+}, null, 2);
+
 const FIELD_ALIASES = {
   id: ["transaction_id", "transactionid", "tx_id", "id", "reference"],
   at: ["timestamp", "datetime", "date_time", "transaction_time", "date", "time", "at"],
@@ -31,6 +147,7 @@ const FIELD_ALIASES = {
 };
 
 const REQUIRED_FIELDS = ["id", "at", "origin", "destination", "amount", "currency", "type"];
+const SUPPORTED_CURRENCIES = new Set(["USD", "EUR", "GBP", "PEN", "MXN", "COP", "BRL", "CAD", "N/A"]);
 
 function normalizeHeader(value) {
   return String(value ?? "").trim().toLowerCase().replaceAll(/[\s-]+/g, "_");
@@ -72,6 +189,41 @@ export function parseCsv(text) {
   return { headers, rows };
 }
 
+function flattenRecord(record, prefix = "") {
+  const output = {};
+  for (const [key, value] of Object.entries(record ?? {})) {
+    const normalizedKey = normalizeHeader(prefix ? `${prefix}_${key}` : key);
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      Object.assign(output, flattenRecord(value, normalizedKey));
+    } else {
+      output[normalizedKey] = value == null ? "" : String(value);
+    }
+  }
+  return output;
+}
+
+export function parseJson(text) {
+  let parsed;
+  try {
+    parsed = JSON.parse(String(text ?? ""));
+  } catch (error) {
+    return { headers: [], rows: [], parseError: `Invalid JSON: ${error.message}` };
+  }
+  const records = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.transactions) ? parsed.transactions : [];
+  if (!records.length || !records.every((record) => record && typeof record === "object" && !Array.isArray(record))) {
+    return { headers: [], rows: [], parseError: "JSON import expects an array of transaction objects or a transactions array" };
+  }
+  const rows = records.map((record) => flattenRecord(record));
+  const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))].sort();
+  return { headers, rows };
+}
+
+export function parseTransactionInput(text, options = {}) {
+  const format = options.format === "json" ? "json" : "csv";
+  const parsed = format === "json" ? parseJson(text) : parseCsv(text);
+  return { ...parsed, format };
+}
+
 export function inferColumnMapping(headers) {
   const normalized = headers.map(normalizeHeader);
   const mapping = {};
@@ -81,12 +233,26 @@ export function inferColumnMapping(headers) {
   return mapping;
 }
 
+export function normalizeColumnMapping(headers, overrides = {}) {
+  const normalizedHeaders = new Set(headers.map(normalizeHeader));
+  const inferred = inferColumnMapping(headers);
+  return Object.fromEntries(Object.entries(FIELD_ALIASES).map(([field]) => {
+    const override = normalizeHeader(overrides[field] ?? "");
+    return [field, override && normalizedHeaders.has(override) ? override : inferred[field]];
+  }));
+}
+
 function parseAmount(value) {
   const number = Number(String(value ?? "").replaceAll(",", ""));
   return Number.isFinite(number) ? number : null;
 }
 
+function hasExplicitTimezone(value) {
+  return /(?:z|[+-]\d{2}:?\d{2})$/i.test(String(value ?? "").trim());
+}
+
 function validDate(value) {
+  if (!hasExplicitTimezone(value)) return null;
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date.toISOString() : null;
 }
@@ -100,23 +266,46 @@ function normalizeKind(value, fallback) {
   return "account";
 }
 
-export function previewTransactionImport(csvText, options = {}) {
-  const { headers, rows } = parseCsv(csvText);
-  const mapping = inferColumnMapping(headers);
+export function previewTransactionImport(text, options = {}) {
+  const parsed = parseTransactionInput(text, options);
+  const { headers, rows } = parsed;
+  const mapping = normalizeColumnMapping(headers, options.mapping ?? {});
   const missingFields = REQUIRED_FIELDS.filter((field) => !mapping[field]);
   const acceptedRows = [];
   const rejectedRows = [];
+
+  if (parsed.parseError) {
+    return {
+      contract: TRANSACTION_IMPORT_VERSION,
+      fileName: options.fileName ?? `pasted-transactions.${parsed.format}`,
+      format: parsed.format,
+      parserVersion: `${parsed.format}-import-0.2`,
+      headers,
+      mappedColumns: mapping,
+      requiredFields: REQUIRED_FIELDS,
+      missingFields: REQUIRED_FIELDS,
+      acceptedRows,
+      rejectedRows: [{ rowNumber: 1, id: "parse-error", reasons: [parsed.parseError], raw: {} }],
+      summary: { totalRows: 0, accepted: 0, rejected: 1 },
+      provenance: {
+        sourceFileName: options.fileName ?? `pasted-transactions.${parsed.format}`,
+        parserVersion: `${parsed.format}-import-0.2`,
+        importedAt: "training-session",
+      },
+    };
+  }
 
   rows.forEach((row, rowIndex) => {
     const rowNumber = rowIndex + 2;
     const reasons = [];
     if (missingFields.length) reasons.push(`Missing required mapped fields: ${missingFields.join(", ")}`);
     const at = mapping.at ? validDate(row[mapping.at]) : null;
-    if (!at) reasons.push("Invalid timestamp");
+    if (!at) reasons.push("Invalid timestamp or missing explicit timezone");
     const amount = mapping.amount ? parseAmount(row[mapping.amount]) : null;
     if (amount === null) reasons.push("Invalid amount");
     const currency = mapping.currency ? String(row[mapping.currency] ?? "").trim().toUpperCase() : "";
     if (!currency) reasons.push("Missing currency");
+    if (currency && !SUPPORTED_CURRENCIES.has(currency)) reasons.push(`Unsupported currency: ${currency}`);
     const origin = mapping.origin ? String(row[mapping.origin] ?? "").trim() : "";
     const destination = mapping.destination ? String(row[mapping.destination] ?? "").trim() : "";
     if (!origin) reasons.push("Missing origin");
@@ -139,6 +328,7 @@ export function previewTransactionImport(csvText, options = {}) {
       destinationKind: normalizeKind(mapping.destinationKind ? row[mapping.destinationKind] : "", destination),
       amount,
       currency,
+      timezone: String(row[mapping.at]).match(/(?:z|[+-]\d{2}:?\d{2})$/i)?.[0]?.toUpperCase() ?? "",
       type,
       description: mapping.description ? String(row[mapping.description] ?? "").trim() : "",
       rowNumber,
@@ -147,8 +337,9 @@ export function previewTransactionImport(csvText, options = {}) {
 
   return {
     contract: TRANSACTION_IMPORT_VERSION,
-    fileName: options.fileName ?? "pasted-transactions.csv",
-    parserVersion: "csv-import-0.1",
+    fileName: options.fileName ?? `pasted-transactions.${parsed.format}`,
+    format: parsed.format,
+    parserVersion: `${parsed.format}-import-0.2`,
     headers,
     mappedColumns: mapping,
     requiredFields: REQUIRED_FIELDS,
@@ -161,9 +352,10 @@ export function previewTransactionImport(csvText, options = {}) {
       rejected: rejectedRows.length,
     },
     provenance: {
-      sourceFileName: options.fileName ?? "pasted-transactions.csv",
-      parserVersion: "csv-import-0.1",
+      sourceFileName: options.fileName ?? `pasted-transactions.${parsed.format}`,
+      parserVersion: `${parsed.format}-import-0.2`,
       importedAt: "training-session",
+      mappingMode: options.mapping ? "explicit-with-inference-fallback" : "inferred",
     },
   };
 }
@@ -222,6 +414,18 @@ function hoursBetween(a, b) {
   return Math.abs(new Date(b).getTime() - new Date(a).getTime()) / 36e5;
 }
 
+function hardNegativeReasons(transactions, accountId) {
+  const related = transactions.filter((tx) => tx.origin === accountId || tx.destination === accountId);
+  const text = related.map((tx) => `${tx.type} ${tx.description} ${tx.origin} ${tx.destination}`).join(" ").toLowerCase();
+  return [
+    /payroll|salary|wage/.test(text) && "payroll or salary hub pattern",
+    /payment processor|processor|merchant|omnibus/.test(text) && "legitimate payment processor indicator",
+    /refund|chargeback|reversal/.test(text) && "refund or reversal pattern",
+    /batch|bulk|settlement/.test(text) && "batch transfer context",
+    related.length > 0 && related.every((tx) => tx.amount === 0 || /login|device|ip|shared infrastructure|branch/.test(`${tx.type} ${tx.description}`.toLowerCase())) && "shared infrastructure without money movement",
+  ].filter(Boolean);
+}
+
 export function createImportedFraudWorkflow(preview) {
   const knownAt = preview.acceptedRows
     .map((row) => row.at)
@@ -274,12 +478,13 @@ export function createImportedFraudWorkflow(preview) {
       const fastestPassThroughHours = inbound.length && outbound.length
         ? Math.min(...inbound.flatMap((inTx) => outbound.map((outTx) => hoursBetween(inTx.at, outTx.at))))
         : null;
+      const hardNegatives = hardNegativeReasons(transactions, account.id);
       const indicators = [
-        uniqueOrigins >= 2 && "multiple inbound origins",
-        uniqueDestinations >= 2 && "fan-out to multiple destinations",
-        passThroughRatio >= 0.75 && "high pass-through ratio",
-        fastestPassThroughHours !== null && fastestPassThroughHours <= 3 && "rapid outbound movement",
-        inbound.concat(outbound).some((tx) => tx.amount % 100 === 0 || tx.amount % 50 === 0) && "round or near-round amounts",
+        hardNegatives.length === 0 && uniqueOrigins >= 2 && "multiple inbound origins",
+        hardNegatives.length === 0 && uniqueDestinations >= 2 && "fan-out to multiple destinations",
+        hardNegatives.length === 0 && passThroughRatio >= 0.75 && "high pass-through ratio",
+        hardNegatives.length === 0 && fastestPassThroughHours !== null && fastestPassThroughHours <= 3 && "rapid outbound movement",
+        hardNegatives.length === 0 && inbound.concat(outbound).some((tx) => tx.amount % 100 === 0 || tx.amount % 50 === 0) && "round or near-round amounts",
       ].filter(Boolean);
       const score = Math.min(100, indicators.length * 18);
       return {
@@ -293,6 +498,7 @@ export function createImportedFraudWorkflow(preview) {
         outboundAmount,
         passThroughRatio,
         fastestPassThroughHours,
+        contraryEvidence: hardNegatives,
         dependencies: inbound.concat(outbound).map((tx) => tx.id),
       };
     }).sort((a, b) => b.score - a.score || a.accountId.localeCompare(b.accountId));

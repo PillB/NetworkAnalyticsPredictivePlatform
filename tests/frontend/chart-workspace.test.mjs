@@ -58,10 +58,12 @@ test("annotations are analyst commentary and layouts are separate visual state",
   workspace = saveLayout(workspace, "Briefing view", {
     positions: { northstar: { x: 40, y: 44 } },
     rotation: 15,
+    nodeVisuals: { northstar: { icon: "organization", image: null } },
   });
   assert.equal(workspace.annotations[0].classification, "analyst annotation");
   assert.equal(selectedLayout(workspace).name, "Briefing view");
   assert.deepEqual(selectedLayout(workspace).positions.northstar, { x: 40, y: 44 });
+  assert.equal(selectedLayout(workspace).nodeVisuals.northstar.icon, "organization");
 });
 
 test("workspace undo and redo reverse chart authoring without evidence mutation", () => {

@@ -38,6 +38,322 @@ All analytical output remains decision support. The system must not determine gu
 
 ## 2. Phase checklist
 
+## 2A. Expanded nine-step implementation plan
+
+This expansion is the execution contract for the remaining Phase 4 work. Each
+step is implemented as a vertical slice: design, code, unit tests, black-box
+tests, browser checks where relevant, retrospective, state update, and deployment
+validation for coherent public-training increments.
+
+Global constraints for every step:
+
+- provenance first: evidence, analyst notes, visual state, and AI drafts remain
+  separate;
+- analyst decision-support only: no guilt, criminality, dangerousness, or
+  enforcement determinations;
+- CPU-first deterministic baselines before neural or adaptive models;
+- leakage-safe evaluation, calibration checks, explainability, accessibility,
+  and overreliance testing;
+- GitHub Pages remains synthetic training-only and cannot imply production
+  authorization, persistence, retention, or audit controls.
+
+Per-step delivery checklist:
+
+- define data contracts and UI states before implementation;
+- implement minimal useful behavior against existing app patterns;
+- add unit tests for reducer/parser/model logic;
+- add integration or browser tests for cross-module flows;
+- add black-box safety tests for evidence mutation, authorization leakage,
+  unsupported claims, and report/export behavior;
+- update this checklist and `AGENT_STATE.md` with the retrospective;
+- deploy only after local tests pass, then verify CI/CD and the live Pages URL.
+
+### Step 1 — Graph manipulation quality and custom node identity
+
+Goal: make graph interaction feel professional and allow analyst-grade visual
+customization.
+
+Done conditions:
+
+- Node drag is smooth, non-jittery, and does not full-rerender the SVG on every
+  pointermove.
+- Drag, rotate, spin, reset, undo, redo, save layout, and restore layout work
+  independently from analysis versions.
+- Users can assign built-in icons and safe uploaded images to nodes.
+- Custom visuals are stored as presentation metadata, not evidence.
+
+Tests:
+
+- Unit: projection/unprojection math round-trips under spacing and rotation.
+- Unit: one drag creates one undo checkpoint.
+- Unit: image validator accepts PNG/JPEG/WebP and rejects SVG, oversized, and
+  malformed files.
+- Black-box: visual edits do not mutate evidence, reports, or analysis version.
+- Playwright: drag node through many mouse steps, rotate then drag, set icon,
+  upload image, reset icon, undo/redo layout, complete fraud workflow.
+
+Retrospective questions:
+
+- Did renderer state become authoritative, or is it still presentation-only?
+- Did drag or custom visuals change evidence dependencies, report output, or
+  analysis version?
+- Does the semantic mirror still expose the graph without relying on custom
+  icons or images?
+
+### Step 2 — i2-class visual charting parity
+
+Goal: close the core link-analysis charting gap.
+
+Done conditions:
+
+- Users can manually add chart entities, links, labels, notes, edge styling, and
+  briefing annotations.
+- Users can create redacted chart views.
+- Users can export a briefing-ready chart with provenance metadata.
+- Visual edits are clearly separated from factual evidence assertions.
+
+Tests:
+
+- Unit: chart reducer covers add/edit/remove entity, add/edit/remove edge,
+  annotation, redaction, undo/redo.
+- Black-box: a report export blocks factual claims lacking evidence.
+- Black-box: redacted chart hides restricted fields without leaking counts or
+  layout gaps.
+- Playwright: create chart, add entity/link, style node, annotate, redact,
+  export, restore.
+
+Retrospective questions:
+
+- Are manual chart edits clearly marked as analyst-authored presentation or
+  notes rather than evidence?
+- Can redaction be verified without comparing hidden counts or layout holes?
+
+### Step 3 — Linkurious-style investigation workspace parity
+
+Goal: make investigations collaborative, searchable, and case-oriented.
+
+Done conditions:
+
+- Workspace supports saved searches, shared layouts, comments, case notes, task
+  states, and review status.
+- Search and expansion are bounded and explainable.
+- Workspace actions are audit-ready and reversible.
+- Case packets can be prepared for review without implying guilt.
+
+Tests:
+
+- Unit: workspace state transitions for search, pin, expand, comment, task
+  status, save/restore.
+- Black-box: expansion uses only authorized graph projection.
+- Black-box: comments are analyst notes, not evidence.
+- Playwright: search, pin result, expand neighbors, comment, assign review
+  status, save workspace, reload/restore.
+
+Retrospective questions:
+
+- Did collaboration metadata become confused with evidence?
+- Are saved searches replayable against the same authorized projection contract?
+
+### Step 4 — Maltego-style transform workflow
+
+Goal: add one-click investigative expansion with source/provenance clarity.
+
+Done conditions:
+
+- User can run safe synthetic transforms from an entity.
+- Each transform shows source, cost, timestamp, input, output, confidence, and
+  limitations.
+- Transform outputs are staged for review before becoming chart items.
+- Transform history is inspectable and undoable.
+
+Tests:
+
+- Unit: transform registry validates input/output contracts.
+- Unit: transform result staging does not mutate evidence automatically.
+- Black-box: transform outputs remain visibly distinct from source evidence.
+- Playwright: select node, run transform, preview results, add selected results,
+  inspect transform history, undo.
+
+Retrospective questions:
+
+- Did transforms create unsupported certainty or hidden enrichment?
+- Can analysts reject transform output without side effects?
+
+### Step 5 — Neo4j/Bloom-style graph exploration
+
+Goal: make graph exploration natural and fast for non-experts.
+
+Done conditions:
+
+- Search phrases support common analyst queries such as "show accounts connected
+  to Acct 777" and "paths between A and B."
+- Scene presets apply saved graph filters/styles.
+- Rule-based styling supports evidence class, entity type, community,
+  uncertainty, and time window.
+- Path/community explanations are plain-language and evidence-linked.
+
+Tests:
+
+- Unit: phrase parser maps supported queries to deterministic operations.
+- Unit: scene preset validation rejects unsafe or inaccessible presets.
+- Black-box: path results include source dependencies and cutoff.
+- Playwright: enter phrase, graph updates, apply scene preset, inspect path
+  explanation, reset.
+
+Retrospective questions:
+
+- Did natural-language query support execute anything without preview?
+- Are unsupported phrases refused clearly instead of guessed?
+
+### Step 6 — Financial crime / cuentas mulas escalation
+
+Goal: turn the fraud-ring workflow into a reusable transaction-analysis
+capability.
+
+Done conditions:
+
+- CSV and JSON imports support explicit field mapping.
+- Timezone, currency, amount, direction, entity identity, and transaction type
+  are validated.
+- Rejected rows show specific reasons.
+- Mule/ring detection handles hard negatives like payroll hubs, legitimate
+  payment processors, refunds, batch transfers, and shared infrastructure.
+
+Tests:
+
+- Unit: CSV/JSON parsing, mapping, validation, rejected-row reasons.
+- Unit: timezone and currency normalization.
+- Integration: imported transactions produce graph, detector output, and report
+  dependencies.
+- Black-box: fraud outputs remain review recommendations, not criminality
+  claims.
+- Playwright: import sample, map fields, preview rejects, apply, detect ring,
+  inspect top account, export report.
+
+Retrospective questions:
+
+- Which legitimate high-degree flows still produce false positives?
+- Does the UI make uncalibrated status impossible to miss?
+
+### Step 7 — Crime-organization detection and prediction
+
+Goal: support non-financial group/ring detection with evidence-neutral
+hypotheses.
+
+Done conditions:
+
+- Role hypothesis engine supports organizer, broker, bridge, courier,
+  facilitator, infrastructure, cash-out, and unknown.
+- Temporal motifs include sudden broker emergence, bridge concentration,
+  subgroup birth, split/merge, recurring rendezvous, and shared
+  device/location/vehicle.
+- Every role/group output includes evidence, uncertainty, contrary evidence, and
+  sensitivity.
+- No output labels a person or group as criminal.
+
+Tests:
+
+- Unit: role and motif detectors on deterministic fixtures.
+- Unit: removing key evidence changes or explains unchanged role confidence.
+- Black-box: role hypotheses are neutral and evidence-linked.
+- Playwright: open crime workflow, run role hypotheses, inspect bridge warning,
+  remove/toggle evidence, compare explanation, export report.
+
+Retrospective questions:
+
+- Are role words too loaded for the evidence?
+- Are data collection artifacts driving the warning instead of behavior?
+
+### Step 8 — SOTA cognitive/adaptive predictive graph intelligence layer
+
+Goal: add predictive graph capability gated by serious evaluation.
+
+Done conditions:
+
+- Evaluation harness compares deterministic baselines, classical ML, and
+  TGNN/GNN candidates.
+- Candidate methods include recency/frequency/EdgeBank-style baselines,
+  temporal motifs, calibrated logistic/GBM, TGAT, TGN, GraphMixer/DyGFormer,
+  CAWN, JODIE, EvolveGCN, transaction-specific GNNs, and dynamic community
+  methods.
+- Models predict relationships, events, subgraphs, communities, or review
+  hypotheses; never person-level guilt.
+- Models stay disabled unless they beat baselines on hard negatives with
+  calibration, robustness, latency, explainability, and overreliance gates.
+
+Tests:
+
+- Unit: leakage detector rejects future labels/features/scalers/events.
+- Unit: temporal folds replay memory models deterministically.
+- Integration: model harness runs baseline vs candidate on synthetic benchmark.
+- Black-box: uncalibrated models cannot display production predictions.
+- Red-team: evasion patterns, legitimate high-degree actors, missing data,
+  delayed reports, duplicated entities, smurfing, circular flows.
+- Playwright: open model comparison panel, see baseline/candidate/gate status,
+  attempt to enable failed model, blocked with reasons, inspect model card.
+
+Retrospective questions:
+
+- Did any candidate win on easy random negatives but fail hard negatives?
+- Did calibration or explanation fail even when ranking metrics improved?
+
+### Step 9 — Further AI functionality research and implementation
+
+Goal: add high-value AI assistance that improves analyst work without replacing
+evidence discipline.
+
+Candidate AI features:
+
+- GraphRAG analyst assistant: answers graph/report/evidence questions, supports
+  multi-hop questions, and cites exact local dependencies.
+- AI report copilot: drafts neutral summaries, briefing bullets, uncertainty
+  sections, and redaction-aware exports without inventing claims.
+- AI query/copilot: translates plain English into safe graph searches, filters,
+  path queries, import mappings, and visualization presets with preview before
+  execution.
+- AI entity-resolution assistant: suggests possible duplicates with reasons and
+  contrary evidence, requiring analyst confirmation and keeping suggestions
+  separate from identity truth.
+- AI contradiction and gap finder: finds missing corroboration, inconsistent
+  dates, unsupported claims, stale analysis, and overconfident findings.
+- AI tutorial coach: explains workflow steps, defaults, failure modes, and next
+  choices in novice/expert modes.
+- AI red-team reviewer: checks report language for overclaiming, criminality
+  implication, unsupported inference, privacy/security leakage, and automation
+  bias.
+- AI active-learning feedback loop: suggests the next useful analyst review
+  action and tracks whether feedback improves evaluation metrics.
+
+Done conditions:
+
+- AI answers cite exact evidence/report/graph dependencies.
+- AI refuses unsupported accusation, protected-attribute inference, and
+  operational enforcement prompts.
+- AI-generated text is saved only as analyst note or draft, never as evidence.
+- Every AI action has audit metadata: prompt, retrieved sources, output,
+  model/config version, user decision.
+- AI features measurably reduce task time or error without increasing
+  unsupported conclusions.
+
+Tests:
+
+- Unit: prompt policy rejects prohibited request classes.
+- Unit: citation checker rejects uncited factual claims.
+- Unit: GraphRAG retriever returns authorized-only evidence.
+- Integration: assistant answer includes dependencies and uncertainty.
+- Black-box: AI cannot access restricted graph nodes through summaries, counts,
+  or hidden relationships.
+- Red-team: hallucination, prompt injection, protected inference, unsupported
+  accusation, stale evidence, misleading source, overconfident draft.
+- Playwright: ask assistant for explanation, inspect citations, request
+  unsupported accusation and receive refusal, generate report draft, red-team
+  review flags risky language, save as analyst note.
+
+Retrospective questions:
+
+- Did fluent text reduce analyst skepticism?
+- Are citations exact enough to reconstruct every factual claim?
+
 ### Phase A — Current MVP stabilization and deployment validation
 
 Objective: make the current two-use-case training MVP reliably available and tested.

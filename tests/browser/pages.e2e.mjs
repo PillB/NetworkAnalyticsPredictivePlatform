@@ -11,6 +11,14 @@ const remoteURL = process.env.PAGES_REMOTE_URL;
 const baseURL = remoteURL
   ? remoteURL.replace(/\/+$/g, "")
   : `http://127.0.0.1:${port}/${repository}`;
+const tinyPng = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
+  0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+  0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
+  0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+]);
 
 function playwrightModulePath() {
   if (process.env.PLAYWRIGHT_MODULE) return process.env.PLAYWRIGHT_MODULE;
@@ -78,6 +86,10 @@ try {
     assert.match(await page.locator("#question-title").textContent(), /mule accounts|fraud ring/i);
     assert.match(await page.locator("#communityHeading").textContent(), /mule bridge/i);
     assert.equal(await page.locator("#stepList .step-button").count(), 7);
+    await page.locator("#loadSampleJson").click();
+    await page.locator("#previewImport").click();
+    assert.match(await page.locator("#importPreview").innerText(), /3 accepted/i);
+    assert.match(await page.locator("#importPreview").innerText(), /Unsupported currency: DOGE/i);
     await page.locator("#loadSampleCsv").click();
     await page.locator("#previewImport").click();
     assert.match(await page.locator("#importPreview").innerText(), /8 accepted/i);
@@ -86,8 +98,29 @@ try {
     assert.match(await page.locator("#statusMessage").textContent(), /Imported 8 transactions/i);
     assert.match(await page.locator("#graphHeading").textContent(), /Imported financial/i);
     await page.locator("#visualControls").click();
+    await page.locator("#nodeVisualTarget").selectOption("acct-777");
+    await page.locator("#nodeIconPreset").selectOption("alert");
+    assert.match(await page.locator("#statusMessage").textContent(), /Presentation icon updated/i);
+    assert.ok(await page.locator(".node-icon").count() >= 1);
+    await page.locator("#nodeImageUpload").setInputFiles({
+      name: "node.png",
+      mimeType: "image/png",
+      buffer: tinyPng,
+    });
+    assert.match(await page.locator("#statusMessage").textContent(), /Presentation image updated/i);
+    assert.ok(await page.locator(".node-image").count() >= 1);
+    await page.locator("#resetNodeVisual").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /Presentation visual reset/i);
     await page.locator("#rotateRight").click();
     assert.match(await page.locator("#statusMessage").textContent(), /rotated/i);
+    const dragTarget = page.locator('.graph-node[data-node-id="acct-777"]').first();
+    const dragBox = await dragTarget.boundingBox();
+    assert.ok(dragBox);
+    await page.mouse.move(dragBox.x + dragBox.width / 2, dragBox.y + dragBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(dragBox.x + 24, dragBox.y + 18, { steps: 20 });
+    await page.mouse.up();
+    assert.match(await page.locator("#statusMessage").textContent(), /Moved Acct 777/i);
     await page.locator("#graphUndo").click();
     assert.match(await page.locator("#statusMessage").textContent(), /undo/i);
     await page.locator("#resetLayout").click();

@@ -114,6 +114,9 @@
 - 094 | Verified validation documentation links | 31 frontend/static module tests passed and README/master/checklist references resolve by text search | Status: Success
 - 095 | Implemented financial transaction CSV import slice | Added browser-local training CSV import with inferred column mapping, preview, accepted/rejected row counts, rejected-row reasons, parser/file/row provenance, imported graph generation, and imported fraud-ring detection/report contracts | Status: Success
 - 096 | Verified imported fraud workflow locally | 35 frontend/static module tests passed and local GitHub Pages Playwright passed for sample CSV load, preview, 8 accepted/1 rejected rows, imported fraud workflow, chart workspace, guided completion, and report preflight | Status: Success
+- 097 | Extended transaction import validation and mapping | Added JSON import, explicit field-mapping overrides, timezone and supported-currency validation, hard-negative legitimate processor/payroll/refund/shared-infrastructure benchmark handling, UI mapping controls, and Pages browser coverage; make test and local Pages Playwright passed | Status: Success
+- 098 | Persisted expanded nine-step implementation plan | Updated docs/implementation/i2-better-ai-execution-checklist.md with preamble, phase checklist, done conditions, tests, retrospectives, and deployment validation requirements for graph UX, charting, workspace, transforms, exploration, fraud, crime roles, predictive graph intelligence, and AI assistance | Status: Success
+- 099 | Implemented Step 1 graph visual customization slice | Added projection/unprojection helpers, layout checkpoint helper, presentation-only node icons/images, safe PNG/JPEG/WebP validation, saved layout visual metadata, requestAnimationFrame drag preview with pointerup commit, UI controls, unit tests, static assertions, and Pages/Main Playwright coverage | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -186,12 +189,15 @@
 - Workspace undo/redo now covers authoring metadata but not graph layout coordinates; graph layout history remains separate by design to preserve the analysis/workspace/view-state boundary.
 - Competitor/user-value validation shows users prize import, search, expansion, undo/redo, no-code query, timeline/geography, case collaboration, training, and broad data access; advanced AI must be grounded on these basics rather than substituting for them.
 - Browser-local CSV import is training-only on GitHub Pages; production ingestion still requires authorized upload, persistence, retention, audit, malware/content scanning, policy, and operational provenance.
+- JSON and explicit mapping improve training ingestion, but production import still needs server-side schema versioning, file scanning, persistence, actor/purpose audit, larger currency/timezone policy, and analyst-reviewed hard-negative calibration.
+- Graph custom visuals are presentation metadata and now survive saved layouts, but operational image upload still needs server-side scanning, persistence policy, retention, and accessibility review for non-text imagery before production use.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
-  - Test 1: Extend transaction import with JSON support, explicit field-mapping UI, unsupported currency/timezone validation, larger synthetic legitimate-processor benchmark, and calibration/overreliance tests.
-  - Test 2: Extend Phase B chart workspace with persisted visualization presets, annotation/report export semantics, weighted/evidence-aware temporal paths, and accessibility coverage for workspace actions.
-  - Test 3: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
+  - Test 1: Deploy and remotely verify the latest Pages training build containing transaction import JSON/mapping validation and Step 1 graph visual customization.
+  - Test 2: Continue transaction import with server-side authorized upload/persistence, larger calibrated hard-negative benchmarks, and analyst overreliance tests; local JSON support, explicit mapping UI, timezone/currency validation, and first legitimate-processor benchmark are complete.
+  - Test 3: Extend Phase B chart workspace with persisted visualization presets, annotation/report export semantics, weighted/evidence-aware temporal paths, and accessibility coverage for workspace actions.
+  - Test 4: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
   - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.
   - Test 2: Iterate against failed gates and contradictory evidence.

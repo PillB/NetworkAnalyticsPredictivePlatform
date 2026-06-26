@@ -17,7 +17,9 @@ import {
 import * as FinancialFraud from "../../packages/guided-workflow/financial-fraud.mjs";
 import {
   SAMPLE_TRANSACTION_CSV,
+  SAMPLE_TRANSACTION_JSON,
   createImportedFraudWorkflow,
+  parseTransactionInput,
   previewTransactionImport,
 } from "../../packages/guided-workflow/transaction-import.mjs";
 import {
@@ -27,6 +29,14 @@ import {
   graphSummary,
   semanticRows,
 } from "../../packages/graph-renderer/graph-model.mjs";
+import {
+  setNodeIcon,
+  setNodeImage,
+  resetNodeVisual,
+  pushLayoutCheckpoint,
+  snapshotGraphView,
+  validateNodeImage,
+} from "../../packages/graph-renderer/layout-model.mjs";
 import { renderGraph } from "../../packages/graph-renderer/svg-renderer.mjs";
 import {
   addAnnotation,
@@ -50,7 +60,7 @@ configureWorkbenchBootstrap(workbenchBootstrap);
 let activeUseCase = "harbor";
 let state = createInitialState();
 let activeInspectorTab = "evidence";
-let graphView = { positions: {}, rotation: 0, undo: [], redo: [] };
+let graphView = { positions: {}, rotation: 0, nodeVisuals: {}, undo: [], redo: [] };
 let chartWorkspace = createChartWorkspace();
 let importPreview = null;
 let importedFraudWorkflow = null;
@@ -64,6 +74,7 @@ const elements = Object.fromEntries(
     "windowDays", "labelDensity", "visualControls", "visualPopover", "spacing",
     "spacingOutput", "showCommunities", "highContrast", "rotateLeft", "rotateRight",
     "graphUndo", "graphRedo", "resetLayout", "resetAnalysis", "beforeGraph",
+    "nodeVisualTarget", "nodeIconPreset", "nodeImageUpload", "resetNodeVisual",
     "afterGraph", "graphComparison", "overlayPanel", "appearedCount", "missingCount",
     "inspectorContent", "splitConfidence", "communityInterpretation", "communityAlternative",
     "aliasIncluded", "communityCount", "membershipCount", "coverageValue", "reportPreview",
@@ -72,8 +83,8 @@ const elements = Object.fromEntries(
     "helpDialog", "closeHelp", "chartSearch", "pinFirstResult", "expandSelected",
     "findPath", "annotationText", "addAnnotation", "layoutName", "saveLayout",
     "restoreLayout", "workspaceUndo", "workspaceRedo", "chartSearchResults", "chartRows", "chartNotes",
-    "transactionImportPanel", "transactionCsv", "loadSampleCsv", "previewImport",
-    "applyImport", "importPreview",
+    "transactionImportPanel", "transactionFormat", "transactionCsv", "loadSampleCsv",
+    "loadSampleJson", "previewImport", "applyImport", "importPreview", "mappingControls",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -185,26 +196,24 @@ function graphSource() {
 }
 
 function snapshotLayout() {
-  return {
-    positions: structuredClone(graphView.positions),
-    rotation: graphView.rotation,
-  };
+  return snapshotGraphView(graphView);
 }
 
 function restoreLayout(snapshot) {
-  graphView = { ...graphView, positions: structuredClone(snapshot.positions), rotation: snapshot.rotation };
-}
-
-function pushLayoutHistory() {
   graphView = {
     ...graphView,
-    undo: [...graphView.undo, snapshotLayout()].slice(-20),
-    redo: [],
+    positions: structuredClone(snapshot.positions),
+    rotation: snapshot.rotation,
+    nodeVisuals: structuredClone(snapshot.nodeVisuals ?? graphView.nodeVisuals ?? {}),
   };
 }
 
+function pushLayoutHistory() {
+  graphView = pushLayoutCheckpoint(graphView);
+}
+
 function resetGraphView() {
-  graphView = { positions: {}, rotation: 0, undo: [], redo: [] };
+  graphView = { positions: {}, rotation: 0, nodeVisuals: {}, undo: [], redo: [] };
 }
 
 function renderSteps() {
@@ -268,12 +277,21 @@ function renderControls() {
   elements.spacingOutput.textContent = state.settings.spacing;
   elements.graphUndo.disabled = graphView.undo.length === 0;
   elements.graphRedo.disabled = graphView.redo.length === 0;
+  const currentTarget = elements.nodeVisualTarget.value || workflow.nodes[0]?.id || "";
+  elements.nodeVisualTarget.innerHTML = workflow.nodes
+    .map((node) => `<option value="${escapeHtml(node.id)}">${escapeHtml(node.label)}</option>`)
+    .join("");
+  elements.nodeVisualTarget.value = workflow.nodes.some((node) => node.id === currentTarget)
+    ? currentTarget
+    : workflow.nodes[0]?.id ?? "";
+  elements.nodeIconPreset.value = graphView.nodeVisuals[elements.nodeVisualTarget.value]?.icon ?? "default";
   document.documentElement.dataset.contrast = state.settings.highContrast ? "high" : "standard";
   document.querySelector(".version-chip").textContent = `Analysis v${state.analysisVersion}`;
 }
 
 function renderImportPreview() {
   if (activeUseCase !== "fraud") return;
+  renderMappingControls();
   elements.applyImport.disabled = !importPreview || importPreview.summary.accepted === 0;
   if (!importPreview) {
     elements.importPreview.innerHTML = `
@@ -290,9 +308,38 @@ function renderImportPreview() {
     .join("<br>") || "None";
   elements.importPreview.innerHTML = `
     <div class="workspace-item"><b>${importPreview.summary.accepted} accepted</b><small>${importPreview.summary.rejected} rejected of ${importPreview.summary.totalRows} rows</small></div>
-    <div class="workspace-item"><b>Mapped columns</b><small>${mapped || "No required columns mapped"}</small></div>
+    <div class="workspace-item"><b>${escapeHtml(importPreview.format.toUpperCase())} mapped fields</b><small>${mapped || "No required columns mapped"}</small></div>
     <div class="workspace-item"><b>Rejected rows</b><small>${escapeHtml(rejected)}</small></div>
   `;
+}
+
+function currentMappingOverrides() {
+  return Object.fromEntries(
+    [...elements.mappingControls.querySelectorAll("[data-mapping-field]")]
+      .map((select) => [select.dataset.mappingField, select.value])
+      .filter(([, value]) => value),
+  );
+}
+
+function renderMappingControls() {
+  const parsed = parseTransactionInput(elements.transactionCsv.value, { format: elements.transactionFormat.value });
+  const headers = parsed.headers ?? [];
+  const fields = ["id", "at", "origin", "destination", "amount", "currency", "type", "originKind", "destinationKind", "description"];
+  if (!headers.length) {
+    elements.mappingControls.innerHTML = `<div class="mapping-empty">Paste or load data to map fields.</div>`;
+    return;
+  }
+  const existing = currentMappingOverrides();
+  const options = (selected) => [
+    `<option value="">Infer</option>`,
+    ...headers.map((header) => `<option value="${escapeHtml(header)}" ${existing[selected] === header ? "selected" : ""}>${escapeHtml(header)}</option>`),
+  ].join("");
+  elements.mappingControls.innerHTML = fields.map((field) => `
+    <label>
+      <span>${escapeHtml(field)}</span>
+      <select data-mapping-field="${escapeHtml(field)}">${options(field)}</select>
+    </label>
+  `).join("");
 }
 
 function renderGraphs() {
@@ -306,9 +353,11 @@ function renderGraphs() {
     showCommunities: state.settings.showCommunities,
     positions: graphView.positions,
     rotation: graphView.rotation,
+    nodeVisuals: graphView.nodeVisuals,
     onSelect: selectRelationship,
     onNodeMoveStart: pushLayoutHistory,
-    onNodeMove: moveNode,
+    onNodeMovePreview: previewNodeMove,
+    onNodeMoveEnd: commitNodeMove,
   };
   renderGraph(elements.beforeGraph, summary.before, options);
   renderGraph(elements.afterGraph, summary.after, options);
@@ -537,7 +586,7 @@ function renderChartWorkspace() {
   const layouts = chartWorkspace.savedLayouts.map((layout) => `
     <div class="workspace-item">
       <b>${escapeHtml(layout.name)}</b>
-      <small>${Object.keys(layout.positions).length} moved nodes · ${layout.rotation}° rotation</small>
+      <small>${Object.keys(layout.positions).length} moved nodes · ${Object.keys(layout.nodeVisuals ?? {}).length} custom visuals · ${layout.rotation}° rotation</small>
     </div>
   `).join("");
   elements.chartNotes.innerHTML = notes || layouts
@@ -569,18 +618,26 @@ function selectRelationship(id) {
   setStatus(`Selected ${activeWorkflow().relationshipById(id).source}`);
 }
 
-function moveNode(id, position) {
+function clampPosition(position) {
+  return {
+    x: Math.max(4, Math.min(96, position.x)),
+    y: Math.max(4, Math.min(96, position.y)),
+  };
+}
+
+function previewNodeMove(id, position) {
   graphView = {
     ...graphView,
     positions: {
       ...graphView.positions,
-      [id]: {
-        x: Math.max(4, Math.min(96, position.x)),
-        y: Math.max(4, Math.min(96, position.y)),
-      },
+      [id]: clampPosition(position),
     },
   };
-  renderGraphs();
+}
+
+function commitNodeMove(id, position) {
+  previewNodeMove(id, position);
+  render();
   setStatus(`Moved ${activeWorkflow().nodeById(id).label} in the view only`);
 }
 
@@ -685,13 +742,35 @@ elements.scopeToggle.addEventListener("click", () => {
   elements.scopeToggle.setAttribute("aria-expanded", String(!elements.scopeDrawer.hidden));
 });
 elements.loadSampleCsv.addEventListener("click", () => {
+  elements.transactionFormat.value = "csv";
   elements.transactionCsv.value = SAMPLE_TRANSACTION_CSV;
   importPreview = null;
   renderImportPreview();
   setStatus("Sample transaction CSV loaded for preview");
 });
+elements.loadSampleJson.addEventListener("click", () => {
+  elements.transactionFormat.value = "json";
+  elements.transactionCsv.value = SAMPLE_TRANSACTION_JSON;
+  importPreview = null;
+  renderImportPreview();
+  setStatus("Sample transaction JSON loaded for preview");
+});
+elements.transactionFormat.addEventListener("change", () => {
+  importPreview = null;
+  renderImportPreview();
+  setStatus(`${elements.transactionFormat.value.toUpperCase()} import mode selected`);
+});
+elements.transactionCsv.addEventListener("input", () => {
+  importPreview = null;
+  renderMappingControls();
+});
 elements.previewImport.addEventListener("click", () => {
-  importPreview = previewTransactionImport(elements.transactionCsv.value, { fileName: "training-transactions.csv" });
+  const format = elements.transactionFormat.value;
+  importPreview = previewTransactionImport(elements.transactionCsv.value, {
+    format,
+    fileName: `training-transactions.${format}`,
+    mapping: currentMappingOverrides(),
+  });
   renderImportPreview();
   setStatus(`Import preview: ${importPreview.summary.accepted} accepted, ${importPreview.summary.rejected} rejected`);
 });
@@ -733,6 +812,51 @@ elements.resetLayout.addEventListener("click", () => {
   graphView = { ...graphView, positions: {}, rotation: 0 };
   render();
   setStatus("Graph layout reset to the recommended baseline");
+});
+elements.nodeVisualTarget.addEventListener("change", () => {
+  elements.nodeIconPreset.value = graphView.nodeVisuals[elements.nodeVisualTarget.value]?.icon ?? "default";
+});
+elements.nodeIconPreset.addEventListener("change", (event) => {
+  const nodeId = elements.nodeVisualTarget.value;
+  pushLayoutHistory();
+  graphView = setNodeIcon(graphView, nodeId, event.target.value);
+  render();
+  setStatus(`Presentation icon updated for ${activeWorkflow().nodeById(nodeId).label}`);
+});
+elements.nodeImageUpload.addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  const nodeId = elements.nodeVisualTarget.value;
+  if (!file) return;
+  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const validation = validateNodeImage({ type: file.type, size: file.size, bytes });
+  if (!validation.accepted) {
+    event.target.value = "";
+    setStatus(validation.reason);
+    return;
+  }
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(file);
+  });
+  pushLayoutHistory();
+  graphView = setNodeImage(graphView, nodeId, {
+    dataUrl,
+    type: file.type,
+    name: file.name,
+    size: file.size,
+  });
+  event.target.value = "";
+  render();
+  setStatus(`Presentation image updated for ${activeWorkflow().nodeById(nodeId).label}`);
+});
+elements.resetNodeVisual.addEventListener("click", () => {
+  const nodeId = elements.nodeVisualTarget.value;
+  pushLayoutHistory();
+  graphView = resetNodeVisual(graphView, nodeId);
+  render();
+  setStatus(`Presentation visual reset for ${activeWorkflow().nodeById(nodeId).label}`);
 });
 elements.chartSearch.addEventListener("input", (event) => {
   chartWorkspace = { ...chartWorkspace, query: event.target.value };
@@ -794,7 +918,12 @@ elements.restoreLayout.addEventListener("click", () => {
   const layout = selectedLayout(chartWorkspace);
   if (!layout) return;
   pushLayoutHistory();
-  graphView = { ...graphView, positions: structuredClone(layout.positions), rotation: layout.rotation };
+  graphView = {
+    ...graphView,
+    positions: structuredClone(layout.positions),
+    rotation: layout.rotation,
+    nodeVisuals: structuredClone(layout.nodeVisuals ?? graphView.nodeVisuals ?? {}),
+  };
   render();
   setStatus(`Restored saved layout: ${layout.name}`);
 });
