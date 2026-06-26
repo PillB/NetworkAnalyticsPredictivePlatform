@@ -327,7 +327,16 @@
                 <option value="entity">Entity</option>
               </select>
             </label>
+            <label>
+              <span>Node style</span>
+              <select id="manualEntityStyle">
+                <option value="slate">Slate</option>
+                <option value="accent">Accent</option>
+                <option value="warning">Warning</option>
+              </select>
+            </label>
             <button class="button secondary" id="addManualEntity" type="button">Add entity</button>
+            <button class="button secondary" id="moveManualEntity" type="button">Move item</button>
             <label>
               <span>Link from</span>
               <select id="manualEdgeSource"></select>
@@ -353,6 +362,11 @@
             <button class="button secondary" id="restoreRedactions" type="button">Restore redactions</button>
             <button class="button primary" id="exportChart" type="button">Export chart</button>
           </div>
+          <article class="manual-chart-surface" aria-labelledby="manual-chart-title">
+            <h3 id="manual-chart-title">Briefing chart canvas</h3>
+            <svg id="manualChartCanvas" role="img" aria-label="Manual briefing chart items and analyst-created links"></svg>
+            <p>Manual nodes and links are briefing visuals only. They do not become evidence.</p>
+          </article>
           <div class="chart-workspace-grid">
             <article>
               <h3>Search results</h3>

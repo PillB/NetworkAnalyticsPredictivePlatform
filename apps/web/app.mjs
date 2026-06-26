@@ -57,6 +57,7 @@ import {
   expandNeighbors,
   exportBriefingChart,
   explainPath,
+  moveManualEntity,
   pinSearchResult,
   redactChartItem,
   redoWorkspaceChange,
@@ -101,12 +102,12 @@ const elements = Object.fromEntries(
     "findPath", "annotationText", "addAnnotation", "layoutName", "saveLayout",
     "restoreLayout", "workspaceUndo", "workspaceRedo", "chartSearchResults", "chartRows", "chartNotes",
     "manualEntityLabel", "manualEntityType", "addManualEntity", "manualEdgeSource", "manualEdgeTarget",
-    "manualEdgeLabel", "manualEdgeStyle", "addManualEdge", "redactChartItem", "restoreRedactions", "exportChart",
+    "manualEntityStyle", "moveManualEntity", "manualEdgeLabel", "manualEdgeStyle", "addManualEdge", "redactChartItem", "restoreRedactions", "exportChart",
     "transactionImportPanel", "transactionFormat", "transactionCsv", "loadSampleCsv",
     "loadSampleJson", "previewImport", "applyImport", "importPreview", "mappingControls",
     "scopePurpose", "scopePeriod", "scopeFocus", "scopeReason", "beforePeriodLabel",
     "afterPeriodLabel", "beforeKnownAt", "afterKnownAt", "modelGatePanel", "assistantPrompt",
-    "askAssistant", "draftReport", "redTeamDraft", "assistantOutput",
+    "askAssistant", "draftReport", "redTeamDraft", "assistantOutput", "manualChartCanvas",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -638,6 +639,35 @@ function chartSearchResults() {
   return searchGraph(chartWorkspace.query, graphSource(), state.settings);
 }
 
+function chartNodePoint(id) {
+  const manual = (chartWorkspace.manualEntities ?? []).find((entity) => entity.id === id);
+  if (manual) return { x: Number(manual.x ?? 50), y: Number(manual.y ?? 50), label: manual.label };
+  const node = activeWorkflow().nodeById(id);
+  return node ? { x: Number(node.x ?? 50), y: Number(node.y ?? 50), label: node.label } : null;
+}
+
+function renderManualChartCanvas() {
+  const redacted = new Set(chartWorkspace.redactedItemIds ?? []);
+  const manualEdges = (chartWorkspace.manualEdges ?? [])
+    .map((edge) => ({ edge, source: chartNodePoint(edge.sourceId), target: chartNodePoint(edge.targetId) }))
+    .filter((item) => item.source && item.target);
+  const manualEntities = chartWorkspace.manualEntities ?? [];
+  const edgeMarkup = manualEdges.map(({ edge, source, target }) => `
+    <g class="manual-chart-edge style-${escapeHtml(edge.style)}" data-manual-edge-id="${escapeHtml(edge.id)}">
+      <line x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}"></line>
+      <text x="${(source.x + target.x) / 2}" y="${(source.y + target.y) / 2 - 2}">${escapeHtml(redacted.has(edge.id) ? "Redacted link" : edge.label)}</text>
+    </g>
+  `).join("");
+  const entityMarkup = manualEntities.map((entity) => `
+    <g class="manual-chart-node style-${escapeHtml(redacted.has(entity.id) ? "redacted" : entity.style ?? "slate")}" data-manual-entity-id="${escapeHtml(entity.id)}">
+      <circle cx="${entity.x}" cy="${entity.y}" r="4.8"></circle>
+      <text x="${entity.x}" y="${Number(entity.y) + 8.5}" text-anchor="middle">${escapeHtml(redacted.has(entity.id) ? "Redacted item" : entity.label)}</text>
+    </g>
+  `).join("");
+  elements.manualChartCanvas.setAttribute("viewBox", "0 0 100 100");
+  elements.manualChartCanvas.innerHTML = `${edgeMarkup}${entityMarkup}`;
+}
+
 function renderChartWorkspace() {
   const results = chartSearchResults();
   const rows = semanticChartRows(chartWorkspace, graphSource());
@@ -652,6 +682,7 @@ function renderChartWorkspace() {
   elements.manualEdgeSource.innerHTML = edgeOptions;
   elements.manualEdgeTarget.innerHTML = edgeOptions;
   if (selectableRows[1]) elements.manualEdgeTarget.value = selectableRows[1].id;
+  renderManualChartCanvas();
   elements.chartSearchResults.innerHTML = results.length
     ? results.map((result, index) => `
       <button class="workspace-item" type="button" data-chart-result="${index}">
@@ -1016,10 +1047,25 @@ elements.addAnnotation.addEventListener("click", () => {
 });
 elements.addManualEntity.addEventListener("click", () => {
   const before = chartWorkspace.manualEntities.length;
-  chartWorkspace = commitWorkspaceChange(chartWorkspace, addManualEntity(chartWorkspace, elements.manualEntityLabel.value, elements.manualEntityType.value));
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, addManualEntity(
+    chartWorkspace,
+    elements.manualEntityLabel.value,
+    elements.manualEntityType.value,
+    { style: elements.manualEntityStyle.value },
+  ));
   elements.manualEntityLabel.value = "";
   renderChartWorkspace();
   setStatus(chartWorkspace.manualEntities.length > before ? "Manual chart entity added as analyst-created, not evidence" : "Manual entity label was empty");
+});
+elements.moveManualEntity.addEventListener("click", () => {
+  const targetId = chartWorkspace.manualEntities[0]?.id;
+  if (!targetId) {
+    setStatus("No manual chart entity to move");
+    return;
+  }
+  chartWorkspace = commitWorkspaceChange(chartWorkspace, moveManualEntity(chartWorkspace, targetId, 9, 6));
+  renderChartWorkspace();
+  setStatus("Manual chart entity moved as presentation coordinates only");
 });
 elements.addManualEdge.addEventListener("click", () => {
   const before = chartWorkspace.manualEdges.length;

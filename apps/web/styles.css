@@ -577,13 +577,39 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 }
 .chart-authoring-tools {
   display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) minmax(105px, .6fr) max-content minmax(120px, .7fr) minmax(120px, .7fr) minmax(150px, 1fr) minmax(105px, .6fr) max-content max-content max-content max-content;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(95px, .6fr) minmax(95px, .6fr) max-content max-content minmax(110px, .7fr) minmax(110px, .7fr) minmax(140px, 1fr) minmax(95px, .6fr) max-content max-content max-content max-content;
   gap: 9px;
   align-items: end;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
+.manual-chart-surface {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8faf7;
+}
+.manual-chart-surface h3 { margin: 0 0 8px; font: 15px var(--font-display); }
+.manual-chart-surface svg {
+  display: block;
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid #d9dfd8;
+  border-radius: 8px;
+  background: #fffef9;
+}
+.manual-chart-surface p { margin: 8px 0 0; color: var(--muted); font-size: 10px; }
+.manual-chart-node circle { stroke: white; stroke-width: 1.2; }
+.manual-chart-node.style-slate circle { fill: #526070; }
+.manual-chart-node.style-accent circle { fill: #246b8f; }
+.manual-chart-node.style-warning circle { fill: #9b7b36; }
+.manual-chart-node.style-redacted circle { fill: #a3a7a9; stroke-dasharray: 1 1; }
+.manual-chart-node text, .manual-chart-edge text { fill: var(--ink); font-size: 3.1px; font-weight: 750; }
+.manual-chart-edge line { stroke: #6d7681; stroke-width: 1.1; }
+.manual-chart-edge.style-dashed line { stroke-dasharray: 2 1.5; }
+.manual-chart-edge.style-emphasis line { stroke: #111827; stroke-width: 2; }
 .chart-authoring-tools label > span {
   display: block;
   margin-bottom: 4px;

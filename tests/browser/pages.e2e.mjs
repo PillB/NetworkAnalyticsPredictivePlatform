@@ -146,17 +146,23 @@ try {
     assert.match(await page.locator("#chartNotes").innerText(), /analyst annotation/i);
     await page.locator("#manualEntityLabel").fill("Briefing only account");
     await page.locator("#manualEntityType").selectOption("account");
+    await page.locator("#manualEntityStyle").selectOption("accent");
     await page.locator("#addManualEntity").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Manual chart entity added/i);
     assert.match(await page.locator("#chartRows").innerText(), /Briefing only account/i);
+    assert.ok(await page.locator('.manual-chart-node.style-accent[data-manual-entity-id="manual-entity-1"]').count() >= 1);
+    await page.locator("#moveManualEntity").click();
+    assert.match(await page.locator("#statusMessage").textContent(), /presentation coordinates/i);
     await page.locator("#manualEdgeSource").selectOption("manual-entity-1");
     await page.locator("#manualEdgeTarget").selectOption("acct-777");
     await page.locator("#manualEdgeLabel").fill("briefing-only link");
     await page.locator("#manualEdgeStyle").selectOption("dashed");
     await page.locator("#addManualEdge").click();
     assert.match(await page.locator("#chartRows").innerText(), /briefing-only link/i);
+    assert.ok(await page.locator('.manual-chart-edge.style-dashed[data-manual-edge-id="manual-edge-1"]').count() >= 1);
     await page.locator("#redactChartItem").click();
     assert.match(await page.locator("#chartRows").innerText(), /Redacted chart item/i);
+    assert.match(await page.locator("#manualChartCanvas").textContent(), /Redacted item/i);
     assert.match(await page.locator("#chartNotes").innerText(), /blocked/i);
     const [chartDownload] = await Promise.all([
       page.waitForEvent("download"),

@@ -12,6 +12,7 @@ import {
   expandNeighbors,
   exportBriefingChart,
   explainPath,
+  moveManualEntity,
   pinSearchResult,
   redactChartItem,
   redoWorkspaceChange,
@@ -96,8 +97,18 @@ test("manual chart reducer covers entity, edge, style, redaction, and removal", 
   workspace = addManualEntity(workspace, "Briefing Person", "person");
   workspace = addManualEntity(workspace, "Briefing Account", "account");
   assert.equal(workspace.manualEntities.length, 2);
-  workspace = editManualEntity(workspace, "manual-entity-1", { label: "Briefing Source", type: "person" });
+  workspace = editManualEntity(workspace, "manual-entity-1", { label: "Briefing Source", type: "person", style: "accent", x: 41, y: 52 });
   assert.equal(workspace.manualEntities[0].label, "Briefing Source");
+  assert.equal(workspace.manualEntities[0].style, "accent");
+  assert.deepEqual(
+    { x: workspace.manualEntities[0].x, y: workspace.manualEntities[0].y },
+    { x: 41, y: 52 },
+  );
+  workspace = moveManualEntity(workspace, "manual-entity-1", 8, -7);
+  assert.deepEqual(
+    { x: workspace.manualEntities[0].x, y: workspace.manualEntities[0].y },
+    { x: 49, y: 45 },
+  );
 
   workspace = addManualEdge(workspace, "manual-entity-1", "manual-entity-2", "briefing link");
   assert.equal(workspace.manualEdges[0].evidenceStatus, "not evidence");
@@ -130,5 +141,7 @@ test("briefing chart export blocks unsupported factual claims and preserves prov
   assert.ok(exported.unsupportedClaims.includes("manual-edge-1"));
   assert.ok(exported.provenance.pathDependencies.length >= 1);
   assert.equal(exported.manualEntities[0].label, "Redacted chart item");
+  assert.equal(exported.manualEntities[0].x, null);
+  assert.equal(exported.manualEntities[0].style, "redacted");
   assert.match(exported.provenance.warning, /not evidence/i);
 });

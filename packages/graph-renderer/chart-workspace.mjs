@@ -28,6 +28,12 @@ function unique(values) {
   return [...new Set(values)];
 }
 
+function clampCoordinate(value, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(5, Math.min(95, number));
+}
+
 function withoutHistory(workspace) {
   const {
     undoStack: _undoStack,
@@ -207,9 +213,10 @@ export function addAnnotation(workspace, text, targetId) {
   };
 }
 
-export function addManualEntity(workspace, label, type = "entity") {
+export function addManualEntity(workspace, label, type = "entity", options = {}) {
   const clean = String(label ?? "").trim();
   if (!clean) return workspace;
+  const index = (workspace.manualEntities ?? []).length;
   const entity = {
     id: nextId("manual-entity", workspace.manualEntities ?? []),
     label: clean,
@@ -217,6 +224,9 @@ export function addManualEntity(workspace, label, type = "entity") {
     role: "analyst-created chart entity",
     classification: "analyst chart item",
     evidenceStatus: "not evidence",
+    x: clampCoordinate(options.x, 28 + (index % 4) * 14),
+    y: clampCoordinate(options.y, 28 + Math.floor(index / 4) * 14),
+    style: String(options.style ?? "slate").trim() || "slate",
   };
   return {
     ...workspace,
@@ -232,9 +242,21 @@ export function editManualEntity(workspace, entityId, updates = {}) {
           ...entity,
           label: String(updates.label ?? entity.label).trim() || entity.label,
           type: String(updates.type ?? entity.type).trim().toLowerCase() || entity.type,
+          style: String(updates.style ?? entity.style ?? "slate").trim() || "slate",
+          x: clampCoordinate(updates.x, entity.x ?? 50),
+          y: clampCoordinate(updates.y, entity.y ?? 50),
         }
       : entity),
   };
+}
+
+export function moveManualEntity(workspace, entityId, deltaX = 0, deltaY = 0) {
+  const entity = (workspace.manualEntities ?? []).find((item) => item.id === entityId);
+  if (!entity) return workspace;
+  return editManualEntity(workspace, entityId, {
+    x: Number(entity.x ?? 50) + Number(deltaX ?? 0),
+    y: Number(entity.y ?? 50) + Number(deltaY ?? 0),
+  });
 }
 
 export function removeManualEntity(workspace, entityId) {
@@ -354,6 +376,9 @@ export function exportBriefingChart(workspace, source, settings) {
     id: entity.id,
     label: redacted.has(entity.id) ? "Redacted chart item" : entity.label,
     type: entity.type,
+    x: redacted.has(entity.id) ? null : entity.x,
+    y: redacted.has(entity.id) ? null : entity.y,
+    style: redacted.has(entity.id) ? "redacted" : entity.style,
     evidenceStatus: entity.evidenceStatus,
     redacted: redacted.has(entity.id),
   }));

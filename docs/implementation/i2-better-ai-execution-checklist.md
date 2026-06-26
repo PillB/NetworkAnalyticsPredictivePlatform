@@ -141,18 +141,25 @@ Current implementation evidence:
 - Implemented manual chart entities, manual chart links, link styling,
   briefing annotations, redacted chart rows, briefing JSON export metadata, and
   unsupported-claim blocking for manual items.
+- Added an independent briefing chart canvas for analyst-created manual nodes
+  and links, including presentation-only node coordinates, node style, link
+  style, and move controls separate from evidence and analysis versions.
+- Redacted briefing exports suppress manual entity coordinates and style values
+  for redacted items instead of preserving layout-sensitive presentation
+  metadata.
 - Tests cover reducer add/edit/remove entity, add/edit/remove edge, annotation,
-  redaction, undo/redo, briefing export provenance, local Pages preview, and
-  main browser journey.
+  redaction, undo/redo, coordinate/style edits, briefing export provenance,
+  local Pages preview, and main browser journey.
 
 Remaining gaps:
 
 - Redacted chart views are still browser-session training artifacts, not
   persisted server-side review packets.
-- Manual chart entities are listed in the semantic workspace, but not yet drawn
-  as a separate editable chart canvas with independent coordinates.
 - Redaction needs production authorization, dissemination policy, and export
   retention controls before operational use.
+- Canvas movement is controlled by a deterministic move button in the training
+  MVP; production-grade freeform drag handles, snap/grid alignment, print layout,
+  and multi-page chart packets remain future work.
 
 ### Step 3 — Linkurious-style investigation workspace parity
 
