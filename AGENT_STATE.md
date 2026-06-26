@@ -117,6 +117,7 @@
 - 097 | Extended transaction import validation and mapping | Added JSON import, explicit field-mapping overrides, timezone and supported-currency validation, hard-negative legitimate processor/payroll/refund/shared-infrastructure benchmark handling, UI mapping controls, and Pages browser coverage; make test and local Pages Playwright passed | Status: Success
 - 098 | Persisted expanded nine-step implementation plan | Updated docs/implementation/i2-better-ai-execution-checklist.md with preamble, phase checklist, done conditions, tests, retrospectives, and deployment validation requirements for graph UX, charting, workspace, transforms, exploration, fraud, crime roles, predictive graph intelligence, and AI assistance | Status: Success
 - 099 | Implemented Step 1 graph visual customization slice | Added projection/unprojection helpers, layout checkpoint helper, presentation-only node icons/images, safe PNG/JPEG/WebP validation, saved layout visual metadata, requestAnimationFrame drag preview with pointerup commit, UI controls, unit tests, static assertions, and Pages/Main Playwright coverage | Status: Success
+- 100 | Deployed and remotely verified latest training build | Pushed commits e875dec and bac6b64 to main; public GitHub Actions run 28218260529 for bac6b64 completed successfully; remote HTTPS Playwright passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform/ including JSON import and graph visual customization flow | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -191,13 +192,13 @@
 - Browser-local CSV import is training-only on GitHub Pages; production ingestion still requires authorized upload, persistence, retention, audit, malware/content scanning, policy, and operational provenance.
 - JSON and explicit mapping improve training ingestion, but production import still needs server-side schema versioning, file scanning, persistence, actor/purpose audit, larger currency/timezone policy, and analyst-reviewed hard-negative calibration.
 - Graph custom visuals are presentation metadata and now survive saved layouts, but operational image upload still needs server-side scanning, persistence policy, retention, and accessibility review for non-text imagery before production use.
+- Git push and public Actions inspection worked, but `gh auth status` reports an invalid PillB token; future GitHub connector/CLI workflows that require authenticated `gh` need reauthentication even though HTTPS push succeeded this turn.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development
-  - Test 1: Deploy and remotely verify the latest Pages training build containing transaction import JSON/mapping validation and Step 1 graph visual customization.
-  - Test 2: Continue transaction import with server-side authorized upload/persistence, larger calibrated hard-negative benchmarks, and analyst overreliance tests; local JSON support, explicit mapping UI, timezone/currency validation, and first legitimate-processor benchmark are complete.
-  - Test 3: Extend Phase B chart workspace with persisted visualization presets, annotation/report export semantics, weighted/evidence-aware temporal paths, and accessibility coverage for workspace actions.
-  - Test 4: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
+  - Test 1: Continue transaction import with server-side authorized upload/persistence, larger calibrated hard-negative benchmarks, and analyst overreliance tests; local JSON support, explicit mapping UI, timezone/currency validation, and first legitimate-processor benchmark are complete.
+  - Test 2: Extend Phase B chart workspace with persisted visualization presets, annotation/report export semantics, weighted/evidence-aware temporal paths, and accessibility coverage for workspace actions.
+  - Test 3: Start crime-organization detection/prediction layer: role hypotheses, temporal motifs, bridge/intermediary warnings, deterministic baselines, and gated TGNN/GNN evaluation harness.
 - [ ] Next Step: Phase 5 — evaluation, iteration, and documentation
   - Test 1: Execute correctness, lineage, robustness, calibration, performance, accessibility, and user-journey evaluations.
   - Test 2: Iterate against failed gates and contradictory evidence.
