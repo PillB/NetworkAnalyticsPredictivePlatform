@@ -13,10 +13,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
+from uuid import UUID, uuid5
 
 
 DEFAULT_ALLOWED_ORIGIN = "https://pillb.github.io"
 DEFAULT_ACCOUNTS_PATH = "local-demo-accounts.txt"
+DEMO_ID_NAMESPACE = UUID("370ec18d-1209-5e7e-b9e9-2cf17a5721e4")
 
 
 @dataclass(frozen=True)
@@ -37,6 +39,7 @@ class DemoSecurityConfig:
     token_ttl_seconds: int
     postgres_dsn: str | None
     require_postgres_tls: bool
+    workbench_source: str
 
     @classmethod
     def from_env(cls) -> "DemoSecurityConfig":
@@ -58,6 +61,7 @@ class DemoSecurityConfig:
             token_ttl_seconds=int(os.environ.get("NAPP_DEMO_TOKEN_TTL_SECONDS", "3600")),
             postgres_dsn=os.environ.get("NAPP_POSTGRES_DSN"),
             require_postgres_tls=os.environ.get("NAPP_DEMO_REQUIRE_POSTGRES_TLS", "1") != "0",
+            workbench_source=os.environ.get("NAPP_DEMO_WORKBENCH_SOURCE", "synthetic").strip().lower(),
         )
 
 
@@ -153,6 +157,16 @@ def authenticate_demo_account(username: str, password: str, config: DemoSecurity
     return account
 
 
+def demo_context_uuid(kind: str, value: str) -> UUID:
+    clean_kind = kind.strip()
+    clean_value = value.strip()
+    if clean_kind not in {"actor", "purpose"}:
+        raise ValueError("demo context kind must be actor or purpose")
+    if not clean_value:
+        raise ValueError("demo context value must be non-empty")
+    return uuid5(DEMO_ID_NAMESPACE, f"{clean_kind}:{clean_value}")
+
+
 def validate_postgres_transport_security(dsn: str | None, *, required: bool = True) -> dict[str, Any]:
     if not dsn:
         return {
@@ -193,6 +207,7 @@ def demo_security_status(config: DemoSecurityConfig) -> dict[str, Any]:
         config.auth_required and not config.token_secret and "NAPP_DEMO_TOKEN_SECRET is required",
         config.auth_required and not config.accounts_path.exists() and "demo accounts file is missing",
         not config.allowed_origins and "at least one allowed origin is required",
+        config.workbench_source not in {"synthetic", "postgres"} and "NAPP_DEMO_WORKBENCH_SOURCE must be synthetic or postgres",
         config.require_postgres_tls and not postgres_tls["passed"] and "PostgreSQL TLS validation failed",
     ]
     return {
@@ -201,6 +216,7 @@ def demo_security_status(config: DemoSecurityConfig) -> dict[str, Any]:
         "allowedOrigins": list(config.allowed_origins),
         "accountsFileConfigured": config.accounts_path.exists(),
         "tokenTtlSeconds": config.token_ttl_seconds,
+        "workbenchSource": config.workbench_source,
         "postgresTls": postgres_tls,
         "rlsBoundary": "transaction-local SET LOCAL app.actor_id/app.purpose_id/app.authorized_case_ids",
         "browserToDatabase": "prohibited",

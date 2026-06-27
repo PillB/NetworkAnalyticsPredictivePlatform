@@ -64,10 +64,12 @@ def harbor_lantern_training_authorization(
 
 def build_harbor_lantern_workbench(
     authorization: AuthorizationContext,
+    *,
+    repository: Any | None = None,
 ) -> WorkbenchBootstrap:
     fixture = load_harbor_lantern_fixture()
     scope = fixture["case"]["scope"]
-    service = AnalysisService(harbor_lantern_repository(), build_lineage)
+    service = AnalysisService(repository or harbor_lantern_repository(), build_lineage)
     manifest = harbor_lantern_manifest()
 
     def query(start_key: str, end_key: str) -> TemporalWindowQuery:

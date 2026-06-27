@@ -70,6 +70,22 @@ export NAPP_DEMO_REQUIRE_POSTGRES_TLS=1
 export NAPP_POSTGRES_DSN='postgresql://demo_app:REDACTED@localhost:5432/napp?sslmode=verify-full&sslrootcert=/absolute/path/to/root.crt'
 ```
 
+By default the workbench endpoint serves the synthetic training projection:
+
+```bash
+export NAPP_DEMO_WORKBENCH_SOURCE=synthetic
+```
+
+To require PostgreSQL-backed workbench reads for the demo, opt in explicitly:
+
+```bash
+export NAPP_DEMO_WORKBENCH_SOURCE=postgres
+```
+
+In `postgres` mode, fallback to the synthetic bundle is a failure. If the live
+probe does not pass, `/v1/cases/harbor-lantern/workbench` returns a 503
+`postgres_demo_not_ready` structured error with the failed TLS/RLS/role checks.
+
 Then start the API:
 
 ```bash
@@ -148,13 +164,18 @@ The live PostgreSQL probe should show:
 - `details.forcedRlsTableCount` equal to `details.nappTableCount`;
 - `details.transactionLocalContextSet: true`.
 
+If `NAPP_DEMO_WORKBENCH_SOURCE=postgres`, the workbench endpoint must also
+return `WorkbenchBootstrapV1` from the PostgreSQL repository path. A response
+from the synthetic training bundle in this mode should be treated as a failed
+demo validation, not a success.
+
 ## Current Limits
 
 - Demo credentials are file-backed and intended only for local demonstration.
 - The API bridge does not replace production OIDC/PKCE.
-- The current workbench endpoint still returns the synthetic Harbor Lantern
-  training projection. The repository already contains PostgreSQL
-  import/reconstruction and RLS helpers; promoting the workbench endpoint to
-  read operational cases from PostgreSQL remains a separate controlled slice.
+- The workbench endpoint defaults to the synthetic Harbor Lantern training
+  projection. PostgreSQL-backed workbench reads are available only when
+  `NAPP_DEMO_WORKBENCH_SOURCE=postgres` is set and the live security probe
+  passes; otherwise the endpoint fails closed instead of falling back.
 - Real deployments need managed secrets, certificate rotation, monitoring,
   rate limits, audit retention, and incident-response controls.

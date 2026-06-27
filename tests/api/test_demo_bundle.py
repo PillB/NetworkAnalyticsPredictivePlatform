@@ -7,6 +7,7 @@ from apps.api.demo_bundle import (
     build_harbor_lantern_workbench,
     harbor_lantern_training_authorization,
 )
+from apps.api.temporal.fixtures import harbor_lantern_repository
 
 
 class DemoBundleTests(unittest.TestCase):
@@ -90,6 +91,17 @@ class DemoBundleTests(unittest.TestCase):
             json.dumps(first, sort_keys=True, separators=(",", ":")),
             json.dumps(second, sort_keys=True, separators=(",", ":")),
         )
+
+    def test_builder_accepts_explicit_repository_without_contract_drift(self) -> None:
+        default_payload = build_harbor_lantern_workbench(self.authorization()).to_dict()
+        injected_payload = build_harbor_lantern_workbench(
+            self.authorization(),
+            repository=harbor_lantern_repository(),
+        ).to_dict()
+
+        self.assertEqual(injected_payload["contract"], "WorkbenchBootstrapV1")
+        self.assertEqual(injected_payload["after_projection"], default_payload["after_projection"])
+        self.assertEqual(injected_payload["relationships"], default_payload["relationships"])
 
 
 if __name__ == "__main__":

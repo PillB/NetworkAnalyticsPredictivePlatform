@@ -142,6 +142,8 @@
 - 122 | Implemented secure hybrid GitHub Pages demo bridge | Added ignored local demo accounts, Pages login controls, HTTPS-only demo API client, origin-bound FastAPI login/token bridge, PostgreSQL TLS config checks, protected live TLS/role/forced-RLS/context probe, and secure-hybrid deployment docs | Status: Success
 - 123 | Validated secure hybrid demo bridge locally | npm test passed 81 frontend tests; make test-python passed; static/API/Pages Playwright and accessibility passed after localhost escalation; make test-all passed including live PostgreSQL 18 integration | Status: Success
 - 124 | Deployed and remotely validated secure hybrid bridge commit | Pushed 5707060 to main; GitHub Pages Actions run 28275515575 succeeded; remote HTTPS Pages Playwright passed against https://pillb.github.io/NetworkAnalyticsPredictivePlatform | Status: Success
+- 125 | Added fail-closed PostgreSQL workbench source mode | Added NAPP_DEMO_WORKBENCH_SOURCE=postgres, deterministic demo actor/purpose UUID mapping, repository injection for the workbench builder, and 503 postgres_demo_not_ready behavior when the live TLS/RLS probe fails; synthetic fallback in PostgreSQL mode is now a test failure | Status: Success
+- 126 | Validated PostgreSQL workbench source mode locally | Focused API tests passed positive PostgreSQL repository routing and negative no-fallback behavior; npm test and make test-python passed; make test-all passed static/API browser, accessibility, Pages preview, and live PostgreSQL 18 integration | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -234,6 +236,7 @@
 - Browser JavaScript must never connect directly to PostgreSQL or hold database credentials; the only supported GitHub Pages hybrid demo pattern is browser to HTTPS API bridge to PostgreSQL.
 - The hybrid demo bridge now verifies configuration and live database posture, but it still serves the synthetic training workbench projection. Promoting operational PostgreSQL-backed case reads requires a separate controlled service slice with persistent identity, audit, retention, and monitoring.
 - File-backed demo accounts are acceptable only for local demonstration. Shared demos require managed secrets, short-lived credentials, rate limits, TLS certificate rotation, audit retention, and incident-response controls.
+- A PostgreSQL-mode demo that falls back to synthetic data is not a successful validation. Explicit PostgreSQL source mode must either serve through the PostgreSQL repository after passing the live probe or fail closed with structured reasons.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development

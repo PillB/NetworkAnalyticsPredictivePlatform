@@ -8,6 +8,7 @@ from typing import Any
 from .demo_security import (
     DemoSecurityConfig,
     authenticate_demo_account,
+    demo_context_uuid,
     demo_security_status,
     issue_demo_token,
     origin_allowed,
@@ -96,6 +97,67 @@ def create_app() -> Any:
             return verify_demo_token(token, demo_config)
         except ValueError as exc:
             raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    def _postgres_workbench(authorization: Any) -> dict[str, Any]:
+        if demo_config.workbench_source != "postgres":
+            return build_harbor_lantern_workbench(authorization).to_dict()
+        probe = postgres_runtime_security_probe(demo_config)
+        if not probe["passed"]:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "contract": "StructuredErrorV1",
+                    "error": {
+                        "code": "postgres_demo_not_ready",
+                        "message": "PostgreSQL workbench source is enabled but the secure runtime probe failed.",
+                        "status": 503,
+                        "retryable": True,
+                        "details": {
+                            "failures": probe["failures"],
+                            "transport": probe["transport"],
+                        },
+                        "recovery": [
+                            "Configure NAPP_POSTGRES_DSN with sslmode=verify-full and sslrootcert.",
+                            "Use a non-superuser role without BYPASSRLS.",
+                            "Enable and force row-level security on NAPP tables.",
+                        ],
+                    },
+                },
+            )
+        try:
+            from psycopg_pool import ConnectionPool
+
+            from .persistence import PostgreSQLAssertionRepository
+        except ImportError as exc:  # pragma: no cover - deployment dependent
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "contract": "StructuredErrorV1",
+                    "error": {
+                        "code": "postgres_driver_unavailable",
+                        "message": "PostgreSQL workbench source requires psycopg_pool.",
+                        "status": 503,
+                        "retryable": True,
+                        "details": {"error": str(exc)},
+                        "recovery": ["Install the locked Python dependencies before starting the API bridge."],
+                    },
+                },
+            ) from exc
+        with ConnectionPool(
+            conninfo=demo_config.postgres_dsn,
+            min_size=0,
+            max_size=2,
+            kwargs={"autocommit": False},
+        ) as pool:
+            repository = PostgreSQLAssertionRepository(
+                pool,
+                actor_id=demo_context_uuid("actor", authorization.actor_id),
+                purpose_id=demo_context_uuid("purpose", authorization.purpose),
+            )
+            return build_harbor_lantern_workbench(
+                authorization,
+                repository=repository,
+            ).to_dict()
 
     @app.get("/v1/demo/security")
     def demo_security() -> dict[str, Any]:
@@ -207,7 +269,7 @@ def create_app() -> Any:
             ),
         )
         try:
-            return build_harbor_lantern_workbench(authorization).to_dict()
+            return _postgres_workbench(authorization)
         except ServiceError as exc:
             error = exc.error.to_dict()
             raise HTTPException(
