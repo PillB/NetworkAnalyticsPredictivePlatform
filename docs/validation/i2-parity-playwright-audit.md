@@ -1,6 +1,6 @@
 # i2 Parity Playwright Audit
 
-Generated: 2026-06-26T18:21:19.068Z
+Generated: 2026-06-26T22:01:00.703Z
 
 ## Scope
 

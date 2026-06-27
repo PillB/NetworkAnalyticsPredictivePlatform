@@ -13,3 +13,4 @@ build/
 *.log
 test-results/
 *.egg-info/
+local-demo-accounts.txt

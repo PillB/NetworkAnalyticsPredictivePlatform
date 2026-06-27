@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  demoApiBaseUrl,
+  loginDemo,
   loadWorkbenchBootstrap,
+  logoutDemo,
   staticWorkbenchBootstrap,
   validateWorkbenchBootstrap,
 } from "../../packages/api-client/workbench-client.mjs";
@@ -34,6 +37,86 @@ test("authorized API payload is preferred and validated", async () => {
   assert.equal(calls[0][0], "/contract-test");
   assert.equal(calls[0][1].headers["X-Purpose"], "training");
   assert.ok(calls[0][1].headers["X-Authorization-Id"]);
+});
+
+test("GitHub Pages can prefer an explicit secure demo API bridge", async () => {
+  const payload = staticWorkbenchBootstrap();
+  const storage = new Map([
+    ["nappDemoApiBaseUrl", "https://demo-api.example.test"],
+    ["nappDemoToken", "demo-token"],
+  ]);
+  const calls = [];
+  const result = await loadWorkbenchBootstrap({
+    staticDeployment: true,
+    storage: {
+      getItem: (key) => storage.get(key),
+      setItem: (key, value) => storage.set(key, value),
+      removeItem: (key) => storage.delete(key),
+    },
+    fetchImpl: async (url, options) => {
+      calls.push([url, options]);
+      return {
+        ok: true,
+        async json() {
+          return { ...payload, transport: undefined };
+        },
+      };
+    },
+  });
+
+  assert.equal(result.transport, "authorized-api");
+  assert.equal(calls[0][0], "https://demo-api.example.test/v1/cases/harbor-lantern/workbench");
+  assert.equal(calls[0][1].mode, "cors");
+  assert.equal(calls[0][1].headers.Authorization, "Bearer demo-token");
+});
+
+test("demo login stores only API URL and bearer token client side", async () => {
+  const storage = new Map();
+  const store = {
+    getItem: (key) => storage.get(key),
+    setItem: (key, value) => storage.set(key, value),
+    removeItem: (key) => storage.delete(key),
+  };
+  const login = await loginDemo({
+    baseUrl: "https://demo-api.example.test/",
+    username: "analyst@example.test",
+    password: "demo-pass-1",
+    storage: store,
+    fetchImpl: async (url, options) => {
+      assert.equal(url, "https://demo-api.example.test/v1/demo/login");
+      assert.equal(options.method, "POST");
+      assert.equal(options.mode, "cors");
+      return {
+        ok: true,
+        async json() {
+          return {
+            contract: "HybridDemoLoginV1",
+            token: "demo-token",
+            actorId: "demo-analyst",
+          };
+        },
+      };
+    },
+  });
+
+  assert.equal(login.token, "demo-token");
+  assert.equal(demoApiBaseUrl(store), "https://demo-api.example.test");
+  assert.equal(storage.get("nappDemoToken"), "demo-token");
+  logoutDemo(store);
+  assert.equal(storage.has("nappDemoToken"), false);
+  assert.equal(storage.get("nappDemoApiBaseUrl"), "https://demo-api.example.test");
+});
+
+test("demo API rejects non-HTTPS non-loopback endpoints in the browser client", async () => {
+  await assert.rejects(
+    () => loginDemo({
+      baseUrl: "http://public-demo.example.test",
+      username: "x",
+      password: "y",
+      fetchImpl: async () => ({ ok: false }),
+    }),
+    /HTTPS/,
+  );
 });
 
 test("network or contract failure uses explicit training fallback", async () => {

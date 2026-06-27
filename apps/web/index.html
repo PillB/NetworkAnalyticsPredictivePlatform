@@ -32,6 +32,28 @@
       </button>
     </header>
 
+    <section class="demo-login" aria-labelledby="demo-login-title">
+      <div>
+        <p class="kicker">Hybrid demo bridge</p>
+        <h2 id="demo-login-title">Connect GitHub Pages to a secured local API</h2>
+        <p id="demoLoginStatus">Static training mode. Configure an HTTPS demo API endpoint to use local PostgreSQL through the API gateway.</p>
+      </div>
+      <label>
+        <span>API URL</span>
+        <input id="demoApiUrl" type="url" placeholder="https://your-demo-tunnel.example" autocomplete="off" />
+      </label>
+      <label>
+        <span>User</span>
+        <input id="demoUsername" type="text" autocomplete="username" />
+      </label>
+      <label>
+        <span>Password</span>
+        <input id="demoPassword" type="password" autocomplete="current-password" />
+      </label>
+      <button class="button primary" id="demoLogin" type="button">Login</button>
+      <button class="button secondary" id="demoLogout" type="button">Logout</button>
+    </section>
+
     <div class="app-shell">
       <aside class="workflow-panel" aria-labelledby="workflow-title">
         <div class="workflow-heading">

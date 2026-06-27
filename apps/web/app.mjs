@@ -43,7 +43,10 @@ import {
   evaluateProductionPromotion,
 } from "../../packages/predictive/production-readiness.mjs";
 import {
+  demoApiBaseUrl,
   loadWorkbenchBootstrap,
+  loginDemo,
+  logoutDemo,
 } from "../../packages/api-client/workbench-client.mjs";
 import {
   graphSummary,
@@ -101,7 +104,7 @@ import {
   graphRuleLegend,
 } from "../../packages/graph-renderer/bloom-exploration.mjs";
 
-const workbenchBootstrap = await loadWorkbenchBootstrap();
+let workbenchBootstrap = await loadWorkbenchBootstrap();
 configureWorkbenchBootstrap(workbenchBootstrap);
 
 let activeUseCase = "harbor";
@@ -145,6 +148,7 @@ const elements = Object.fromEntries(
     "afterPeriodLabel", "beforeKnownAt", "afterKnownAt", "modelGatePanel", "assistantPrompt",
     "askAssistant", "previewAiQuery", "draftReport", "redTeamDraft", "findAiGaps",
     "coachAiStep", "suggestAiReview", "saveAiNote", "assistantOutput", "manualChartCanvas",
+    "demoApiUrl", "demoUsername", "demoPassword", "demoLogin", "demoLogout", "demoLoginStatus",
   ].map((id) => [id, document.getElementById(id)]),
 );
 
@@ -701,6 +705,21 @@ function renderAssistant() {
   `;
 }
 
+function renderDemoLogin() {
+  if (!elements.demoLoginStatus) return;
+  const configuredUrl = demoApiBaseUrl();
+  if (elements.demoApiUrl && !elements.demoApiUrl.value) {
+    elements.demoApiUrl.value = configuredUrl;
+  }
+  const actor = localStorage.getItem("nappDemoActorId") ?? "";
+  const mode = workbenchBootstrap.transport === "authorized-api"
+    ? `Connected as ${actor || "demo user"} through the authorized API bridge.`
+    : configuredUrl
+      ? "Demo API configured but current bootstrap is static fallback. Login again or check the bridge security status."
+      : "Static training mode. Configure an HTTPS demo API endpoint to use local PostgreSQL through the API gateway.";
+  elements.demoLoginStatus.textContent = mode;
+}
+
 function renderTable() {
   const rows = semanticRows(state.settings, graphSource());
   elements.tableCount.textContent = `${rows.length} relationships · select a row to inspect`;
@@ -903,6 +922,7 @@ function renderBloomExploration() {
 }
 
 function render() {
+  renderDemoLogin();
   renderSteps();
   renderCoach();
   renderControls();
@@ -1520,6 +1540,27 @@ elements.exportReport.addEventListener("click", () => {
   link.click();
   URL.revokeObjectURL(url);
   setStatus("Accessible HTML training report exported");
+});
+
+elements.demoLogin.addEventListener("click", async () => {
+  try {
+    await loginDemo({
+      baseUrl: elements.demoApiUrl.value,
+      username: elements.demoUsername.value,
+      password: elements.demoPassword.value,
+    });
+    setStatus("Demo login succeeded; reloading authorized API bridge");
+    window.location.reload();
+  } catch (error) {
+    elements.demoLoginStatus.textContent = error?.message ?? "Demo login failed";
+    setStatus("Demo login failed");
+  }
+});
+
+elements.demoLogout.addEventListener("click", () => {
+  logoutDemo();
+  setStatus("Demo session cleared; reloading static training mode");
+  window.location.reload();
 });
 
 elements.askAssistant.addEventListener("click", () => {

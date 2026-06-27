@@ -66,6 +66,10 @@ It includes both the Harbor Lantern temporal-community tutorial and the
 financial transaction mule-account/fraud-ring training case.
 The deployment workflow is in `.github/workflows/pages.yml`; see
 [GitHub Pages deployment](docs/deployment/github-pages.md).
+For a controlled demo that lets the Pages app request data from a local
+PostgreSQL-backed machine, use the HTTPS API bridge pattern in
+[Secure hybrid demo](docs/deployment/secure-hybrid-demo.md). Do not expose
+PostgreSQL directly to browser JavaScript.
 
 For the reproducible CPU-only feasibility workload:
 
@@ -85,6 +89,9 @@ make api
 Then open `http://127.0.0.1:4173`. The browser requests an authorized,
 versioned `WorkbenchBootstrapV1` from FastAPI. If the API is unavailable, the
 training-only static server uses an explicitly labeled canonical fallback.
+For hybrid GitHub Pages demos, the API must enforce CORS, bearer-token demo
+login, TLS-verified PostgreSQL transport, and transaction-local RLS checks as
+documented in [Secure hybrid demo](docs/deployment/secure-hybrid-demo.md).
 
 ## Run the guided demonstration
 
