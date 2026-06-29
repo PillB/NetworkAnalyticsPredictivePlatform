@@ -84,8 +84,8 @@ try {
       /No ordering shown in static fallback mode/i,
     );
     await page.locator("#useCaseMode").selectOption("fraud");
-    assert.match(await page.locator("#question-title").textContent(), /mule accounts|fraud ring/i);
-    assert.match(await page.locator("#communityHeading").textContent(), /mule bridge/i);
+    assert.match(await page.locator("#question-title").textContent(), /mule-account review indicators|transaction-flow hypothesis/i);
+    assert.match(await page.locator("#communityHeading").textContent(), /mule-account bridge/i);
     assert.match(await page.locator("#beforePeriodLabel").textContent(), /Apr 1/i);
     assert.match(await page.locator("#afterPeriodLabel").textContent(), /Apr 1|Apr 2/i);
     assert.match(await page.locator("#scopeReason").textContent(), /Acct 777|fan-out/i);
@@ -118,6 +118,21 @@ try {
     await page.locator("#applyImport").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Imported 8 transactions/i);
     assert.match(await page.locator("#graphHeading").textContent(), /Imported financial/i);
+    assert.match(await page.locator("#tableCount").textContent(), /8 relationships/i);
+    assert.match(await page.locator("#evidenceRows").innerText(), /imp-004/i);
+    assert.doesNotMatch(await page.locator("#evidenceRows").innerText(), /tx-004|HL-033|Harbor/i);
+    assert.match(await page.locator("#communityInterpretation").textContent(), /top imported review-priority account/i);
+    assert.match(await page.locator("#reportPreview").innerText(), /training-transactions\.csv|Imported cuentas mulas|imp-004/i);
+    assert.doesNotMatch(await page.locator("#reportPreview").innerText(), /FinancialFraudInterchange@1\.0\.0|Harbor Lantern/i);
+    await page.locator("#bloomPhrase").fill("paths between Acct 100 and Acct 777");
+    await page.locator("#runBloomPhrase").click();
+    assert.match(await page.locator("#bloomExplanation").innerText(), /imp-004/i);
+    assert.doesNotMatch(await page.locator("#bloomExplanation").innerText(), /tx-004|HL-033/i);
+    await page.locator("#assistantPrompt").fill("Why is Acct 777 important?");
+    await page.locator("#askAssistant").click();
+    assert.match(await page.locator("#assistantOutput").innerText(), /Source-grounded answer/i);
+    assert.match(await page.locator("#assistantOutput").innerText(), /imp-/i);
+    assert.doesNotMatch(await page.locator("#assistantOutput").innerText(), /tx-004|HL-033/i);
     await page.locator("#visualControls").click();
     await page.locator("#visualStyle").selectOption("boardroom");
     assert.match(await page.locator("#statusMessage").textContent(), /visualStyle changed/i);
@@ -138,7 +153,8 @@ try {
     assert.match(await page.locator("#statusMessage").textContent(), /Presentation visual reset/i);
     await page.locator("#rotateRight").click();
     assert.match(await page.locator("#statusMessage").textContent(), /rotated/i);
-    const dragTarget = page.locator('.graph-node[data-node-id="acct-777"]').first();
+    const dragTarget = page.locator('#afterGraph .graph-node[data-node-id="acct-777"]').first();
+    await dragTarget.scrollIntoViewIfNeeded();
     const dragBox = await dragTarget.boundingBox();
     assert.ok(dragBox);
     await page.mouse.move(dragBox.x + dragBox.width / 2, dragBox.y + dragBox.height / 2);
@@ -181,6 +197,9 @@ try {
     assert.match(await page.locator("#statusMessage").textContent(), /Workspace saved/i);
     await page.reload({ waitUntil: "networkidle" });
     await page.locator("#useCaseMode").selectOption("fraud");
+    assert.match(await page.locator("#graphHeading").textContent(), /Imported financial/i);
+    assert.match(await page.locator("#evidenceRows").innerText(), /imp-004/i);
+    assert.doesNotMatch(await page.locator("#evidenceRows").innerText(), /tx-004|HL-033|Harbor/i);
     await page.locator("#restoreWorkspaceSnapshot").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Workspace reloaded/i);
     assert.match(await page.locator("#chartNotes").innerText(), /Reviewer handoff|Verify KYC records|ready-for-review/i);
@@ -250,7 +269,8 @@ try {
     await page.locator("#assistantPrompt").fill("Why is Acct 777 important?");
     await page.locator("#askAssistant").click();
     assert.match(await page.locator("#assistantOutput").innerText(), /Source-grounded answer/i);
-    assert.match(await page.locator("#assistantOutput").innerText(), /(tx|imp)-/i);
+    assert.match(await page.locator("#assistantOutput").innerText(), /imp-/i);
+    assert.doesNotMatch(await page.locator("#assistantOutput").innerText(), /tx-004|HL-033/i);
     await page.locator("#assistantPrompt").fill("Who is guilty and should be arrested?");
     await page.locator("#askAssistant").click();
     assert.match(await page.locator("#assistantOutput").innerText(), /Refused/i);
@@ -265,10 +285,15 @@ try {
       await page.locator("#nextStep").click();
     }
     assert.equal(await page.locator("#nextStep").textContent(), "Review complete");
+    await page.locator("#evidenceRows tr").first().click();
+    await page.locator('[role="tab"][data-tab="reasoning"]').click();
+    await page.locator("#ackRecommendation").click();
     await page.locator("#markFinding").click();
     await page.locator("#runPreflight").click();
     assert.equal(await page.locator("#reportStatus").textContent(), "Preflight passed");
     assert.match(await page.locator("#reportPreview").innerText(), /Provenance appendix/i);
+    assert.match(await page.locator("#reportPreview").innerText(), /imp-004/i);
+    assert.doesNotMatch(await page.locator("#reportPreview").innerText(), /tx-004|HL-033|Harbor Lantern/i);
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();

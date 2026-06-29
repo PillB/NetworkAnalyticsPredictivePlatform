@@ -61,6 +61,13 @@ test("detector ranks possible mule account using transparent behavioral indicato
   assert.ok(detection.advancedModelRoadmap.some((item) => /Temporal GNN/i.test(item)));
 });
 
+test("financial workflow uses review-priority wording instead of proof or confidence claims", () => {
+  assert.doesNotMatch(CASE.question, /suspected fraud ring/i);
+  const analysis = deriveAnalysis(DEFAULT_SETTINGS);
+  assert.match(analysis.interpretation, /uncalibrated rule-count index/i);
+  assert.doesNotMatch(analysis.splitConfidence, /confidence/i);
+});
+
 test("infrastructure toggle changes the visible graph and confidence context", () => {
   const withInfrastructure = graphSummary(DEFAULT_SETTINGS, source);
   const withoutInfrastructureSettings = {
@@ -91,11 +98,35 @@ test("financial report is neutral, gated, and reconstructable", () => {
     analysisVersion: 1,
     findingReady: true,
     preflightRun: false,
+    journey: {
+      evidenceInspected: true,
+      reasoningInspected: true,
+      alternativeReviewed: true,
+      recommendationAcknowledged: true,
+    },
   };
   const report = reportModel(state);
-  assert.match(report.assessment, /review recommendation/i);
+  assert.match(report.assessment, /suggested review step/i);
+  assert.match(report.assessment, /not a determination/i);
+  assert.doesNotMatch(report.assessment, /confidence/i);
+  assert.match(report.nextAction, /Acct 777/i);
+  assert.match(report.nextAction, /KYC/i);
   assert.match(report.method, /TGNN|gated/i);
   assert.match(report.limitations, /uncalibrated/i);
   assert.ok(report.dependencies.includes("tx-004"));
   assert.equal(runPreflight(state).passed, true);
+});
+
+test("financial report preflight fails before the novice journey gates are complete", () => {
+  const state = {
+    stepIndex: 0,
+    selectedId: "tx-004",
+    settings: { ...DEFAULT_SETTINGS },
+    analysisVersion: 1,
+    findingReady: false,
+    preflightRun: false,
+  };
+  const result = runPreflight(state);
+  assert.equal(result.passed, false);
+  assert.ok(result.checks.some(([label, passed]) => /Recommended next review action/.test(label) && !passed));
 });

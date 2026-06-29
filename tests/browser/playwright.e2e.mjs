@@ -176,6 +176,10 @@ async function assertReportExport(page) {
   assert.equal(await page.locator("#exportReport").isDisabled(), true);
   await page.locator("#markFinding").click();
   await page.locator("#runPreflight").click();
+  assert.match(await page.locator("#reportStatus").textContent(), /needs|Ready/i);
+  assert.equal(await page.locator("#exportReport").isDisabled(), true);
+  await page.locator("#ackRecommendation").click();
+  await page.locator("#runPreflight").click();
   assert.equal(await page.locator("#reportStatus").textContent(), "Preflight passed");
   assert.equal(await page.locator("#exportReport").isEnabled(), true);
 

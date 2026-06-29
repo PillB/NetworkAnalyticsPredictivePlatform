@@ -47,6 +47,7 @@ import {
   loadWorkbenchBootstrap,
   loginDemo,
   logoutDemo,
+  staticWorkbenchBootstrap,
 } from "../../packages/api-client/workbench-client.mjs";
 import {
   graphSummary,
@@ -104,7 +105,23 @@ import {
   graphRuleLegend,
 } from "../../packages/graph-renderer/bloom-exploration.mjs";
 
-let workbenchBootstrap = await loadWorkbenchBootstrap();
+let startupBootstrapError = null;
+let workbenchBootstrap;
+try {
+  workbenchBootstrap = await loadWorkbenchBootstrap();
+} catch (error) {
+  startupBootstrapError = error;
+  workbenchBootstrap = {
+    ...staticWorkbenchBootstrap(),
+    transport: "demo-api-error",
+    bootstrap_error: {
+      code: error?.code ?? "workbench_bootstrap_failed",
+      message: error?.message ?? "Workbench API failed",
+      status: error?.status ?? null,
+      endpoint: error?.endpoint ?? null,
+    },
+  };
+}
 configureWorkbenchBootstrap(workbenchBootstrap);
 
 let activeUseCase = "harbor";
@@ -113,7 +130,27 @@ let activeInspectorTab = "evidence";
 let graphView = { positions: {}, rotation: 0, nodeVisuals: {}, undo: [], redo: [] };
 let chartWorkspace = createChartWorkspace();
 let importPreview = null;
-let importedFraudWorkflow = null;
+const importedFraudStorageKey = "napp-imported-fraud-preview-v1";
+function restoreImportedFraudWorkflow() {
+  try {
+    const serialized = localStorage.getItem(importedFraudStorageKey);
+    if (!serialized) return null;
+    const preview = JSON.parse(serialized);
+    if (preview?.contract !== "TransactionImportV1" || preview?.summary?.accepted <= 0) return null;
+    return createImportedFraudWorkflow(preview);
+  } catch {
+    return null;
+  }
+}
+function persistImportedFraudPreview(preview) {
+  try {
+    localStorage.setItem(importedFraudStorageKey, JSON.stringify(preview));
+    return true;
+  } catch {
+    return false;
+  }
+}
+let importedFraudWorkflow = restoreImportedFraudWorkflow();
 let assistantDraft = null;
 let bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
 const modelEvaluation = evaluatePredictiveModelCandidates();
@@ -130,6 +167,7 @@ const elements = Object.fromEntries(
     "graphUndo", "graphRedo", "resetLayout", "resetAnalysis", "beforeGraph",
     "nodeVisualTarget", "nodeIconPreset", "nodeImageUpload", "resetNodeVisual",
     "afterGraph", "graphComparison", "overlayPanel", "appearedCount", "missingCount",
+    "uncertaintyTitle", "uncertaintyDetail",
     "inspectorContent", "splitConfidence", "communityInterpretation", "communityAlternative",
     "aliasIncluded", "communityCount", "membershipCount", "coverageValue", "reportPreview",
     "reportStatus", "markFinding", "runPreflight", "preflightResults", "exportReport",
@@ -164,6 +202,13 @@ function setStatus(message) {
   elements.statusMessage.textContent = message;
 }
 
+function updateJourney(updates) {
+  state = {
+    ...state,
+    journey: { ...(state.journey ?? {}), ...updates },
+  };
+}
+
 function financialInitialState() {
   return {
     stepIndex: 0,
@@ -172,15 +217,21 @@ function financialInitialState() {
     analysisVersion: 1,
     findingReady: false,
     preflightRun: false,
+    journey: {
+      evidenceInspected: false,
+      reasoningInspected: false,
+      alternativeReviewed: false,
+      recommendationAcknowledged: false,
+    },
   };
 }
 
 function activeWorkflow() {
   if (activeUseCase === "fraud") {
-    if (importedFraudWorkflow) {
+      if (importedFraudWorkflow) {
       return {
         ...importedFraudWorkflow,
-        exportName: "imported-cuentas-mulas-fraud-ring",
+        exportName: "imported-cuentas-mulas-transaction-flow",
         relationOptions: [
           ["all", "All recommended"],
           ["transfers", "Transfers"],
@@ -189,7 +240,7 @@ function activeWorkflow() {
         ],
         question: importedFraudWorkflow.case.question,
         graphHeading: "Imported financial transaction network",
-        communityHeading: "Imported mule/ring hypothesis",
+        communityHeading: "Imported transaction-flow hypothesis",
         confidenceLabel: "Review priority",
         aliasLabel: "Include infrastructure events",
         aliasHelp: "Recommended: include, but treat as supporting context",
@@ -217,7 +268,7 @@ function activeWorkflow() {
       deriveAnalysis: FinancialFraud.deriveAnalysis,
       reportModel: FinancialFraud.reportModel,
       runPreflight: FinancialFraud.runPreflight,
-      exportName: "cuentas-mulas-fraud-ring",
+      exportName: "cuentas-mulas-transaction-flow",
       relationOptions: [
         ["all", "All recommended"],
         ["transfers", "Transfers"],
@@ -226,7 +277,7 @@ function activeWorkflow() {
       ],
       question: FinancialFraud.CASE.question,
       graphHeading: "Financial transaction network",
-      communityHeading: "Possible mule bridge",
+      communityHeading: "Possible mule-account bridge",
       confidenceLabel: "Review priority",
       aliasLabel: "Include infrastructure events",
       aliasHelp: "Recommended: include, but treat as supporting context",
@@ -369,6 +420,13 @@ function renderControls() {
   elements.afterKnownAt.textContent = workflow.periodLabels.knownAt;
   elements.aliasControlLabel.textContent = workflow.aliasLabel;
   elements.aliasControlHelp.textContent = workflow.aliasHelp;
+  if (activeUseCase === "fraud") {
+    elements.uncertaintyTitle.textContent = "Infrastructure affects result";
+    elements.uncertaintyDetail.textContent = "Device/IP support is context, not proof";
+  } else {
+    elements.uncertaintyTitle.textContent = "Alias affects result";
+    elements.uncertaintyDetail.textContent = "Elena Voss identity unresolved";
+  }
   const currentRelation = String(state.settings.relationFilter);
   elements.relationFilter.innerHTML = workflow.relationOptions
     .map(([value, label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`)
@@ -533,6 +591,19 @@ function inspectorReasoning(item) {
 }
 
 function inspectorOptions(item) {
+  if (activeUseCase === "fraud") {
+    return `
+      <p class="kicker">Available actions</p>
+      <h2 class="inspector-title" id="inspectorTitle">Test, trace, or retain</h2>
+      <dl class="inspector-list">
+        <div><dt>Inspect source</dt><dd>Trace this visual element to ${escapeHtml(item.source)}.</dd></div>
+        <div><dt>Test without infrastructure context</dt><dd>Turn off device/IP support events to see whether the review-priority pattern depends on infrastructure.</dd></div>
+        <div><dt>Check contrary explanations</dt><dd>Review legitimate processor, refund, shared-device, and delayed-posting alternatives before escalation.</dd></div>
+        <div><dt>Pin to report</dt><dd>This transaction is included only as a synthetic dependency, not proof of criminality.</dd></div>
+      </dl>
+      <button class="button secondary" type="button" id="optionAliasToggle">${state.settings.aliasIncluded ? "Exclude infrastructure events" : "Restore infrastructure events"}</button>
+    `;
+  }
   return `
     <p class="kicker">Available actions</p>
     <h2 class="inspector-title" id="inspectorTitle">Test, trace, or retain</h2>
@@ -561,6 +632,7 @@ function renderInspector() {
       : activeInspectorTab === "options"
         ? inspectorOptions(item)
         : inspectorEvidence(item);
+  elements.inspectorContent.setAttribute("aria-labelledby", `tab-${activeInspectorTab}`);
   const optionToggle = document.getElementById("optionAliasToggle");
   optionToggle?.addEventListener("click", () => changeSetting("aliasIncluded", !state.settings.aliasIncluded));
 }
@@ -568,7 +640,10 @@ function renderInspector() {
 function renderCommunity() {
   const workflow = activeWorkflow();
   const analysis = workflow.deriveAnalysis(state.settings);
-  elements.splitConfidence.textContent = `${analysis.splitConfidence[0].toUpperCase()}${analysis.splitConfidence.slice(1)} confidence`;
+  const confidenceText = `${analysis.splitConfidence[0].toUpperCase()}${analysis.splitConfidence.slice(1)}`;
+  elements.splitConfidence.textContent = activeUseCase === "harbor" && !/confidence/i.test(confidenceText)
+    ? `${confidenceText} confidence`
+    : confidenceText;
   elements.communityInterpretation.textContent = analysis.interpretation;
   elements.communityAlternative.textContent = analysis.alternative;
   elements.communityCount.textContent = analysis.communities;
@@ -578,7 +653,20 @@ function renderCommunity() {
 
 function renderReport() {
   const report = activeWorkflow().reportModel(state);
-  elements.reportStatus.textContent = state.preflightRun ? "Preflight passed" : state.findingReady ? "Finding ready" : "Draft";
+  const dependencyPreview = report.dependencies.slice(0, 6).map(escapeHtml).join(", ");
+  const journey = state.journey ?? {};
+  const missingGates = [
+    ["evidence", journey.evidenceInspected],
+    ["reasoning", journey.reasoningInspected],
+    ["alternative", journey.alternativeReviewed],
+    ["next action", journey.recommendationAcknowledged],
+    ["finding", state.findingReady],
+  ].filter(([, passed]) => !passed).map(([label]) => label);
+  elements.reportStatus.textContent = state.preflightRun
+    ? "Preflight passed"
+    : missingGates.length
+      ? `Draft · needs ${missingGates.join(", ")}`
+      : "Ready for preflight";
   elements.reportPreview.innerHTML = `
     <p class="report-meta">${escapeHtml(report.scope)} · ${escapeHtml(report.method)} · ${escapeHtml(report.fixture)}</p>
     <h3>${escapeHtml(report.title)}</h3>
@@ -586,11 +674,18 @@ function renderReport() {
     <p>${escapeHtml(report.assessment)}</p>
     <h4>Contrary evidence &amp; limitations</h4>
     <p>${escapeHtml(report.contraryEvidence)} ${escapeHtml(report.limitations)}</p>
-    <h4>Next lawful action</h4>
+    <h4>Recommended next review action</h4>
     <p>${escapeHtml(report.nextAction)}</p>
+    <button class="button secondary" type="button" id="ackRecommendation">${journey.recommendationAcknowledged ? "Next action acknowledged" : "Acknowledge next action"}</button>
     <h4>Provenance appendix</h4>
-    <p>${report.dependencies.length} exact synthetic source dependencies attached.</p>
+    <p>${report.dependencies.length} exact synthetic source dependencies attached${dependencyPreview ? `: ${dependencyPreview}` : ""}.</p>
   `;
+  document.getElementById("ackRecommendation")?.addEventListener("click", () => {
+    updateJourney({ recommendationAcknowledged: true });
+    state = { ...state, preflightRun: false };
+    render();
+    setStatus("Recommended next review action acknowledged");
+  });
   elements.markFinding.textContent = state.findingReady ? "Finding ready ✓" : "Mark finding ready";
   elements.exportReport.disabled = !state.preflightRun;
   if (!state.preflightRun) {
@@ -712,7 +807,9 @@ function renderDemoLogin() {
     elements.demoApiUrl.value = configuredUrl;
   }
   const actor = localStorage.getItem("nappDemoActorId") ?? "";
-  const mode = workbenchBootstrap.transport === "authorized-api"
+  const mode = workbenchBootstrap.transport === "demo-api-error"
+    ? `Demo API failed closed: ${workbenchBootstrap.bootstrap_error?.message ?? "check the bridge security status"}. Static fallback is not a successful PostgreSQL validation.`
+    : workbenchBootstrap.transport === "authorized-api"
     ? `Connected as ${actor || "demo user"} through the authorized API bridge.`
     : configuredUrl
       ? "Demo API configured but current bootstrap is static fallback. Login again or check the bridge security status."
@@ -940,6 +1037,7 @@ function render() {
 
 function selectRelationship(id) {
   state = { ...state, selectedId: id };
+  updateJourney({ evidenceInspected: true });
   activeInspectorTab = "evidence";
   document.querySelectorAll('[role="tab"]').forEach((tab) => {
     tab.setAttribute("aria-selected", String(tab.dataset.tab === activeInspectorTab));
@@ -1006,7 +1104,7 @@ function redoGraphLayout() {
 }
 
 function changeSetting(key, value) {
-  const analytical = ["aliasIncluded", "windowDays", "relationFilter", "riskThreshold"].includes(key);
+  const analytical = ["aliasIncluded", "windowDays", "relationFilter", "riskThreshold", "priorityThreshold"].includes(key);
   state = updateSetting(state, key, value);
   if (activeUseCase === "fraud" && key === "aliasIncluded") {
     state = { ...state, settings: { ...state.settings, includeInfrastructure: Boolean(value) } };
@@ -1030,7 +1128,12 @@ function applyExplorationScene(settings) {
 
 function changeStep(nextIndex) {
   const steps = activeWorkflow().steps;
-  state = { ...state, stepIndex: Math.max(0, Math.min(steps.length - 1, nextIndex)) };
+  const stepIndex = Math.max(0, Math.min(steps.length - 1, nextIndex));
+  state = { ...state, stepIndex };
+  const stepId = steps[stepIndex]?.id;
+  if (["community", "alternatives", "model-gates"].includes(stepId)) {
+    updateJourney({ alternativeReviewed: true });
+  }
   render();
   document.querySelector(".coach-card").scrollIntoView({ behavior: "smooth", block: "start" });
   setStatus(steps[state.stepIndex].label);
@@ -1078,7 +1181,7 @@ elements.useCaseMode.addEventListener("change", (event) => {
   bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
   render();
   setStatus(activeUseCase === "fraud"
-    ? "Cuentas mulas and fraud-ring training case loaded"
+    ? "Cuentas mulas transaction-flow review training case loaded"
     : "Temporal community split training case loaded");
 });
 
@@ -1126,13 +1229,14 @@ elements.applyImport.addEventListener("click", () => {
   }
   activeUseCase = "fraud";
   importedFraudWorkflow = createImportedFraudWorkflow(importPreview);
+  persistImportedFraudPreview(importPreview);
   state = { ...financialInitialState(), selectedId: importedFraudWorkflow.relationships[0]?.id ?? "tx-004" };
   activeInspectorTab = "evidence";
   resetGraphView();
   chartWorkspace = createChartWorkspace();
   bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
   render();
-  setStatus(`Imported ${importPreview.summary.accepted} transactions into the fraud-ring workflow`);
+  setStatus(`Imported ${importPreview.summary.accepted} transactions into the transaction-flow review workflow`);
 });
 elements.visualControls.addEventListener("click", () => {
   elements.visualPopover.hidden = !elements.visualPopover.hidden;
@@ -1473,7 +1577,7 @@ elements.resetScenePreset.addEventListener("click", () => {
 });
 elements.resetAnalysis.addEventListener("click", () => {
   if (activeUseCase === "fraud") {
-    const changed = ["aliasIncluded", "windowDays", "relationFilter", "riskThreshold", "includeInfrastructure"].some(
+    const changed = ["aliasIncluded", "windowDays", "relationFilter", "priorityThreshold", "includeInfrastructure"].some(
       (key) => String(state.settings[key]) !== String(FinancialFraud.DEFAULT_SETTINGS[key]),
     );
     state = {
@@ -1484,7 +1588,7 @@ elements.resetAnalysis.addEventListener("click", () => {
         includeInfrastructure: FinancialFraud.DEFAULT_SETTINGS.includeInfrastructure,
         windowDays: FinancialFraud.DEFAULT_SETTINGS.windowDays,
         relationFilter: FinancialFraud.DEFAULT_SETTINGS.relationFilter,
-        riskThreshold: FinancialFraud.DEFAULT_SETTINGS.riskThreshold,
+        priorityThreshold: FinancialFraud.DEFAULT_SETTINGS.priorityThreshold,
       },
       analysisVersion: state.analysisVersion + (changed ? 1 : 0),
       preflightRun: false,
@@ -1496,14 +1600,35 @@ elements.resetAnalysis.addEventListener("click", () => {
   setStatus(`Recommended analysis restored as v${state.analysisVersion}`);
 });
 
-document.querySelector(".tab-list").addEventListener("click", (event) => {
-  const tab = event.target.closest("[data-tab]");
-  if (!tab) return;
+function activateInspectorTab(tab) {
   activeInspectorTab = tab.dataset.tab;
+  if (activeInspectorTab === "reasoning") {
+    updateJourney({ reasoningInspected: true, alternativeReviewed: true });
+  }
   document.querySelectorAll('[role="tab"]').forEach((item) => {
     item.setAttribute("aria-selected", String(item === tab));
   });
   renderInspector();
+  tab.focus();
+}
+
+document.querySelector(".tab-list").addEventListener("click", (event) => {
+  const tab = event.target.closest("[data-tab]");
+  if (!tab) return;
+  activateInspectorTab(tab);
+});
+document.querySelector(".tab-list").addEventListener("keydown", (event) => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabs = [...document.querySelectorAll('[role="tab"][data-tab]')];
+  const index = tabs.indexOf(document.activeElement);
+  if (index < 0) return;
+  event.preventDefault();
+  const nextIndex = event.key === "Home"
+    ? 0
+    : event.key === "End"
+      ? tabs.length - 1
+      : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  activateInspectorTab(tabs[nextIndex]);
 });
 
 elements.evidenceRows.addEventListener("click", (event) => {
@@ -1738,7 +1863,9 @@ elements.helpDialog.addEventListener("close", () => elements.helpButton.focus())
 
 render();
 setStatus(
-  workbenchBootstrap.transport === "authorized-api"
-    ? "Authorized service projection loaded"
-    : "Static training fallback loaded",
+  startupBootstrapError
+    ? "Demo API failed closed; static fallback is not a PostgreSQL validation success"
+    : workbenchBootstrap.transport === "authorized-api"
+      ? "Authorized service projection loaded"
+      : "Static training fallback loaded",
 );

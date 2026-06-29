@@ -285,17 +285,17 @@
             <div class="change-ribbon" aria-live="polite">
               <div><span class="change-icon appeared">+</span><p><b id="appearedCount">0 appeared later</b><small>Observed in after only</small></p></div>
               <div><span class="change-icon missing">–</span><p><b id="missingCount">0 no longer observed</b><small>Not evidence of termination</small></p></div>
-              <div><span class="change-icon uncertain">?</span><p><b>Alias affects result</b><small>Elena Voss identity unresolved</small></p></div>
+              <div><span class="change-icon uncertain">?</span><p><b id="uncertaintyTitle">Alias affects result</b><small id="uncertaintyDetail">Elena Voss identity unresolved</small></p></div>
             </div>
           </div>
 
           <aside class="inspector-card" aria-labelledby="inspectorTitle">
             <div class="tab-list" role="tablist" aria-label="Inspector views">
-              <button role="tab" aria-selected="true" data-tab="evidence" type="button">Evidence</button>
-              <button role="tab" aria-selected="false" data-tab="reasoning" type="button">Reasoning</button>
-              <button role="tab" aria-selected="false" data-tab="options" type="button">Options</button>
+              <button id="tab-evidence" role="tab" aria-selected="true" aria-controls="inspectorContent" data-tab="evidence" type="button">Evidence</button>
+              <button id="tab-reasoning" role="tab" aria-selected="false" aria-controls="inspectorContent" data-tab="reasoning" type="button">Reasoning</button>
+              <button id="tab-options" role="tab" aria-selected="false" aria-controls="inspectorContent" data-tab="options" type="button">Options</button>
             </div>
-            <div id="inspectorContent"></div>
+            <div id="inspectorContent" role="tabpanel" aria-labelledby="tab-evidence" aria-live="polite"></div>
           </aside>
         </section>
 

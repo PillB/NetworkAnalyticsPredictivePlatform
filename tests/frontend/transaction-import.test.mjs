@@ -133,7 +133,14 @@ test("imported workflow exposes graph, detection, report, and preflight contract
     analysisVersion: 1,
     findingReady: true,
     preflightRun: false,
+    journey: {
+      evidenceInspected: true,
+      reasoningInspected: true,
+      alternativeReviewed: true,
+      recommendationAcknowledged: true,
+    },
   };
   assert.match(workflow.reportModel(state).scope, /accepted/);
+  assert.match(workflow.reportModel(state).assessment, /suggested review step/i);
   assert.equal(workflow.runPreflight(state).passed, true);
 });

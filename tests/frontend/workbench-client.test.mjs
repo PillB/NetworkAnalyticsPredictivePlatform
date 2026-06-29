@@ -8,6 +8,7 @@ import {
   logoutDemo,
   staticWorkbenchBootstrap,
   validateWorkbenchBootstrap,
+  WorkbenchBootstrapError,
 } from "../../packages/api-client/workbench-client.mjs";
 
 test("static fallback conforms to the service bootstrap contract", () => {
@@ -119,7 +120,7 @@ test("demo API rejects non-HTTPS non-loopback endpoints in the browser client", 
   );
 });
 
-test("network or contract failure uses explicit training fallback", async () => {
+test("unconfigured network or contract failure uses explicit training fallback", async () => {
   const unavailable = await loadWorkbenchBootstrap({
     fetchImpl: async () => {
       throw new Error("offline");
@@ -136,6 +137,44 @@ test("network or contract failure uses explicit training fallback", async () => 
 
   assert.equal(unavailable.transport, "static-training-fallback");
   assert.equal(invalid.transport, "static-training-fallback");
+});
+
+test("configured demo API failure fails closed instead of using fallback", async () => {
+  const storage = new Map([
+    ["nappDemoApiBaseUrl", "https://demo-api.example.test"],
+    ["nappDemoToken", "demo-token"],
+  ]);
+  await assert.rejects(
+    () => loadWorkbenchBootstrap({
+      staticDeployment: true,
+      storage: {
+        getItem: (key) => storage.get(key),
+        setItem: (key, value) => storage.set(key, value),
+        removeItem: (key) => storage.delete(key),
+      },
+      fetchImpl: async () => ({
+        ok: false,
+        status: 503,
+        async json() {
+          return {
+            detail: {
+              error: {
+                code: "postgres_demo_not_ready",
+                message: "PostgreSQL workbench source is enabled but the secure runtime probe failed.",
+              },
+            },
+          };
+        },
+      }),
+    }),
+    (error) => {
+      assert.ok(error instanceof WorkbenchBootstrapError);
+      assert.equal(error.code, "postgres_demo_not_ready");
+      assert.equal(error.status, 503);
+      assert.equal(error.endpoint, "https://demo-api.example.test/v1/cases/harbor-lantern/workbench");
+      return true;
+    },
+  );
 });
 
 test("GitHub Pages deployment does not probe a nonexistent API", async () => {

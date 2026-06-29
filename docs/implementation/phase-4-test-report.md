@@ -42,7 +42,15 @@ neutral language, and visible abstention.
 `make test-browser-pages` builds the exact static artifact used by GitHub
 Pages, serves it beneath `/NetworkAnalyticsPredictivePlatform/`, and passes the
 seven-step journey and report preflight without asset, module, fixture, console,
-or API-probing errors.
+or API-probing errors. It also verifies imported transaction state remains
+coherent across graph, semantic table, Bloom-style path explanation, workspace
+reload, AI citations, report preview, and report preflight without falling back
+to stale Harbor Lantern or built-in fraud-case source IDs.
+
+`make test-browser-postgres-required` builds the same GitHub Pages artifact,
+preconfigures a demo API bridge in browser storage, mocks a PostgreSQL-required
+503 bootstrap failure, and verifies the UI fails closed instead of treating the
+static fallback as a successful PostgreSQL validation.
 
 `make test-postgres-live` creates an isolated PostgreSQL 18.4 cluster under
 `/tmp`, applies migrations 0001, 0002, and 0003, and verifies:
@@ -99,6 +107,12 @@ Playwright verifies:
 - preflight-gated HTML report download and required report content;
 - zero browser console or uncaught page errors;
 - both authorized API and explicit static-fallback startup modes.
+- configured PostgreSQL-required demo bridge failure is visible and is not
+  reported as an authorized-service or successful fallback state.
+- imported financial transaction evidence survives the browser-local training
+  reload path and continues to drive downstream graph, workspace, AI, and report
+  views using `imp-*` dependencies rather than stale `tx-*` or Harbor Lantern
+  dependencies.
 
 Screenshots and the exported report are written under
 `test-results/playwright/`.

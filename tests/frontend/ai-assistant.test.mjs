@@ -147,11 +147,24 @@ test("predictive leakage detector rejects future labels features and scalers", (
     { id: "future-known", knownAt: "2026-04-05T00:00:00Z" },
     { id: "future-label", labelKnownAt: "2026-04-05T00:00:00Z" },
     { id: "future-scaler", scalerFitAt: "2026-04-05T00:00:00Z" },
+    { id: "future-window", featureWindowEnd: "2026-04-05T00:00:00Z" },
   ], "2026-04-04T18:00:00Z");
   assert.equal(report.leakageSafe, false);
   assert.ok(report.violations.some((violation) => /future event/i.test(violation.reason)));
   assert.ok(report.violations.some((violation) => /future label/i.test(violation.reason)));
   assert.ok(report.violations.some((violation) => /future scaler/i.test(violation.reason)));
+  assert.ok(report.violations.some((violation) => /future feature window/i.test(violation.reason)));
+});
+
+test("predictive leakage detector fails closed on invalid timestamps", () => {
+  const report = detectTemporalLeakage([
+    { id: "bad-known", knownAt: "not-a-date" },
+    { id: "bad-window", featureWindowEnd: "invalid-window" },
+  ], "not-a-prediction-time");
+  assert.equal(report.leakageSafe, false);
+  assert.ok(report.violations.some((violation) => /invalid prediction time/i.test(violation.reason)));
+  assert.ok(report.violations.some((violation) => /invalid knownAt timestamp/i.test(violation.reason)));
+  assert.ok(report.violations.some((violation) => /invalid featureWindowEnd timestamp/i.test(violation.reason)));
 });
 
 test("temporal folds replay deterministically", () => {

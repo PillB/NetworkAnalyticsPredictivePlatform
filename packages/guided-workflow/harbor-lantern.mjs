@@ -42,6 +42,12 @@ export function createInitialState() {
     analysisVersion: 1,
     findingReady: false,
     preflightRun: false,
+    journey: {
+      evidenceInspected: false,
+      reasoningInspected: false,
+      alternativeReviewed: false,
+      recommendationAcknowledged: false,
+    },
   };
 }
 
@@ -136,14 +142,21 @@ export function reportModel(state) {
       "The disputed alias may join two people incorrectly, and no direct observation establishes that the Northstar–Halcyon relationship ended.",
     method: `Independent community snapshots with explicit lineage matching · analysis v${state.analysisVersion}`,
     limitations: `${analysis.evidenceCoverage} estimated source coverage; missing observations are not negative evidence.`,
-    nextAction: "Lawfully seek corroborating identity and source-coverage records before making an operational inference.",
+    nextAction:
+      "Lawfully corroborate the Elena Voss alias and the February 24-March 2 source-coverage gap before making any operational inference.",
     dependencies,
   };
 }
 
 export function runPreflight(state) {
   const report = reportModel(state);
+  const journey = state.journey ?? {};
   const checks = [
+    ["Evidence has been inspected", journey.evidenceInspected === true],
+    ["Reasoning and uncertainty have been reviewed", journey.reasoningInspected === true],
+    ["Alternative explanation has been reviewed", journey.alternativeReviewed === true],
+    ["Recommended next review action has been acknowledged", journey.recommendationAcknowledged === true],
+    ["Finding is marked ready", state.findingReady === true],
     ["Both event-time windows are recorded", Boolean(report.before && report.after)],
     ["Known-at cutoff is recorded", Boolean(report.knownAt)],
     ["Canonical fixture version is recorded", Boolean(report.fixture)],

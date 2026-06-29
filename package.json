@@ -7,6 +7,7 @@
     "test": "node --test tests/frontend/*.test.mjs",
     "test:browser": "node tests/browser/playwright.e2e.mjs",
     "test:pages": "node tests/browser/pages.e2e.mjs",
+    "test:postgres-required": "node tests/browser/postgres-required.e2e.mjs",
     "audit:i2": "node tests/browser/i2-parity-audit.mjs",
     "audit:workspace": "node tests/browser/workspace-parity-audit.mjs",
     "audit:bloom": "node tests/browser/bloom-parity-audit.mjs",

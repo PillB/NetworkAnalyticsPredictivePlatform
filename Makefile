@@ -1,4 +1,4 @@
-.PHONY: setup test test-all test-python test-web test-browser test-browser-api test-browser-accessibility test-browser-pages test-postgres-live benchmark pages-build pages-preview demo api
+.PHONY: setup test test-all test-python test-web test-browser test-browser-api test-browser-accessibility test-browser-pages test-browser-postgres-required test-postgres-live benchmark pages-build pages-preview demo api
 
 PYTHON := .venv/bin/python
 
@@ -7,7 +7,7 @@ test: test-python test-web
 setup:
 	UV_CACHE_DIR=/tmp/network-analytics-uv-cache uv sync --python 3.11
 
-test-all: test test-browser test-browser-api test-browser-accessibility test-browser-pages test-postgres-live
+test-all: test test-browser test-browser-api test-browser-accessibility test-browser-pages test-browser-postgres-required test-postgres-live
 
 test-python:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s tests/backend -p 'test_*.py' -v
@@ -35,6 +35,9 @@ test-browser-accessibility:
 
 test-browser-pages:
 	node tests/browser/pages.e2e.mjs
+
+test-browser-postgres-required:
+	node tests/browser/postgres-required.e2e.mjs
 
 test-postgres-live:
 	.venv/bin/python tests/database/live_postgres_integration.py

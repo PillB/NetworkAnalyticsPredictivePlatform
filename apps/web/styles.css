@@ -768,7 +768,11 @@ dialog p, dialog li { line-height: 1.55; }
   .demo-login button { width: 100%; }
   .app-shell { display: block; }
   .workflow-panel { padding: 14px; border-right: 0; border-bottom: 1px solid var(--line); }
-  .workflow-heading, .ethics-note { display: none; }
+  .ethics-note { display: none; }
+  .workflow-heading {
+    display: block;
+    margin-bottom: 10px;
+  }
   .step-list { display: flex; overflow-x: auto; gap: 5px; }
   .step-button { width: max-content; grid-template-columns: 24px auto; padding: 7px 9px; }
   .step-button::before { display: none; }

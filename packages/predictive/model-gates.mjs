@@ -221,14 +221,32 @@ function time(value) {
 export function detectTemporalLeakage(dependencies = [], predictionTime = DEFAULT_PREDICTION_TIME) {
   const cutoff = time(predictionTime);
   const violations = [];
+  if (!Number.isFinite(cutoff)) {
+    violations.push({
+      dependencyId: "prediction-time",
+      field: "predictionTime",
+      value: predictionTime,
+      reason: "invalid prediction time",
+    });
+  }
   for (const dependency of dependencies) {
     for (const [field, label] of [
       ["eventTime", "future event dependency"],
       ["knownAt", "future known-at dependency"],
       ["labelKnownAt", "future label dependency"],
       ["scalerFitAt", "future scaler fit"],
+      ["featureWindowEnd", "future feature window"],
     ]) {
-      if (dependency[field] && time(dependency[field]) > cutoff) {
+      if (!dependency[field]) continue;
+      const parsed = time(dependency[field]);
+      if (!Number.isFinite(parsed)) {
+        violations.push({
+          dependencyId: dependency.id ?? "unknown",
+          field,
+          value: dependency[field],
+          reason: `invalid ${field} timestamp`,
+        });
+      } else if (Number.isFinite(cutoff) && parsed > cutoff) {
         violations.push({
           dependencyId: dependency.id ?? "unknown",
           field,

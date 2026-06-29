@@ -32,12 +32,17 @@ test("core visual has a semantic table and live status equivalent", async () => 
 
 test("mandatory interpretation safeguards are present", async () => {
   const html = await readFile(`${repoRoot}apps/web/index.html`, "utf8");
+  const app = await readFile(`${repoRoot}apps/web/app.mjs`, "utf8");
+  const fraud = await readFile(`${repoRoot}packages/guided-workflow/financial-fraud.mjs`, "utf8");
   assert.match(html, /do not determine guilt/i);
   assert.match(html, /Not evidence of termination/i);
   assert.match(html, /Fictional training data/i);
   assert.match(html, /does not estimate guilt/i);
   assert.match(html, /Uncalibrated baseline/i);
   assert.match(html, /They do not create evidence/i);
+  assert.match(app, /ackRecommendation/);
+  assert.match(fraud, /suggested review step/i);
+  assert.doesNotMatch(fraud, /suspected fraud ring/i);
 });
 
 test("i2-class chart workspace controls are present", async () => {

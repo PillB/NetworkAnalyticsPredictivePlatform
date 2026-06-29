@@ -736,7 +736,7 @@ export function createImportedFraudWorkflow(preview) {
         label: account.label,
         role: account.role,
         score,
-        status: score >= Number(settings.riskThreshold ?? 70) ? "review-priority" : score >= 45 ? "watch" : "background",
+        status: score >= Number(settings.priorityThreshold ?? settings.riskThreshold ?? 70) ? "review-priority" : score >= 45 ? "watch" : "background",
         indicators,
         inboundAmount,
         outboundAmount,
@@ -765,8 +765,8 @@ export function createImportedFraudWorkflow(preview) {
     const detection = detectFraudRings(settings);
     const top = detection.topAccount;
     return {
-      splitConfidence: top.score >= 70 ? "review priority" : "low–moderate review priority",
-      interpretation: `${top.label} is the top imported review-priority account (${top.score}/100) because it combines ${top.indicators.join(", ")}.`,
+      splitConfidence: top.score >= 70 ? "review-priority indicators" : "low-moderate review-priority indicators",
+      interpretation: `${top.label} is the top imported review-priority account with an uncalibrated rule-count index of ${top.score}/100 because it combines ${top.indicators.join(", ")}.`,
       communities: Math.max(1, new Set(transactions.flatMap((tx) => [tx.origin, tx.destination])).size > 4 ? 3 : 1),
       changedMemberships: relationships.length,
       evidenceCoverage: `${Math.round((preview.summary.accepted / Math.max(1, preview.summary.totalRows)) * 100)}%`,
@@ -779,29 +779,35 @@ export function createImportedFraudWorkflow(preview) {
     const analysis = deriveAnalysis(state.settings);
     const detection = detectFraudRings(state.settings);
     return {
-      title: "Imported cuentas mulas · Fraud-ring review report",
+      title: "Imported cuentas mulas · Transaction-flow review report",
       question: caseModel.question,
       scope: `${preview.fileName} · ${preview.summary.accepted} accepted / ${preview.summary.rejected} rejected rows`,
       before: "Imported collection phase · first half of accepted transaction times",
       after: "Imported fan-out phase · second half of accepted transaction times",
       knownAt: knownAt.replace("T", " ").replace("Z", " UTC"),
       fixture: `${TRANSACTION_IMPORT_VERSION}@${preview.parserVersion}`,
-      assessment: `${analysis.interpretation} This is a review recommendation, not a determination that any person committed a crime.`,
+      assessment: `${analysis.interpretation} This is a suggested review step, not a determination that any person committed a crime.`,
       contraryEvidence: analysis.alternative,
       method: "Explainable imported-transaction mule-indicator baseline; TGNN candidates remain gated until validated.",
       limitations: "Training import only; rejected rows and mapping assumptions are disclosed; scores are uncalibrated.",
-      nextAction: "Review rejected rows, validate account ownership/KYC, corroborate complaints, and test legitimate processor explanations before escalation.",
+      nextAction: "Review rejected rows, validate top-account ownership/KYC, corroborate complaints, and test legitimate processor explanations before escalation.",
       dependencies: detection.scores.flatMap((score) => score.dependencies),
     };
   }
 
   function runPreflight(state) {
     const report = reportModel(state);
+    const journey = state.journey ?? {};
     const checks = [
+      ["Evidence has been inspected", journey.evidenceInspected === true],
+      ["Reasoning and uncertainty have been reviewed", journey.reasoningInspected === true],
+      ["Alternative explanation has been reviewed", journey.alternativeReviewed === true],
+      ["Recommended next review action has been acknowledged", journey.recommendationAcknowledged === true],
+      ["Finding is marked ready", state.findingReady === true],
       ["Import mapping is recorded", Object.values(preview.mappedColumns).some(Boolean)],
       ["Accepted and rejected row counts are recorded", preview.summary.totalRows >= preview.summary.accepted],
       ["Known-at cutoff is recorded", Boolean(report.knownAt)],
-      ["Neutral review-priority language is used", /review recommendation|review-priority/i.test(report.assessment)],
+      ["Neutral review-priority language is used", /suggested review step|review-priority/i.test(report.assessment)],
       ["Contrary explanations are included", /Rejected rows|processor|refund/i.test(report.contraryEvidence)],
       ["Calibration limitations are disclosed", /uncalibrated/i.test(report.limitations)],
       ["Imported transaction dependencies are attached", report.dependencies.length > 0],

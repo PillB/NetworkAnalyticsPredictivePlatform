@@ -3,7 +3,7 @@ export const CASE = Object.freeze({
   name: "Cuentas mulas and fraud-ring detection",
   synthetic: true,
   question:
-    "Which accounts behave like possible mule accounts and how does money move through the suspected fraud ring?",
+    "Which accounts show possible mule-account review indicators and how does money move through the transaction-flow hypothesis?",
   eventRange: "2026-04-01/2026-04-04",
   knownAt: "2026-04-04T18:00:00Z",
 });
@@ -30,11 +30,11 @@ export const STEPS = Object.freeze([
   {
     id: "detect",
     label: "Run mule indicators",
-    eyebrow: "Step 3 · Detection",
-    title: "Score behavior, not identity",
+    eyebrow: "Step 3 · Review priority",
+    title: "Rank behavior for review, not identity",
     explanation:
-      "Smart defaults combine transparent rules: many inbound victims, rapid outbound movement, low dwell time, shared device or IP, round amounts, and burst timing.",
-    task: "Inspect the top-ranked mule account and read which indicators contributed to the score.",
+      "Smart defaults combine transparent review-priority indicators: many inbound origins, rapid outbound movement, low dwell time, shared device or IP, round amounts, and burst timing.",
+    task: "Inspect the top-ranked account and read which indicators contributed to the uncalibrated review-priority index.",
   },
   {
     id: "temporal",
@@ -51,7 +51,7 @@ export const STEPS = Object.freeze([
     eyebrow: "Step 5 · Community",
     title: "Separate collection, mule, and cash-out roles",
     explanation:
-      "Community detection groups accounts with dense transaction timing and shared infrastructure. Role labels are hypotheses backed by indicators and can be challenged.",
+      "Community detection groups accounts with dense transaction timing and shared infrastructure. Role labels are review hypotheses backed by indicators and can be challenged.",
     task: "Compare the detected mule bridge with the cash-out cluster and check the alternative explanation.",
   },
   {
@@ -67,9 +67,9 @@ export const STEPS = Object.freeze([
     id: "report",
     label: "Export defensible finding",
     eyebrow: "Step 7 · Report",
-    title: "Write a review recommendation",
+    title: "Write a suggested review step",
     explanation:
-      "The report should say which accounts merit lawful review, why, what evidence is missing, and which next steps would corroborate or refute the ring hypothesis.",
+      "The report should say which accounts merit lawful review, why, what evidence is missing, and which next steps would corroborate or refute the transaction-flow hypothesis.",
     task: "Mark the finding ready, run preflight, and export the HTML report with exact synthetic transaction dependencies.",
   },
 ]);
@@ -219,7 +219,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   showCommunities: true,
   highContrast: false,
   aliasIncluded: true,
-  riskThreshold: 70,
+  priorityThreshold: 70,
   includeInfrastructure: true,
 });
 
@@ -271,7 +271,7 @@ export function detectFraudRings(settings = DEFAULT_SETTINGS) {
       label: account.label,
       role: account.role,
       score,
-      status: score >= Number(settings.riskThreshold) ? "review-priority" : score >= 45 ? "watch" : "background",
+      status: score >= Number(settings.priorityThreshold ?? settings.riskThreshold ?? 70) ? "review-priority" : score >= 45 ? "watch" : "background",
       indicators,
       inboundAmount,
       outboundAmount,
@@ -286,7 +286,7 @@ export function detectFraudRings(settings = DEFAULT_SETTINGS) {
     scores,
     topAccount: bridge ?? scores[0],
     ringHypothesis:
-      "Possible fraud ring pattern: victims feed collection accounts, funds consolidate into Acct 777, then quickly fan out to cash-out accounts with shared infrastructure.",
+      "Possible transaction-flow pattern: complaint-backed origins feed collection accounts, funds consolidate into Acct 777, then quickly fan out to cash-out accounts with shared infrastructure.",
     communityRoles: {
       collection: ["a-100", "a-101"],
       muleBridge: ["a-777"],
@@ -316,8 +316,8 @@ export function deriveAnalysis(settings = DEFAULT_SETTINGS) {
   const detection = detectFraudRings(settings);
   const top = detection.topAccount;
   return {
-    splitConfidence: top.score >= 85 ? "high review priority" : "moderate review priority",
-    interpretation: `${top.label} is the top review-priority account (${top.score}/100) because it combines ${top.indicators.join(", ")}.`,
+    splitConfidence: top.score >= 85 ? "strong review-priority indicators" : "moderate review-priority indicators",
+    interpretation: `${top.label} is the top review-priority account with an uncalibrated rule-count index of ${top.score}/100 because it combines ${top.indicators.join(", ")}.`,
     communities: 3,
     changedMemberships: 5,
     evidenceCoverage: includeInfrastructure ? "83%" : "71%",
@@ -331,32 +331,38 @@ export function reportModel(state) {
   const analysis = deriveAnalysis(state.settings);
   const detection = detectFraudRings(state.settings);
   return {
-    title: "Cuentas mulas · Fraud-ring review report",
+    title: "Cuentas mulas · Transaction-flow review report",
     question: CASE.question,
     scope: "Synthetic financial transactions · April 1–4, 2026",
     before: "Collection phase · April 1, 09:12–11:06 UTC",
     after: "Fan-out and infrastructure phase · April 1, 12:18–April 2, 08:19 UTC",
     knownAt: "April 4, 2026 at 18:00 UTC",
     fixture: "FinancialFraudInterchange@1.0.0",
-    assessment: `${analysis.interpretation} This is a review recommendation, not a determination that any person committed a crime.`,
+    assessment: `${analysis.interpretation} This is a suggested review step, not a determination that any person committed a crime.`,
     contraryEvidence: analysis.alternative,
     method:
       "Explainable CPU mule-indicator baseline with temporal community roles; TGNN candidates remain gated until validated.",
     limitations:
       "Synthetic data only; scores are uncalibrated and require institution-specific validation, legal approval, and human review.",
     nextAction:
-      "Lawfully review account-opening records, device ownership, chargeback/complaint data, KYC status, and expected account behavior before escalation.",
+      "Lawfully review Acct 777 account-opening records, device/IP ownership, chargeback and complaint data, KYC status, and expected account behavior before escalation.",
     dependencies: detection.scores.flatMap((score) => score.dependencies),
   };
 }
 
 export function runPreflight(state) {
   const report = reportModel(state);
+  const journey = state.journey ?? {};
   const checks = [
+    ["Evidence has been inspected", journey.evidenceInspected === true],
+    ["Reasoning and uncertainty have been reviewed", journey.reasoningInspected === true],
+    ["Alternative explanation has been reviewed", journey.alternativeReviewed === true],
+    ["Recommended next review action has been acknowledged", journey.recommendationAcknowledged === true],
+    ["Finding is marked ready", state.findingReady === true],
     ["Transaction time range is recorded", Boolean(report.before && report.after)],
     ["Known-at cutoff is recorded", Boolean(report.knownAt)],
     ["Detection method and TGNN gate status are recorded", /TGNN|gated/i.test(report.method)],
-    ["Neutral review-priority language is used", /review recommendation|review-priority/i.test(report.assessment)],
+    ["Neutral review-priority language is used", /suggested review step|review-priority/i.test(report.assessment)],
     ["Contrary explanations are included", /processor|refund|shared/i.test(report.contraryEvidence)],
     ["Calibration limitations are disclosed", /uncalibrated/i.test(report.limitations)],
     ["Synthetic transaction dependencies are attached", report.dependencies.length > 0],

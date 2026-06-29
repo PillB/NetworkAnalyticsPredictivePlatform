@@ -111,12 +111,30 @@ test("report includes temporal cutoffs, contrary evidence, and exact dependencie
   assert.match(report.knownAt, /23:59/);
   assert.equal(report.fixture, "HarborLanternInterchangeV1@1.0.0");
   assert.match(report.contraryEvidence, /alias/i);
+  assert.match(report.nextAction, /Elena Voss alias/i);
+  assert.match(report.nextAction, /source-coverage gap/i);
   assert.equal(report.dependencies.length, visibleRelationships(DEFAULT_SETTINGS).length);
 });
 
-test("default report passes reconstructability preflight", () => {
+test("default report blocks preflight until required journey gates are complete", () => {
   const result = runPreflight(createInitialState());
+  assert.equal(result.passed, false);
+  assert.ok(result.checks.some(([label, passed]) => /Evidence has been inspected/.test(label) && !passed));
+});
+
+test("completed journey report passes reconstructability preflight", () => {
+  const state = {
+    ...createInitialState(),
+    findingReady: true,
+    journey: {
+      evidenceInspected: true,
+      reasoningInspected: true,
+      alternativeReviewed: true,
+      recommendationAcknowledged: true,
+    },
+  };
+  const result = runPreflight(state);
   assert.equal(result.passed, true);
-  assert.equal(result.checks.length, 7);
+  assert.equal(result.checks.length, 12);
   assert.ok(result.checks.every(([, passed]) => passed));
 });

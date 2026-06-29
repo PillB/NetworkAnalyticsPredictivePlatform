@@ -45,6 +45,25 @@ export function staticWorkbenchBootstrap() {
   };
 }
 
+export class WorkbenchBootstrapError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = "WorkbenchBootstrapError";
+    this.code = details.code ?? "workbench_bootstrap_failed";
+    this.status = details.status ?? null;
+    this.detail = details.detail ?? null;
+    this.endpoint = details.endpoint ?? null;
+  }
+}
+
+async function readErrorDetail(response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 function normalizeDemoBaseUrl(value) {
   const clean = String(value ?? "").trim().replace(/\/+$/g, "");
   if (!clean) return "";
@@ -128,12 +147,26 @@ export async function loadWorkbenchBootstrap({
         ...headers,
       },
     });
-    if (!response.ok) throw new Error(`Workbench API returned ${response.status}`);
+    if (!response.ok) {
+      const detail = await readErrorDetail(response);
+      throw new WorkbenchBootstrapError(`Workbench API returned ${response.status}`, {
+        code: detail?.detail?.error?.code ?? detail?.error?.code ?? "workbench_api_error",
+        status: response.status,
+        detail,
+        endpoint: targetEndpoint,
+      });
+    }
     return {
       ...validateWorkbenchBootstrap(await response.json()),
       transport: "authorized-api",
     };
-  } catch {
+  } catch (error) {
+    if (demoBaseUrl || endpoint) {
+      if (error instanceof WorkbenchBootstrapError) throw error;
+      throw new WorkbenchBootstrapError(error?.message ?? "Workbench API failed", {
+        endpoint: targetEndpoint,
+      });
+    }
     return staticWorkbenchBootstrap();
   }
 }
