@@ -116,7 +116,12 @@ test("boardroom graph style and AI decision-support panels are present", async (
   const css = await readFile(`${repoRoot}apps/web/styles.css`, "utf8");
   assert.match(html, /id="visualStyle"/);
   assert.match(html, /Boardroom/);
+  assert.match(html, /single-before/);
+  assert.match(html, /single-after/);
+  assert.match(html, /timeline-split/);
   assert.match(html, /id="modelGatePanel"/);
+  assert.match(html, /id="runLocalModel"/);
+  assert.match(html, /no LLM, no API, no external provider/i);
   assert.match(html, /id="assistantPrompt"/);
   assert.match(html, /id="askAssistant"/);
   assert.match(html, /id="previewAiQuery"/);
@@ -127,7 +132,9 @@ test("boardroom graph style and AI decision-support panels are present", async (
   assert.match(html, /id="suggestAiReview"/);
   assert.match(html, /id="saveAiNote"/);
   assert.match(app, /evaluatePredictiveModelCandidates/);
+  assert.match(app, /trainLocalReviewModel/);
   assert.match(app, /answerGraphQuestion/);
   assert.match(app, /suggestNextReviewAction/);
   assert.match(css, /graph-style-boardroom/);
+  assert.match(css, /mode-timeline-split/);
 });

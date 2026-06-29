@@ -336,6 +336,10 @@ select, .control-button {
 .legend-line { display: inline-block; width: 17px; border-top: 2px dashed var(--amber); }
 .legend-line.derived { border-top: 3px double var(--blue); }
 .graph-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 15px; }
+.graph-comparison.mode-single-before,
+.graph-comparison.mode-single-after,
+.graph-comparison.mode-overlay,
+.graph-comparison.mode-timeline-split { grid-template-columns: 1fr; }
 .graph-panel { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fbfaf5; }
 .graph-panel header { display: flex; align-items: center; justify-content: space-between; padding: 9px 11px; background: #eef1eb; border-bottom: 1px solid var(--line); }
 .graph-panel header div { display: flex; gap: 8px; align-items: baseline; }
@@ -372,6 +376,9 @@ select, .control-button {
 .overlay-panel { grid-column: 1 / -1; min-height: 260px; padding: 24px; border-radius: 10px; background: linear-gradient(135deg, #edf4f1, #fbf6e8); }
 .overlay-panel h3 { margin: 0 0 9px; font: 24px var(--font-display); }
 .overlay-panel ul { margin: 15px 0; padding-left: 20px; line-height: 1.7; }
+.overlay-panel svg { display: block; width: 100%; aspect-ratio: 1.65; min-height: 230px; }
+.timeline-split-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 9px; }
+.timeline-slice { min-width: 0; }
 .change-ribbon { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 9px; }
 .change-ribbon > div { display: flex; align-items: center; gap: 8px; padding: 9px; border-radius: 8px; background: #f2f1eb; }
 .change-ribbon p { margin: 0; }
@@ -452,6 +459,20 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
   border-radius: var(--radius-md);
   box-shadow: 0 8px 30px rgba(20,45,47,.04);
 }
+.model-train-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin: 12px 0;
+}
+.model-train-controls span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+.local-model-result details { margin-top: 8px; }
+.local-model-result ul { margin: 7px 0; padding-left: 18px; font-size: 9px; line-height: 1.6; }
 .assistant-tools {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) repeat(8, max-content);

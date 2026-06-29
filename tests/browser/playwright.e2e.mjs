@@ -68,6 +68,7 @@ async function desktopJourney(browser) {
   await assertPageLandmarks(page);
   await assertGuidedJourney(page);
   await assertCustomizationAndVersioning(page);
+  await assertGraphModesAndLocalTraining(page);
   await assertKeyboardEvidenceSelection(page);
   await assertReportExport(page);
 
@@ -156,6 +157,40 @@ async function assertCustomizationAndVersioning(page) {
   assert.equal(await page.locator(".version-chip").textContent(), "Analysis v3");
   await page.locator("#visualControls").click();
   assert.equal(await page.locator("#visualPopover").isHidden(), true);
+}
+
+async function assertGraphModesAndLocalTraining(page) {
+  const tableCount = await page.locator("#tableCount").textContent();
+  await page.locator("#visualControls").click();
+
+  await page.locator("#comparisonMode").selectOption("single-before");
+  assert.equal(await page.locator("#beforeGraph").isVisible(), true);
+  assert.equal(await page.locator("#afterGraph").isHidden(), true);
+  assert.equal(await page.locator("#tableCount").textContent(), tableCount);
+
+  await page.locator("#comparisonMode").selectOption("single-after");
+  assert.equal(await page.locator("#beforeGraph").isHidden(), true);
+  assert.equal(await page.locator("#afterGraph").isVisible(), true);
+  assert.equal(await page.locator("#tableCount").textContent(), tableCount);
+
+  await page.locator("#comparisonMode").selectOption("overlay");
+  assert.equal(await page.locator("#overlayGraph").isVisible(), true);
+  assert.match(await page.locator("#overlayPanel").innerText(), /No longer observed/i);
+
+  await page.locator("#comparisonMode").selectOption("timeline-split");
+  assert.ok(await page.locator('[id^="timelineGraph"]').count() >= 2);
+  assert.match(await page.locator("#overlayPanel").innerText(), /Semantic table unchanged/i);
+  assert.equal(await page.locator("#tableCount").textContent(), tableCount);
+  await page.locator("#visualControls").click();
+
+  await page.locator("#useCaseMode").selectOption("fraud");
+  assert.match(await page.locator("#localModelOutput").innerText(), /Ready to train/i);
+  await page.locator("#runLocalModel").click();
+  assert.match(await page.locator("#localModelOutput").innerText(), /browser-local logistic/i);
+  assert.match(await page.locator("#localModelOutput").innerText(), /Top review-priority prediction: Acct 777/i);
+  assert.match(await page.locator("#localModelOutput").innerText(), /tx-004|transaction dependencies/i);
+  assert.doesNotMatch(await page.locator("#localModelOutput").innerText(), /should be arrested|proved/i);
+  await page.locator("#useCaseMode").selectOption("harbor");
 }
 
 async function assertKeyboardEvidenceSelection(page) {

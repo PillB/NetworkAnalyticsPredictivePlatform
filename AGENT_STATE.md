@@ -148,6 +148,7 @@
 - 128 | Implemented browser fail-closed PostgreSQL bridge validation | Configured demo API failures now raise WorkbenchBootstrapError instead of returning static fallback; the app renders a visible demo-api-error state, Makefile/package scripts include a Pages Playwright regression, docs record the gate, and make test-all passed | Status: Success
 - 129 | Implemented imported-flow continuity validation | Browser-local imported transaction preview now rehydrates after reload; Pages Playwright asserts graph, table, Bloom path, workspace, AI citations, and report preview/preflight use imported imp-* dependencies and do not retain stale tx-* or Harbor Lantern evidence | Status: Success
 - 130 | Implemented guided recommendation gates and model leakage hardening | Harbor, built-in fraud, and imported fraud reports now require evidence inspection, reasoning/alternative review, recommended next-action acknowledgment, finding readiness, and preflight before export; fraud wording was softened to uncalibrated review-priority indicators; temporal leakage checks fail closed on invalid timestamps and future feature windows; npm test, browser, Pages, accessibility, postgres-required, live PostgreSQL, and make test-all passed | Status: Success
+- 131 | Implemented customizable graph comparison and local ML training workflow | Added single-before, single-after, overlay SVG, and three-slice chronological graph modes while preserving semantic table/report independence; added browser-local deterministic logistic review-priority model over temporal graph features with ELI5 output and evidence dependencies; npm test, browser, Pages preview, and accessibility passed locally | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -246,6 +247,8 @@
 - Cross-module browser tests must assert evidence identity continuity, not just visible UI success. Reloadable browser-local training state can otherwise display restored workspace notes against the wrong graph/source universe.
 - A report export is not valid merely because preflight code can construct a report. The user journey must prove evidence inspection, reasoning/alternative review, explicit next-action acknowledgment, and finding readiness before report export is enabled.
 - Fraud and transaction-flow outputs must say uncalibrated review-priority indicator or suggested review step, not confidence, guilt, optimality, profitability, or production prediction.
+- Before/after graph views are presentation filters over period-tagged relationships; overlay, single, and timeline split modes must not alter semantic rows, report dependencies, or recommendation gates.
+- The browser-local logistic model is a real deterministic training run for the synthetic training use case, but it is not SOTA TGNN/GNN deployment, profitability evidence, or production-calibrated fraud prediction.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development

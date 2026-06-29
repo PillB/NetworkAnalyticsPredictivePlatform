@@ -60,6 +60,39 @@ export function graphSummary(settings, source) {
   };
 }
 
+function eventMillis(relationship) {
+  const normalized = String(relationship.eventTime ?? "")
+    .replace(" UTC", "Z")
+    .replace(" ", "T");
+  const parsed = Date.parse(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function buildTimelineSplitModels(settings, source, splitCount = 3) {
+  const data = sourceFor(source);
+  const visible = data.visibleRelationships(settings)
+    .map((relationship) => ({
+      ...relationship,
+      sourceNode: data.nodeById(relationship.subject),
+      targetNode: data.nodeById(relationship.object),
+      changeLabel: CHANGE_LABELS[relationship.status],
+      atMs: eventMillis(relationship),
+    }))
+    .sort((a, b) => a.atMs - b.atMs || String(a.id).localeCompare(String(b.id)));
+  const count = Math.max(1, Number(splitCount) || 1);
+  const chunkSize = Math.max(1, Math.ceil(visible.length / count));
+  return Array.from({ length: count }, (_, index) => {
+    const edges = visible.slice(index * chunkSize, (index + 1) * chunkSize);
+    const nodeIds = new Set(edges.flatMap((edge) => [edge.subject, edge.object]));
+    return {
+      period: `slice-${index + 1}`,
+      label: `Slice ${index + 1}`,
+      nodes: data.nodes.filter((node) => nodeIds.has(node.id)),
+      edges,
+    };
+  }).filter((model) => model.edges.length > 0);
+}
+
 export function semanticRows(settings, source) {
   const data = sourceFor(source);
   return data.visibleRelationships(settings).map((relationship) => ({

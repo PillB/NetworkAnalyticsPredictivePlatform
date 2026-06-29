@@ -159,6 +159,9 @@
             <select id="comparisonMode">
               <option value="side-by-side">Side by side</option>
               <option value="overlay">Overlay summary</option>
+              <option value="single-before">Single view · before</option>
+              <option value="single-after">Single view · after</option>
+              <option value="timeline-split">3-slice timeline</option>
               <option value="difference">Differences only</option>
             </select>
           </label>
@@ -546,6 +549,11 @@
               Candidates can rank review hypotheses only after leakage, hard-negative,
               calibration, explanation, latency, and overreliance gates pass.
             </p>
+            <div class="model-train-controls">
+              <button class="button primary" id="runLocalModel" type="button">Run local review model</button>
+              <span>Browser-local logistic model · no LLM, no API, no external provider</span>
+            </div>
+            <div id="localModelOutput" class="workspace-list" aria-live="polite"></div>
             <div id="modelGatePanel" class="workspace-list"></div>
           </article>
 

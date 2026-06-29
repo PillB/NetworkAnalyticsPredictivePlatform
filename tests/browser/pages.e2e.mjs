@@ -124,6 +124,11 @@ try {
     assert.match(await page.locator("#communityInterpretation").textContent(), /top imported review-priority account/i);
     assert.match(await page.locator("#reportPreview").innerText(), /training-transactions\.csv|Imported cuentas mulas|imp-004/i);
     assert.doesNotMatch(await page.locator("#reportPreview").innerText(), /FinancialFraudInterchange@1\.0\.0|Harbor Lantern/i);
+    await page.locator("#runLocalModel").click();
+    assert.match(await page.locator("#localModelOutput").innerText(), /browser-local logistic review-priority model/i);
+    assert.match(await page.locator("#localModelOutput").innerText(), /Top review-priority prediction: Acct 777/i);
+    assert.match(await page.locator("#localModelOutput").innerText(), /imp-004|Evidence dependencies/i);
+    assert.doesNotMatch(await page.locator("#localModelOutput").innerText(), /should be arrested|proved/i);
     await page.locator("#bloomPhrase").fill("paths between Acct 100 and Acct 777");
     await page.locator("#runBloomPhrase").click();
     assert.match(await page.locator("#bloomExplanation").innerText(), /imp-004/i);

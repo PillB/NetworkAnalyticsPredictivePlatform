@@ -50,6 +50,7 @@ import {
   staticWorkbenchBootstrap,
 } from "../../packages/api-client/workbench-client.mjs";
 import {
+  buildTimelineSplitModels,
   graphSummary,
   semanticRows,
 } from "../../packages/graph-renderer/graph-model.mjs";
@@ -104,6 +105,10 @@ import {
   executeGraphPhrase,
   graphRuleLegend,
 } from "../../packages/graph-renderer/bloom-exploration.mjs";
+import {
+  buildAccountFeatureRows,
+  trainLocalReviewModel,
+} from "../../packages/predictive/local-trainer.mjs";
 
 let startupBootstrapError = null;
 let workbenchBootstrap;
@@ -152,6 +157,7 @@ function persistImportedFraudPreview(preview) {
 }
 let importedFraudWorkflow = restoreImportedFraudWorkflow();
 let assistantDraft = null;
+let localModelRun = null;
 let bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
 const modelEvaluation = evaluatePredictiveModelCandidates();
 const workspaceStorageKey = "napp-investigation-workspace-v1";
@@ -184,6 +190,7 @@ const elements = Object.fromEntries(
     "loadSampleJson", "previewImport", "applyImport", "importPreview", "mappingControls",
     "scopePurpose", "scopePeriod", "scopeFocus", "scopeReason", "beforePeriodLabel",
     "afterPeriodLabel", "beforeKnownAt", "afterKnownAt", "modelGatePanel", "assistantPrompt",
+    "runLocalModel", "localModelOutput",
     "askAssistant", "previewAiQuery", "draftReport", "redTeamDraft", "findAiGaps",
     "coachAiStep", "suggestAiReview", "saveAiNote", "assistantOutput", "manualChartCanvas",
     "demoApiUrl", "demoUsername", "demoPassword", "demoLogin", "demoLogout", "demoLoginStatus",
@@ -268,6 +275,7 @@ function activeWorkflow() {
       deriveAnalysis: FinancialFraud.deriveAnalysis,
       reportModel: FinancialFraud.reportModel,
       runPreflight: FinancialFraud.runPreflight,
+      transactions: FinancialFraud.TRANSACTIONS,
       exportName: "cuentas-mulas-transaction-flow",
       relationOptions: [
         ["all", "All recommended"],
@@ -521,6 +529,7 @@ function renderMappingControls() {
 function renderGraphs() {
   const source = graphSource();
   const summary = graphSummary(state.settings, source);
+  const mode = state.settings.comparisonMode;
   const options = {
     selectedId: state.selectedId,
     comparisonMode: state.settings.comparisonMode,
@@ -541,19 +550,48 @@ function renderGraphs() {
   elements.appearedCount.textContent = `${summary.appeared.length} appeared later`;
   elements.missingCount.textContent = `${summary.noLongerObserved.length} no longer observed`;
 
-  const overlay = state.settings.comparisonMode === "overlay";
-  elements.overlayPanel.hidden = !overlay;
-  document.querySelectorAll(".graph-panel").forEach((panel) => { panel.hidden = overlay; });
-  if (overlay) {
+  elements.graphComparison.className = `graph-comparison mode-${mode}`;
+  const beforePanel = elements.beforeGraph.closest(".graph-panel");
+  const afterPanel = elements.afterGraph.closest(".graph-panel");
+  const dynamicMode = ["overlay", "timeline-split"].includes(mode);
+  beforePanel.hidden = dynamicMode || mode === "single-after";
+  afterPanel.hidden = dynamicMode || mode === "single-before";
+  elements.overlayPanel.hidden = !dynamicMode;
+  if (mode === "overlay") {
+    const overlayModel = {
+      period: "overlay",
+      nodes: [...new Map([...summary.before.nodes, ...summary.after.nodes].map((node) => [node.id, node])).values()],
+      edges: [...new Map([...summary.before.edges, ...summary.after.edges].map((edge) => [edge.id, edge])).values()],
+    };
     elements.overlayPanel.innerHTML = `
       <p class="kicker">Overlay summary · positions remain anchored</p>
       <h3>${summary.appeared.length + summary.noLongerObserved.length} observed relationship changes</h3>
+      <svg id="overlayGraph" aria-label="Overlay graph with before and after relationships"></svg>
       <ul>
         ${summary.appeared.map((edge) => `<li><b>Appeared later:</b> ${escapeHtml(edge.sourceNode.label)} ${escapeHtml(edge.predicate)} ${escapeHtml(edge.targetNode.label)}</li>`).join("")}
         ${summary.noLongerObserved.map((edge) => `<li><b>No longer observed:</b> ${escapeHtml(edge.sourceNode.label)} ${escapeHtml(edge.predicate)} ${escapeHtml(edge.targetNode.label)}</li>`).join("")}
       </ul>
       <p>“No longer observed” describes this dataset and cutoff. It does not establish that a relationship ended.</p>
     `;
+    renderGraph(document.getElementById("overlayGraph"), overlayModel, { ...options, comparisonMode: "overlay" });
+  } else if (mode === "timeline-split") {
+    const slices = buildTimelineSplitModels(state.settings, source, 3);
+    elements.overlayPanel.innerHTML = `
+      <p class="kicker">Timeline split · visual-only three-slice view</p>
+      <h3>${slices.length} chronological slices from visible evidence</h3>
+      <div class="timeline-split-grid">
+        ${slices.map((slice, index) => `
+          <article class="graph-panel timeline-slice">
+            <header><div><span>${escapeHtml(slice.label)}</span><b>${slice.edges.length} relationships</b></div><small>Semantic table unchanged</small></header>
+            <svg id="timelineGraph${index}" aria-label="${escapeHtml(slice.label)} graph"></svg>
+          </article>
+        `).join("")}
+      </div>
+      <p>This split is for visual review only. Reports still use the complete authorized visible relationship set.</p>
+    `;
+    slices.forEach((slice, index) => {
+      renderGraph(document.getElementById(`timelineGraph${index}`), slice, { ...options, comparisonMode: "timeline-split" });
+    });
   }
 }
 
@@ -784,6 +822,92 @@ function renderModelGates() {
       </div>
     `;
   }).join("");
+}
+
+function localTrainingLabels(workflow) {
+  if (workflow.preview?.acceptedRows?.length) {
+    return workflow.preview.acceptedRows.reduce((labels, row) => {
+      if (!row.expectedAccountId || row.expectedReviewPriority === null) return labels;
+      labels[row.expectedAccountId] = Boolean(labels[row.expectedAccountId] || row.expectedReviewPriority);
+      return labels;
+    }, {});
+  }
+  if (activeUseCase === "fraud") {
+    return Object.fromEntries(
+      workflow.nodes
+        .filter((node) => node.type === "account")
+        .map((node) => [node.id, node.id === "a-777" || node.id === "acct-777"]),
+    );
+  }
+  return {};
+}
+
+function runLocalModelTraining() {
+  if (activeUseCase !== "fraud") {
+    localModelRun = null;
+    renderLocalModel();
+    setStatus("Switch to the financial transaction use case to run the local review-priority model");
+    return;
+  }
+  const workflow = activeWorkflow();
+  const rows = buildAccountFeatureRows({
+    nodes: workflow.nodes,
+    transactions: workflow.transactions ?? [],
+    labels: localTrainingLabels(workflow),
+    settings: state.settings,
+  });
+  localModelRun = trainLocalReviewModel({ rows });
+  updateJourney({ reasoningInspected: true });
+  render();
+  setStatus(`Browser-local review model trained on ${localModelRun.trainingRows} rows with ${localModelRun.predictions.length} account predictions`);
+}
+
+function renderLocalModel() {
+  if (!elements.localModelOutput) return;
+  if (activeUseCase !== "fraud") {
+    elements.localModelOutput.innerHTML = `
+      <div class="workspace-item">
+        <b>Local model ready</b>
+        <small>Select the financial transaction use case, then run the browser-local review-priority model. No LLM, API, or external provider is used.</small>
+      </div>
+    `;
+    return;
+  }
+  if (!localModelRun) {
+    elements.localModelOutput.innerHTML = `
+      <div class="workspace-item">
+        <b>Ready to train in this browser</b>
+        <small>Uses visible transaction graph features, synthetic benchmark scenarios, and any imported expected labels. It is decision support only.</small>
+      </div>
+    `;
+    return;
+  }
+  const top = localModelRun.predictions[0];
+  const dependencies = top.dependencies.slice(0, 6).map(escapeHtml).join(", ") || "No transaction dependencies";
+  const contributionRows = top.contributions.slice(0, 4).map((item) => `
+    <li>${escapeHtml(item.feature)}: value ${escapeHtml(item.value)} · contribution ${escapeHtml(item.contribution)}</li>
+  `).join("");
+  elements.localModelOutput.innerHTML = `
+    <div class="workspace-item local-model-result">
+      <b>${escapeHtml(localModelRun.algorithm)}</b>
+      <small>${escapeHtml(localModelRun.modelFamily)} · ${localModelRun.trainingRows} training rows · ${localModelRun.epochs} epochs</small>
+      <small>Validation: precision ${localModelRun.metrics.precision.toFixed(2)} · recall ${localModelRun.metrics.recall.toFixed(2)} · false-positive scenarios ${localModelRun.metrics.falsePositiveScenarios}</small>
+    </div>
+    <div class="workspace-item local-model-result">
+      <b>Top review-priority prediction: ${escapeHtml(top.label)}</b>
+      <small>Status ${escapeHtml(top.status)} · score ${top.score.toFixed(3)}. This is a prioritization indicator, not a finding of wrongdoing.</small>
+      <details open>
+        <summary>Why this account is first</summary>
+        <ul>${contributionRows}</ul>
+        <small>Evidence dependencies: ${dependencies}</small>
+      </details>
+    </div>
+    <div class="workspace-item local-model-result">
+      <b>Step-by-step reading</b>
+      <small>1. Convert visible transactions into account features. 2. Standardize features. 3. Train deterministic logistic regression. 4. Rank accounts for human review. 5. Verify dependencies before any recommendation.</small>
+      <small>${localModelRun.limitations.map(escapeHtml).join(" ")}</small>
+    </div>
+  `;
 }
 
 function renderAssistant() {
@@ -1029,6 +1153,7 @@ function render() {
   renderCommunity();
   renderReport();
   renderPrioritization();
+  renderLocalModel();
   renderModelGates();
   renderAssistant();
   renderChartWorkspace();
@@ -1176,6 +1301,7 @@ elements.useCaseMode.addEventListener("change", (event) => {
     ? { ...financialInitialState(), selectedId: workflow?.relationships?.[0]?.id ?? "tx-004" }
     : createInitialState();
   activeInspectorTab = "evidence";
+  localModelRun = null;
   resetGraphView();
   chartWorkspace = createChartWorkspace();
   bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
@@ -1232,12 +1358,14 @@ elements.applyImport.addEventListener("click", () => {
   persistImportedFraudPreview(importPreview);
   state = { ...financialInitialState(), selectedId: importedFraudWorkflow.relationships[0]?.id ?? "tx-004" };
   activeInspectorTab = "evidence";
+  localModelRun = null;
   resetGraphView();
   chartWorkspace = createChartWorkspace();
   bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
   render();
   setStatus(`Imported ${importPreview.summary.accepted} transactions into the transaction-flow review workflow`);
 });
+elements.runLocalModel.addEventListener("click", runLocalModelTraining);
 elements.visualControls.addEventListener("click", () => {
   elements.visualPopover.hidden = !elements.visualPopover.hidden;
   elements.visualControls.setAttribute("aria-expanded", String(!elements.visualPopover.hidden));
