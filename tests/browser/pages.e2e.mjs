@@ -83,6 +83,13 @@ try {
       await page.locator("#priorityQueue").innerText(),
       /No ordering shown in static fallback mode/i,
     );
+    await page.locator("#datasetMode").selectOption("dojo-karate-split-v1");
+    assert.equal(await page.locator("#useCaseMode").inputValue(), "dojo");
+    assert.match(await page.locator("#communityHeading").textContent(), /Automatic community split benchmark/i);
+    await page.locator("#runLocalModel").click();
+    assert.match(await page.locator("#localModelOutput").innerText(), /Deterministic community analysis/i);
+    assert.match(await page.locator("#localModelOutput").innerText(), /Uncertain bridge members/i);
+    assert.doesNotMatch(await page.locator("#localModelOutput").innerText(), /criminal gang proof|production prediction/i);
     await page.locator("#useCaseMode").selectOption("fraud");
     assert.match(await page.locator("#question-title").textContent(), /mule-account review indicators|transaction-flow hypothesis/i);
     assert.match(await page.locator("#communityHeading").textContent(), /mule-account bridge/i);

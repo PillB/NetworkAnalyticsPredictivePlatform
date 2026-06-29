@@ -149,6 +149,7 @@
 - 129 | Implemented imported-flow continuity validation | Browser-local imported transaction preview now rehydrates after reload; Pages Playwright asserts graph, table, Bloom path, workspace, AI citations, and report preview/preflight use imported imp-* dependencies and do not retain stale tx-* or Harbor Lantern evidence | Status: Success
 - 130 | Implemented guided recommendation gates and model leakage hardening | Harbor, built-in fraud, and imported fraud reports now require evidence inspection, reasoning/alternative review, recommended next-action acknowledgment, finding readiness, and preflight before export; fraud wording was softened to uncalibrated review-priority indicators; temporal leakage checks fail closed on invalid timestamps and future feature windows; npm test, browser, Pages, accessibility, postgres-required, live PostgreSQL, and make test-all passed | Status: Success
 - 131 | Implemented customizable graph comparison and local ML training workflow | Added single-before, single-after, overlay SVG, and three-slice chronological graph modes while preserving semantic table/report independence; added browser-local deterministic logistic review-priority model over temporal graph features with ELI5 output and evidence dependencies; npm test, browser, Pages preview, and accessibility passed locally | Status: Success
+- 132 | Implemented public dataset registry and benchmark-derived community workflow | Added dataset registry with embedded/external-adapter separation, dojo karate split workflow, deterministic label-propagation baseline, transaction anomaly scorer, benchmark claim gate, research note, and browser coverage for the new dataset selector; npm test, browser, Pages preview, and accessibility passed locally | Status: Success
 
 ## 🧠 Retrospective & Post-Mortem Notes
 - No prior implementation or research artifacts exist in the workspace, so claims and design choices require a fresh evidence trail.
@@ -249,6 +250,8 @@
 - Fraud and transaction-flow outputs must say uncalibrated review-priority indicator or suggested review step, not confidence, guilt, optimality, profitability, or production prediction.
 - Before/after graph views are presentation filters over period-tagged relationships; overlay, single, and timeline split modes must not alter semantic rows, report dependencies, or recommendation gates.
 - The browser-local logistic model is a real deterministic training run for the synthetic training use case, but it is not SOTA TGNN/GNN deployment, profitability evidence, or production-calibrated fraud prediction.
+- Public datasets must be split into embedded tiny fixtures versus external adapters. Karate/dojo is safe as an attributed benchmark-derived teaching fixture; TGB, Elliptic, AMLSim, SNAP, SocioPatterns, Kaggle, and named covert/criminal datasets require adapter/license/sensitivity review before use.
+- Benchmark-derived community and transaction models must declare calibrated=false and productionPredictionsEnabled=false unless validated artifacts, leakage reports, hard-negative evaluation, calibration, and human overreliance evidence exist.
 
 ## 📋 The Execution Pipeline
 - [ ] Active Step: Phase 4 — application development

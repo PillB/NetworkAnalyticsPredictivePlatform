@@ -183,6 +183,15 @@ async function assertGraphModesAndLocalTraining(page) {
   assert.equal(await page.locator("#tableCount").textContent(), tableCount);
   await page.locator("#visualControls").click();
 
+  await page.locator("#datasetMode").selectOption("dojo-karate-split-v1");
+  assert.equal(await page.locator("#useCaseMode").inputValue(), "dojo");
+  assert.match(await page.locator("#question-title").textContent(), /automatic community detector/i);
+  assert.equal(await page.locator("#stepList .step-button").count(), 5);
+  await page.locator("#runLocalModel").click();
+  assert.match(await page.locator("#localModelOutput").innerText(), /Deterministic community analysis/i);
+  assert.match(await page.locator("#localModelOutput").innerText(), /Uncertain bridge members/i);
+  assert.doesNotMatch(await page.locator("#localModelOutput").innerText(), /criminal gang proof|production prediction/i);
+
   await page.locator("#useCaseMode").selectOption("fraud");
   assert.match(await page.locator("#localModelOutput").innerText(), /Ready to train/i);
   await page.locator("#runLocalModel").click();

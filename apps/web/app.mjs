@@ -15,6 +15,10 @@ import {
   configureWorkbenchBootstrap,
 } from "../../packages/guided-workflow/harbor-lantern.mjs";
 import * as FinancialFraud from "../../packages/guided-workflow/financial-fraud.mjs";
+import * as DojoKarate from "../../packages/guided-workflow/dojo-karate-split.mjs";
+import {
+  embeddedWorkflowId,
+} from "../../packages/guided-workflow/dataset-registry.mjs";
 import {
   SAMPLE_TRANSACTION_CSV,
   SAMPLE_TRANSACTION_JSON,
@@ -109,6 +113,9 @@ import {
   buildAccountFeatureRows,
   trainLocalReviewModel,
 } from "../../packages/predictive/local-trainer.mjs";
+import {
+  scoreTransactionAnomalies,
+} from "../../packages/predictive/transaction-anomaly-scorer.mjs";
 
 let startupBootstrapError = null;
 let workbenchBootstrap;
@@ -158,6 +165,8 @@ function persistImportedFraudPreview(preview) {
 let importedFraudWorkflow = restoreImportedFraudWorkflow();
 let assistantDraft = null;
 let localModelRun = null;
+let anomalyRun = null;
+let communityRun = null;
 let bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
 const modelEvaluation = evaluatePredictiveModelCandidates();
 const workspaceStorageKey = "napp-investigation-workspace-v1";
@@ -165,7 +174,7 @@ const workspaceStorageKey = "napp-investigation-workspace-v1";
 const elements = Object.fromEntries(
   [
     "stepList", "stepEyebrow", "stepTitle", "stepExplanation", "stepTask", "backStep",
-    "useCaseMode", "caseId", "caseRange", "caseKnownAt", "question-title",
+    "useCaseMode", "datasetMode", "caseId", "caseRange", "caseKnownAt", "question-title",
     "graphHeading", "communityHeading", "aliasControlLabel", "aliasControlHelp",
     "nextStep", "scopeToggle", "scopeDrawer", "comparisonMode", "relationFilter",
     "windowDays", "labelDensity", "visualStyle", "visualControls", "visualPopover", "spacing",
@@ -233,7 +242,63 @@ function financialInitialState() {
   };
 }
 
+function dojoInitialState() {
+  return {
+    stepIndex: 0,
+    selectedId: "dk-010",
+    settings: { ...DojoKarate.DEFAULT_SETTINGS },
+    analysisVersion: 1,
+    findingReady: false,
+    preflightRun: false,
+    journey: {
+      evidenceInspected: false,
+      reasoningInspected: false,
+      alternativeReviewed: false,
+      recommendationAcknowledged: false,
+    },
+  };
+}
+
 function activeWorkflow() {
+  if (activeUseCase === "dojo") {
+    return {
+      case: DojoKarate.CASE,
+      steps: DojoKarate.STEPS,
+      nodes: DojoKarate.NODES,
+      defaults: DojoKarate.DEFAULT_SETTINGS,
+      nodeById: DojoKarate.nodeById,
+      relationshipById: DojoKarate.relationshipById,
+      visibleRelationships: DojoKarate.visibleRelationships,
+      deriveAnalysis: DojoKarate.deriveAnalysis,
+      reportModel: DojoKarate.reportModel,
+      runPreflight: DojoKarate.runPreflight,
+      runCommunityBaseline: DojoKarate.runCommunityBaseline,
+      exportName: "dojo-karate-split-community",
+      relationOptions: [
+        ["all", "All recommended"],
+        ["training", "Training ties"],
+        ["administration", "Administration"],
+        ["bridge", "Bridge ties"],
+      ],
+      question: DojoKarate.CASE.question,
+      graphHeading: "Dojo benchmark interaction network",
+      communityHeading: "Automatic community split benchmark",
+      confidenceLabel: "Agreement",
+      aliasLabel: "Include bridge interactions",
+      aliasHelp: "Recommended: include, but review bridge members as uncertain",
+      periodLabels: {
+        before: "Weeks 1-4",
+        after: "Weeks 5-8",
+        knownAt: "Known by Jun 1 · 12:00",
+      },
+      scopeDefaults: {
+        purpose: "Training community detection benchmark",
+        period: "Benchmark season · weeks 1-8",
+        focus: "Dojo interaction graph",
+        reason: "This benchmark-derived split shows how automatic communities can agree with labels while preserving uncertainty.",
+      },
+    };
+  }
   if (activeUseCase === "fraud") {
       if (importedFraudWorkflow) {
       return {
@@ -352,6 +417,7 @@ function graphSource() {
 }
 
 function bloomUseCase() {
+  if (activeUseCase === "dojo") return "harbor";
   return activeUseCase === "fraud" && importedFraudWorkflow ? "imported-fraud" : activeUseCase;
 }
 
@@ -410,6 +476,11 @@ function renderControls() {
   const workflow = activeWorkflow();
   elements.transactionImportPanel.hidden = activeUseCase !== "fraud";
   elements.useCaseMode.value = activeUseCase;
+  elements.datasetMode.value = activeUseCase === "dojo"
+    ? "dojo-karate-split-v1"
+    : activeUseCase === "fraud"
+      ? "financial-fraud-synthetic-v1"
+      : "harbor-lantern-v1";
   elements.caseId.textContent = workflow.case.displayId ?? workflow.case.id;
   elements.caseRange.textContent = workflow.case.eventRange ?? "Jan 18–Mar 18, 2026";
   elements.caseKnownAt.textContent = (workflow.case.knownAt ?? workflow.case.scope?.knownAt ?? "2026-03-18T23:59:00Z")
@@ -431,6 +502,9 @@ function renderControls() {
   if (activeUseCase === "fraud") {
     elements.uncertaintyTitle.textContent = "Infrastructure affects result";
     elements.uncertaintyDetail.textContent = "Device/IP support is context, not proof";
+  } else if (activeUseCase === "dojo") {
+    elements.uncertaintyTitle.textContent = "Bridge ties affect result";
+    elements.uncertaintyDetail.textContent = "Bridge members remain uncertain";
   } else {
     elements.uncertaintyTitle.textContent = "Alias affects result";
     elements.uncertaintyDetail.textContent = "Elena Voss identity unresolved";
@@ -661,7 +735,7 @@ function renderInspector() {
   const visibleRows = semanticRows(state.settings, graphSource());
   const visibleIds = new Set(visibleRows.map((row) => row.id));
   if (!item || !visibleIds.has(item.id)) {
-    item = workflow.relationshipById(activeUseCase === "fraud" ? (visibleRows[0]?.id ?? "tx-004") : "r2");
+    item = workflow.relationshipById(visibleRows[0]?.id ?? (activeUseCase === "fraud" ? "tx-004" : activeUseCase === "dojo" ? "dk-001" : "r2"));
     state = { ...state, selectedId: item.id };
   }
   elements.inspectorContent.innerHTML =
@@ -843,10 +917,19 @@ function localTrainingLabels(workflow) {
 }
 
 function runLocalModelTraining() {
+  if (activeUseCase === "dojo") {
+    communityRun = activeWorkflow().runCommunityBaseline(state.settings);
+    updateJourney({ reasoningInspected: true, alternativeReviewed: true });
+    render();
+    setStatus(`Local community analysis completed with ${(communityRun.evaluation.agreement * 100).toFixed(0)}% benchmark agreement`);
+    return;
+  }
   if (activeUseCase !== "fraud") {
     localModelRun = null;
+    anomalyRun = null;
+    communityRun = null;
     renderLocalModel();
-    setStatus("Switch to the financial transaction use case to run the local review-priority model");
+    setStatus("Select a benchmark or financial transaction use case to run automatic training analysis");
     return;
   }
   const workflow = activeWorkflow();
@@ -856,14 +939,46 @@ function runLocalModelTraining() {
     labels: localTrainingLabels(workflow),
     settings: state.settings,
   });
+  anomalyRun = scoreTransactionAnomalies({
+    nodes: workflow.nodes,
+    transactions: workflow.transactions ?? [],
+    labels: localTrainingLabels(workflow),
+    settings: state.settings,
+  });
   localModelRun = trainLocalReviewModel({ rows });
   updateJourney({ reasoningInspected: true });
   render();
-  setStatus(`Browser-local review model trained on ${localModelRun.trainingRows} rows with ${localModelRun.predictions.length} account predictions`);
+  setStatus(`Browser-local transaction analysis completed for ${anomalyRun.predictions.length} accounts; local demo model trained on ${localModelRun.trainingRows} rows`);
 }
 
 function renderLocalModel() {
   if (!elements.localModelOutput) return;
+  if (activeUseCase === "dojo") {
+    if (!communityRun) {
+      elements.localModelOutput.innerHTML = `
+        <div class="workspace-item">
+          <b>Ready to run community benchmark</b>
+          <small>Runs deterministic label propagation on a benchmark-derived dojo split. No LLM, API, external provider, or production prediction is used.</small>
+        </div>
+      `;
+      return;
+    }
+    const labels = Object.entries(communityRun.communities)
+      .map(([label, members]) => `${label}: ${members.length} members`)
+      .join("<br>");
+    elements.localModelOutput.innerHTML = `
+      <div class="workspace-item local-model-result">
+        <b>Deterministic community analysis</b>
+        <small>Agreement ${communityRun.evaluation.agreement.toFixed(2)} on ${communityRun.evaluation.evaluatedNodes} non-bridge benchmark labels · calibrated false</small>
+        <small>${labels}</small>
+      </div>
+      <div class="workspace-item local-model-result">
+        <b>Uncertain bridge members</b>
+        <small>${communityRun.evaluation.uncertainNodes.map(escapeHtml).join(", ")} remain review caveats, not hard conclusions.</small>
+      </div>
+    `;
+    return;
+  }
   if (activeUseCase !== "fraud") {
     elements.localModelOutput.innerHTML = `
       <div class="workspace-item">
@@ -882,12 +997,18 @@ function renderLocalModel() {
     `;
     return;
   }
+  const anomalyTop = anomalyRun?.predictions?.[0];
   const top = localModelRun.predictions[0];
   const dependencies = top.dependencies.slice(0, 6).map(escapeHtml).join(", ") || "No transaction dependencies";
   const contributionRows = top.contributions.slice(0, 4).map((item) => `
     <li>${escapeHtml(item.feature)}: value ${escapeHtml(item.value)} · contribution ${escapeHtml(item.contribution)}</li>
   `).join("");
   elements.localModelOutput.innerHTML = `
+    <div class="workspace-item local-model-result">
+      <b>${escapeHtml(anomalyRun?.algorithm ?? "deterministic temporal transaction anomaly scorer")}</b>
+      <small>Top account ${escapeHtml(anomalyTop?.label ?? top.label)} · review-priority score ${escapeHtml(anomalyTop?.score ?? "n/a")} · calibrated false</small>
+      <small>${escapeHtml(anomalyRun?.prohibitedUse ?? "No production prediction is enabled.")}</small>
+    </div>
     <div class="workspace-item local-model-result">
       <b>${escapeHtml(localModelRun.algorithm)}</b>
       <small>${escapeHtml(localModelRun.modelFamily)} · ${localModelRun.trainingRows} training rows · ${localModelRun.epochs} epochs</small>
@@ -1299,16 +1420,33 @@ elements.useCaseMode.addEventListener("change", (event) => {
   const workflow = activeUseCase === "fraud" ? activeWorkflow() : null;
   state = activeUseCase === "fraud"
     ? { ...financialInitialState(), selectedId: workflow?.relationships?.[0]?.id ?? "tx-004" }
-    : createInitialState();
+    : activeUseCase === "dojo"
+      ? dojoInitialState()
+      : createInitialState();
   activeInspectorTab = "evidence";
   localModelRun = null;
+  anomalyRun = null;
+  communityRun = null;
   resetGraphView();
   chartWorkspace = createChartWorkspace();
   bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
   render();
   setStatus(activeUseCase === "fraud"
     ? "Cuentas mulas transaction-flow review training case loaded"
+    : activeUseCase === "dojo"
+      ? "Dojo community split benchmark loaded"
     : "Temporal community split training case loaded");
+});
+
+elements.datasetMode.addEventListener("change", (event) => {
+  const workflowId = embeddedWorkflowId(event.target.value);
+  if (!workflowId) {
+    setStatus("External benchmark adapters are documented but not embedded in the static training app");
+    renderControls();
+    return;
+  }
+  elements.useCaseMode.value = workflowId;
+  elements.useCaseMode.dispatchEvent(new Event("change"));
 });
 
 elements.scopeToggle.addEventListener("click", () => {
@@ -1359,6 +1497,8 @@ elements.applyImport.addEventListener("click", () => {
   state = { ...financialInitialState(), selectedId: importedFraudWorkflow.relationships[0]?.id ?? "tx-004" };
   activeInspectorTab = "evidence";
   localModelRun = null;
+  anomalyRun = null;
+  communityRun = null;
   resetGraphView();
   chartWorkspace = createChartWorkspace();
   bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };

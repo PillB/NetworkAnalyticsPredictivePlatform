@@ -64,7 +64,16 @@
             <span>Use case</span>
             <select id="useCaseMode">
               <option value="harbor">Temporal community split</option>
+              <option value="dojo">Dojo split benchmark</option>
               <option value="fraud">Cuentas mulas / fraud ring</option>
+            </select>
+          </label>
+          <label class="use-case-picker">
+            <span>Dataset</span>
+            <select id="datasetMode">
+              <option value="harbor-lantern-v1">Harbor Lantern synthetic</option>
+              <option value="dojo-karate-split-v1">Dojo karate benchmark</option>
+              <option value="financial-fraud-synthetic-v1">Synthetic transaction flow</option>
             </select>
           </label>
         </div>
@@ -550,8 +559,8 @@
               calibration, explanation, latency, and overreliance gates pass.
             </p>
             <div class="model-train-controls">
-              <button class="button primary" id="runLocalModel" type="button">Run local review model</button>
-              <span>Browser-local logistic model · no LLM, no API, no external provider</span>
+              <button class="button primary" id="runLocalModel" type="button">Run automatic training analysis</button>
+              <span>Browser-local deterministic analysis · no LLM, no API, no external provider</span>
             </div>
             <div id="localModelOutput" class="workspace-list" aria-live="polite"></div>
             <div id="modelGatePanel" class="workspace-list"></div>

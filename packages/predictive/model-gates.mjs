@@ -452,4 +452,33 @@ export function enableCandidate(evaluation, candidateId) {
   };
 }
 
+export function validateBenchmarkClaimGate(run = {}) {
+  const text = [
+    run.algorithm,
+    run.modelFamily,
+    run.summary,
+    run.claim,
+    ...(run.limitations ?? []),
+  ].join(" ");
+  const blockedClaims = [
+    /state of the art|sota/i,
+    /pretrained/i,
+    /production prediction|production model/i,
+    /calibrated/i,
+    /profitability/i,
+  ].filter((pattern) => pattern.test(text));
+  const failures = [
+    run.benchmarkDerived === true && !run.sourceNote && "benchmark-derived run requires source note",
+    run.calibrated !== false && "benchmark/local run must declare calibrated: false",
+    run.productionPredictionsEnabled !== false && "production predictions must remain disabled",
+    ...blockedClaims.map((pattern) => `blocked claim: ${pattern.source}`),
+  ].filter(Boolean);
+  return {
+    contract: "BenchmarkClaimGateV1",
+    passed: failures.length === 0,
+    failures,
+    productionPredictionsEnabled: false,
+  };
+}
+
 export { DEFAULT_CANDIDATES, GATES };

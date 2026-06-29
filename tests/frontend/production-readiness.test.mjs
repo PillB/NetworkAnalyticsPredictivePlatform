@@ -8,6 +8,7 @@ import {
   validateModelProviderConfig,
   validateTrainedModelArtifact,
 } from "../../packages/predictive/production-readiness.mjs";
+import { validateBenchmarkClaimGate } from "../../packages/predictive/model-gates.mjs";
 import {
   authorizeServerRetrievalRequest,
   createPersistentAiAuditRecord,
@@ -103,6 +104,29 @@ test("provider and promotion gates keep production predictions disabled", () => 
   assert.equal(gate.eligibleForPilot, true);
   assert.equal(gate.productionPredictionsEnabled, false);
   assert.equal(gate.decision, "eligible-for-supervised-pilot-only");
+});
+
+test("benchmark claim gate blocks fake pretrained SOTA or calibrated claims", () => {
+  const good = validateBenchmarkClaimGate({
+    algorithm: "deterministic label propagation",
+    benchmarkDerived: true,
+    sourceNote: "Zachary karate club benchmark-derived teaching fixture",
+    calibrated: false,
+    productionPredictionsEnabled: false,
+    limitations: ["Small benchmark-derived fixture."],
+  });
+  assert.equal(good.passed, true);
+
+  const bad = validateBenchmarkClaimGate({
+    algorithm: "pretrained SOTA temporal GNN",
+    benchmarkDerived: true,
+    calibrated: true,
+    productionPredictionsEnabled: true,
+    claim: "calibrated production model",
+  });
+  assert.equal(bad.passed, false);
+  assert.ok(bad.failures.some((failure) => /source note/i.test(failure)));
+  assert.ok(bad.failures.some((failure) => /blocked claim/i.test(failure)));
 });
 
 test("prompt-injection isolation quarantines poisoned retrieved sources", () => {

@@ -116,6 +116,9 @@ test("boardroom graph style and AI decision-support panels are present", async (
   const css = await readFile(`${repoRoot}apps/web/styles.css`, "utf8");
   assert.match(html, /id="visualStyle"/);
   assert.match(html, /Boardroom/);
+  assert.match(html, /id="datasetMode"/);
+  assert.match(html, /dojo-karate-split-v1/);
+  assert.match(html, /Run automatic training analysis/);
   assert.match(html, /single-before/);
   assert.match(html, /single-after/);
   assert.match(html, /timeline-split/);
