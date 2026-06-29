@@ -449,7 +449,14 @@ function resetGraphView() {
   graphView = { positions: {}, rotation: 0, nodeVisuals: {}, undo: [], redo: [] };
 }
 
+function clampStepIndex() {
+  const maxIndex = Math.max(0, activeWorkflow().steps.length - 1);
+  if (state.stepIndex > maxIndex) state = { ...state, stepIndex: maxIndex };
+  if (state.stepIndex < 0) state = { ...state, stepIndex: 0 };
+}
+
 function renderSteps() {
+  clampStepIndex();
   const steps = activeWorkflow().steps;
   elements.stepList.innerHTML = steps.map((step, index) => `
     <li>
@@ -463,6 +470,7 @@ function renderSteps() {
 }
 
 function renderCoach() {
+  clampStepIndex();
   const step = activeWorkflow().steps[state.stepIndex];
   elements.stepEyebrow.textContent = step.eyebrow;
   elements.stepTitle.textContent = step.title;

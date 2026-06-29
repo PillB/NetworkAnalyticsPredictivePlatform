@@ -11,6 +11,7 @@
     "audit:i2": "node tests/browser/i2-parity-audit.mjs",
     "audit:workspace": "node tests/browser/workspace-parity-audit.mjs",
     "audit:bloom": "node tests/browser/bloom-parity-audit.mjs",
+    "audit:flows": "node tests/browser/screenshot-flow-audit.mjs",
     "build:pages": "node scripts/build-pages.mjs",
     "demo": "node scripts/serve-web.mjs"
   },

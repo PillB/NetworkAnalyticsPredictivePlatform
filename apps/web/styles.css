@@ -142,6 +142,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   gap: 10px;
   align-items: center;
   padding: 10px 8px;
+  min-height: 58px;
   border: 0;
   background: transparent;
   text-align: left;
@@ -448,11 +449,12 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 .priority-card { margin-top: 16px; padding: 18px; }
 .ai-grid {
   display: grid;
-  grid-template-columns: .9fr 1.1fr;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
   gap: 16px;
   margin-top: 16px;
 }
 .model-card, .assistant-card {
+  min-width: 0;
   padding: 18px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -475,7 +477,7 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 .local-model-result ul { margin: 7px 0; padding-left: 18px; font-size: 9px; line-height: 1.6; }
 .assistant-tools {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) repeat(8, max-content);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 8px;
   align-items: end;
   margin-top: 12px;
@@ -611,7 +613,7 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 .chart-workspace-card { margin-top: 16px; padding: 18px; }
 .chart-tools {
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) repeat(4, max-content) minmax(180px, 1fr) max-content minmax(150px, .8fr) repeat(2, max-content);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 9px;
   align-items: end;
 }
@@ -637,7 +639,7 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 }
 .case-workspace-tools {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) max-content minmax(170px, 1.1fr) max-content minmax(140px, .9fr) minmax(110px, .7fr) max-content minmax(130px, .8fr) repeat(4, max-content);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 9px;
   align-items: end;
   margin-top: 10px;
@@ -646,7 +648,7 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 }
 .bloom-tools {
   display: grid;
-  grid-template-columns: minmax(260px, 1.5fr) max-content minmax(170px, .8fr) repeat(2, max-content);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 9px;
   align-items: end;
   margin-top: 10px;
@@ -660,7 +662,7 @@ details p { color: var(--muted); font-size: 10px; line-height: 1.5; }
 .bloom-explanation .workspace-item { background: #eef3f1; }
 .chart-authoring-tools {
   display: grid;
-  grid-template-columns: minmax(160px, 1.2fr) minmax(95px, .6fr) minmax(95px, .6fr) max-content max-content minmax(110px, .7fr) minmax(110px, .7fr) minmax(140px, 1fr) minmax(95px, .6fr) max-content max-content max-content max-content;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 9px;
   align-items: end;
   margin-top: 10px;
