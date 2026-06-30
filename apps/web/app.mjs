@@ -18,8 +18,11 @@ import * as FinancialFraud from "../../packages/guided-workflow/financial-fraud.
 import * as DojoKarate from "../../packages/guided-workflow/dojo-karate-split.mjs";
 import {
   DATASET_INTEGRATION_STEPS,
+  datasetUseCaseResults,
   embeddedWorkflowId,
   listDatasets,
+  recommendedUseCaseForDataset,
+  safeDemoSliceForDataset,
 } from "../../packages/guided-workflow/dataset-registry.mjs";
 import {
   SAMPLE_TRANSACTION_CSV,
@@ -180,7 +183,8 @@ const workspaceStorageKey = "napp-investigation-workspace-v1";
 const elements = Object.fromEntries(
   [
     "stepList", "stepEyebrow", "stepTitle", "stepExplanation", "stepTask", "backStep",
-    "useCaseMode", "datasetMode", "selectedDatasetSummary", "datasetAdapterSteps", "datasetCatalog",
+    "useCaseMode", "datasetMode", "selectedDatasetSummary", "datasetUseCaseMatrix",
+    "useDatasetFlow", "loadDatasetDemo", "datasetAdapterSteps", "datasetCatalog",
     "caseId", "caseRange", "caseKnownAt", "question-title",
     "graphHeading", "communityHeading", "aliasControlLabel", "aliasControlHelp",
     "nextStep", "scopeToggle", "scopeDrawer", "comparisonMode", "splitCount", "splitBoundary",
@@ -234,12 +238,25 @@ function renderDatasetCatalog(selectedId) {
   `).join("");
   elements.datasetMode.value = selected.id;
   const runnable = embeddedWorkflowId(selected.id);
+  const matrix = datasetUseCaseResults(selected.id);
+  const demo = safeDemoSliceForDataset(selected.id);
   elements.selectedDatasetSummary.innerHTML = `
     <b>${escapeHtml(selected.name)}</b>
     <small>${escapeHtml(selected.domain)} · ${escapeHtml(selected.availability)} · ${selected.synthetic ? "synthetic" : "public/external"} · ${selected.benchmarkDerived ? "benchmark-derived" : "project fixture"}</small>
     <small>${escapeHtml(selected.dataBoundary ?? selected.licenseNote)}</small>
     <small>${runnable ? `Runs now as the ${runnable} website workflow.` : "Adapter-only: use the import/training workflow after offline download and validation."}</small>
   `;
+  elements.datasetUseCaseMatrix.innerHTML = matrix.map((row) => `
+    <article>
+      <b>${escapeHtml(row.label)}</b>
+      <span>${escapeHtml(row.status)}</span>
+      <small>${escapeHtml(row.result)}</small>
+      <small>${escapeHtml(row.aiMl)}</small>
+    </article>
+  `).join("");
+  elements.useDatasetFlow.disabled = false;
+  elements.loadDatasetDemo.disabled = !demo;
+  elements.loadDatasetDemo.textContent = demo ? "Load safe demo slice" : "No safe slice";
   elements.datasetAdapterSteps.innerHTML = DATASET_INTEGRATION_STEPS
     .map((step) => `<li>${escapeHtml(step)}</li>`)
     .join("");
@@ -1509,12 +1526,45 @@ elements.datasetMode.addEventListener("change", (event) => {
   selectedDatasetId = event.target.value;
   const workflowId = embeddedWorkflowId(event.target.value);
   if (!workflowId) {
-    setStatus("External benchmark adapters are documented but not embedded in the static training app");
+    const target = recommendedUseCaseForDataset(selectedDatasetId);
+    const demo = safeDemoSliceForDataset(selectedDatasetId);
+    setStatus(demo
+      ? `Adapter documented. Open ${target} flow or load a safe synthetic demo slice for local analysis.`
+      : `Adapter documented. Open ${target} flow for the closest built-in use case; real data still requires offline mapping.`);
     renderDatasetCatalog(selectedDatasetId);
     return;
   }
   elements.useCaseMode.value = workflowId;
   elements.useCaseMode.dispatchEvent(new Event("change"));
+});
+
+elements.useDatasetFlow.addEventListener("click", () => {
+  const datasetId = selectedDatasetId;
+  const target = recommendedUseCaseForDataset(selectedDatasetId);
+  elements.useCaseMode.value = target;
+  elements.useCaseMode.dispatchEvent(new Event("change"));
+  selectedDatasetId = datasetId;
+  renderDatasetCatalog(selectedDatasetId);
+  setStatus(`Opened ${target} flow for ${listDatasets().find((dataset) => dataset.id === selectedDatasetId)?.name ?? "selected dataset"}`);
+});
+
+elements.loadDatasetDemo.addEventListener("click", () => {
+  const datasetId = selectedDatasetId;
+  const demo = safeDemoSliceForDataset(selectedDatasetId);
+  if (!demo) {
+    setStatus("No safe browser demo slice is available for this dataset family; use the matched flow and offline adapter steps.");
+    return;
+  }
+  elements.useCaseMode.value = "fraud";
+  elements.useCaseMode.dispatchEvent(new Event("change"));
+  selectedDatasetId = datasetId;
+  elements.transactionFormat.value = demo.format;
+  elements.transactionCsv.value = demo.content;
+  importPreview = null;
+  renderMappingControls();
+  renderImportPreview();
+  renderDatasetCatalog(selectedDatasetId);
+  setStatus(`${demo.label} loaded. Preview import, apply accepted rows, then run local anomaly and ML analysis.`);
 });
 
 elements.scopeToggle.addEventListener("click", () => {

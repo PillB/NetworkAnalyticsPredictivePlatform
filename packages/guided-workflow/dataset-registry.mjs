@@ -260,3 +260,78 @@ export function embeddedWorkflowId(datasetId) {
   };
   return map[datasetId] ?? null;
 }
+
+const transactionDemoCsv = (prefix, focus = "acct-777") => `transaction_id,timestamp,origin_id,origin_kind,destination_id,destination_kind,amount,currency,type,description,expected_account_id,expected_review_priority
+${prefix}-001,2026-05-10T09:00:00Z,source-a,person,collector-1,account,1200,USD,fraud complaint transfer,Dataset-adapter demo inbound,${focus},true
+${prefix}-002,2026-05-10T09:08:00Z,source-b,person,collector-2,account,980,USD,fraud complaint transfer,Dataset-adapter demo inbound,${focus},true
+${prefix}-003,2026-05-10T09:50:00Z,collector-1,account,${focus},account,1180,USD,internal transfer,Rapid consolidation,${focus},true
+${prefix}-004,2026-05-10T09:58:00Z,collector-2,account,${focus},account,965,USD,internal transfer,Rapid consolidation,${focus},true
+${prefix}-005,2026-05-10T10:20:00Z,${focus},account,cashout-1,account,1075,USD,cash-out transfer,Cash-out fan-out,${focus},true
+${prefix}-006,2026-05-10T10:28:00Z,${focus},account,cashout-2,account,1015,USD,cash-out transfer,Cash-out fan-out,${focus},true
+${prefix}-007,2026-05-10T11:20:00Z,merchant-processor,account,customer-refund,person,120,USD,refund,Hard-negative legitimate refund,${focus},false
+${prefix}-008,2026-05-10T11:25:00Z,shared-device-1,device,${focus},account,0,N/A,login event,Infrastructure context only,${focus},true`;
+
+function recommendedUseCase(dataset) {
+  const text = `${dataset.domain} ${dataset.taskTypes.join(" ")}`.toLowerCase();
+  if (/transaction|fraud|aml|money|financial|risk|anomaly/.test(text)) return "fraud";
+  if (/community|contact|crime|co-offending|centrality|dojo/.test(text)) return "dojo";
+  return "harbor";
+}
+
+export function datasetUseCaseResults(datasetId) {
+  const dataset = getDataset(datasetId);
+  const recommended = recommendedUseCase(dataset);
+  const embedded = embeddedWorkflowId(datasetId);
+  const statusFor = (useCase) => {
+    if (embedded) return embedded === useCase ? "runs-now" : "supporting-benchmark";
+    if (recommended !== useCase) return useCase === "fraud" ? "not-primary" : "supporting-benchmark";
+    return useCase === "fraud" ? "matched-safe-demo-slice" : "matched-adapter-demo";
+  };
+  return [
+    {
+      useCase: "harbor",
+      label: "Temporal split investigation",
+      status: statusFor("harbor"),
+      result: recommended === "harbor"
+        ? "Temporal comparison, no-split/unified review, auto split, and report preflight."
+        : "Use for temporal stress tests after mapping relationships and known-at cutoffs.",
+      aiMl: "Deterministic temporal/community reasoning; no LLM or production model.",
+    },
+    {
+      useCase: "dojo",
+      label: "Community detection benchmark",
+      status: statusFor("dojo"),
+      result: recommended === "dojo"
+        ? "Deterministic label-propagation community analysis with bridge-member uncertainty."
+        : "Use for topology and community sanity checks after adapter mapping.",
+      aiMl: "CPU deterministic community baseline; calibrated false; no GenAI.",
+    },
+    {
+      useCase: "fraud",
+      label: "Transaction anomaly and local ML",
+      status: statusFor("fraud"),
+      result: recommended === "fraud"
+        ? "Safe synthetic slice can be imported, previewed, scored, trained locally, and report-gated."
+        : "Only use if the source is converted into transaction CSV/JSON with labels and cutoffs.",
+      aiMl: "Deterministic anomaly scorer plus browser-local logistic review-priority model; calibrated false; no LLM/API.",
+    },
+  ];
+}
+
+export function recommendedUseCaseForDataset(datasetId) {
+  return embeddedWorkflowId(datasetId) ?? recommendedUseCase(getDataset(datasetId));
+}
+
+export function safeDemoSliceForDataset(datasetId) {
+  const dataset = getDataset(datasetId);
+  const recommended = recommendedUseCase(dataset);
+  if (embeddedWorkflowId(datasetId)) return null;
+  if (recommended !== "fraud") return null;
+  const prefix = datasetId.split("-").slice(0, 2).join("-").replaceAll(/[^a-z0-9]/gi, "").slice(0, 12) || "adapter";
+  return {
+    format: "csv",
+    label: `${dataset.name} safe synthetic transaction slice`,
+    caveat: "This is a schema-compatible synthetic slice inspired by the adapter family. It is not a row sample from the external dataset.",
+    content: transactionDemoCsv(prefix),
+  };
+}

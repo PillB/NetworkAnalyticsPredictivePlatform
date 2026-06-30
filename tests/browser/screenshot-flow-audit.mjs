@@ -224,6 +224,10 @@ async function fraudImportFlow(browser, report, iteration) {
   const flowId = repeatCount > 1 ? `run-${iteration}-fraud-import-model-workspace` : "fraud-import-model-workspace";
   const { context, page, errors } = await startFreshPage(browser, report, flowId);
   await action(page, report, flowId, "select-fraud", "Select transaction fraud workflow", () => page.locator("#useCaseMode").selectOption("fraud"));
+  await action(page, report, flowId, "select-fin-adapter", "Select DGraph-Fin adapter dataset", () => page.locator("#datasetMode").selectOption("dgraph-fin-adapter"));
+  await action(page, report, flowId, "open-adapter-panel", "Open adapter use-case matrix", () => page.locator(".dataset-catalog-panel summary").click());
+  await action(page, report, flowId, "load-adapter-demo", "Load safe adapter demo slice", () => page.locator("#loadDatasetDemo").click());
+  await action(page, report, flowId, "preview-adapter-demo", "Preview safe adapter demo import", () => page.locator("#previewImport").click());
   await action(page, report, flowId, "load-json", "Load sample JSON", () => page.locator("#loadSampleJson").click());
   await action(page, report, flowId, "preview-json", "Preview JSON import with rejection", () => page.locator("#previewImport").click());
   await action(page, report, flowId, "load-csv", "Load sample CSV", () => page.locator("#loadSampleCsv").click());

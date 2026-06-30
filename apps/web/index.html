@@ -32,7 +32,8 @@
       </button>
     </header>
 
-    <section class="demo-login" aria-labelledby="demo-login-title">
+    <details class="demo-login" aria-labelledby="demo-login-title">
+      <summary>Connect data source</summary>
       <div>
         <p class="kicker">Hybrid demo bridge</p>
         <h2 id="demo-login-title">Connect GitHub Pages to a secured local API</h2>
@@ -52,7 +53,7 @@
       </label>
       <button class="button primary" id="demoLogin" type="button">Login</button>
       <button class="button secondary" id="demoLogout" type="button">Logout</button>
-    </section>
+    </details>
 
     <div class="app-shell">
       <aside class="workflow-panel" aria-labelledby="workflow-title">
@@ -79,6 +80,11 @@
           <details class="dataset-catalog-panel">
             <summary>Dataset coverage</summary>
             <div id="selectedDatasetSummary" class="dataset-summary" aria-live="polite"></div>
+            <div id="datasetUseCaseMatrix" class="dataset-usecase-matrix" aria-live="polite"></div>
+            <div class="dataset-actions">
+              <button class="button secondary" id="useDatasetFlow" type="button">Open matched flow</button>
+              <button class="button primary" id="loadDatasetDemo" type="button">Load safe demo slice</button>
+            </div>
             <ol id="datasetAdapterSteps" class="dataset-steps"></ol>
             <div id="datasetCatalog" class="dataset-catalog" aria-label="Dataset catalog"></div>
           </details>

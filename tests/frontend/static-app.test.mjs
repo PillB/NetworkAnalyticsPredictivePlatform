@@ -119,10 +119,14 @@ test("boardroom graph style and AI decision-support panels are present", async (
   assert.match(html, /id="datasetMode"/);
   assert.match(html, /id="datasetCatalog"/);
   assert.match(html, /id="selectedDatasetSummary"/);
+  assert.match(html, /id="datasetUseCaseMatrix"/);
+  assert.match(html, /id="useDatasetFlow"/);
+  assert.match(html, /id="loadDatasetDemo"/);
   assert.match(html, /id="datasetAdapterSteps"/);
   assert.doesNotMatch(html, /<details class="dataset-catalog-panel" open>/);
   assert.match(html, /dojo-karate-split-v1/);
   assert.match(app, /renderDatasetCatalog/);
+  assert.match(app, /safeDemoSliceForDataset/);
   assert.match(app, /DATASET_INTEGRATION_STEPS/);
   assert.match(html, /Run automatic training analysis/);
   assert.match(html, /single-before/);

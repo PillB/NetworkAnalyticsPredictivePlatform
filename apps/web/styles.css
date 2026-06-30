@@ -66,14 +66,23 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   padding: 8px;
 }
 .demo-login {
-  display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(220px, .6fr) 120px 140px auto auto;
-  gap: 10px;
-  align-items: end;
   padding: 12px 22px;
   border-bottom: 1px solid var(--line);
   background: #f8faf7;
 }
+.demo-login[open] {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(220px, .6fr) 120px 140px auto auto;
+  gap: 10px;
+  align-items: end;
+}
+.demo-login summary {
+  cursor: pointer;
+  color: var(--teal-dark);
+  font-size: 11px;
+  font-weight: 900;
+}
+.demo-login[open] summary { grid-column: 1 / -1; }
 .demo-login h2 {
   margin: 0;
   font: 16px/1.2 var(--font-display);
@@ -146,10 +155,43 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   background: #f8faf7;
 }
 .dataset-summary b { font-size: 11px; }
-.dataset-summary small, .dataset-steps, .dataset-catalog-item small {
+.dataset-summary small, .dataset-steps, .dataset-catalog-item small, .dataset-usecase-matrix small {
   color: var(--muted);
   font-size: 9px;
   line-height: 1.45;
+}
+.dataset-usecase-matrix {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.dataset-usecase-matrix article {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfaf5;
+}
+.dataset-usecase-matrix b { font-size: 10px; }
+.dataset-usecase-matrix span {
+  justify-self: start;
+  color: var(--teal-dark);
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.dataset-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+.dataset-actions .button {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 10px;
 }
 .dataset-steps {
   margin: 8px 0;
