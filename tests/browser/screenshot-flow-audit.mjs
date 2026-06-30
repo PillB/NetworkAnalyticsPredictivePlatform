@@ -17,6 +17,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 const runId = new Date().toISOString().replaceAll(/[:.]/g, "-");
 const artifacts = process.env.FLOW_AUDIT_DIR ?? `test-results/flow-audit/${runId}`;
 const maxFixPasses = Number(process.env.FLOW_AUDIT_FIX_PASSES ?? 2);
+const repeatCount = Math.max(1, Number(process.env.FLOW_AUDIT_REPEAT ?? 1));
 
 function playwrightModulePath() {
   if (process.env.PLAYWRIGHT_MODULE) return process.env.PLAYWRIGHT_MODULE;
@@ -179,14 +180,20 @@ async function startFreshPage(browser, report, flowId, viewport = { width: 1440,
   return { context, page, errors };
 }
 
-async function harborFlow(browser, report) {
-  const flowId = "harbor-fresh-report";
+async function harborFlow(browser, report, iteration) {
+  const flowId = repeatCount > 1 ? `run-${iteration}-harbor-fresh-report` : "harbor-fresh-report";
   const { context, page, errors } = await startFreshPage(browser, report, flowId);
+  await action(page, report, flowId, "dataset-catalog", "Open dataset catalog and review adapter workflow", () => page.locator(".dataset-catalog-panel summary").click());
+  await action(page, report, flowId, "adapter-only", "Select adapter-only DGraph-Fin dataset", () => page.locator("#datasetMode").selectOption("dgraph-fin-adapter"));
+  await action(page, report, flowId, "embedded-harbor", "Return to embedded Harbor dataset", () => page.locator("#datasetMode").selectOption("harbor-lantern-v1"));
   await action(page, report, flowId, "help-open", "Open help dialog", () => page.locator("#helpButton").click());
   await action(page, report, flowId, "help-close", "Close help dialog", () => page.locator("#closeHelp").click());
   for (let index = 0; index < 6; index += 1) {
     await action(page, report, flowId, `step-${index + 2}`, `Advance guided step ${index + 2}`, () => page.locator("#nextStep").click());
   }
+  await action(page, report, flowId, "unified", "Switch to true single unified graph", () => page.locator("#comparisonMode").selectOption("unified"));
+  await action(page, report, flowId, "auto-split", "Apply algorithmic recommended split", () => page.locator("#applyRecommendedSplit").click());
+  await action(page, report, flowId, "five-split", "Show five chronological visual slices", () => page.locator("#splitCount").selectOption("5"));
   await action(page, report, flowId, "overlay", "Switch to overlay graph", () => page.locator("#comparisonMode").selectOption("overlay"));
   await action(page, report, flowId, "timeline", "Switch to timeline split graph", () => page.locator("#comparisonMode").selectOption("timeline-split"));
   await action(page, report, flowId, "evidence", "Select first evidence row", () => page.locator("#evidenceRows tr").first().click());
@@ -198,8 +205,8 @@ async function harborFlow(browser, report) {
   await context.close();
 }
 
-async function dojoFlow(browser, report) {
-  const flowId = "dojo-community-benchmark";
+async function dojoFlow(browser, report, iteration) {
+  const flowId = repeatCount > 1 ? `run-${iteration}-dojo-community-benchmark` : "dojo-community-benchmark";
   const { context, page, errors } = await startFreshPage(browser, report, flowId);
   await action(page, report, flowId, "select-dataset", "Select dojo karate benchmark dataset", () => page.locator("#datasetMode").selectOption("dojo-karate-split-v1"));
   await action(page, report, flowId, "run-community", "Run deterministic community analysis", () => page.locator("#runLocalModel").click());
@@ -213,8 +220,8 @@ async function dojoFlow(browser, report) {
   await context.close();
 }
 
-async function fraudImportFlow(browser, report) {
-  const flowId = "fraud-import-model-workspace";
+async function fraudImportFlow(browser, report, iteration) {
+  const flowId = repeatCount > 1 ? `run-${iteration}-fraud-import-model-workspace` : "fraud-import-model-workspace";
   const { context, page, errors } = await startFreshPage(browser, report, flowId);
   await action(page, report, flowId, "select-fraud", "Select transaction fraud workflow", () => page.locator("#useCaseMode").selectOption("fraud"));
   await action(page, report, flowId, "load-json", "Load sample JSON", () => page.locator("#loadSampleJson").click());
@@ -246,8 +253,8 @@ async function fraudImportFlow(browser, report) {
   await context.close();
 }
 
-async function mobileFlow(browser, report) {
-  const flowId = "mobile-critical-path";
+async function mobileFlow(browser, report, iteration) {
+  const flowId = repeatCount > 1 ? `run-${iteration}-mobile-critical-path` : "mobile-critical-path";
   const { context, page, errors } = await startFreshPage(browser, report, flowId, { width: 390, height: 844 });
   await action(page, report, flowId, "mobile-next", "Advance one mobile step", () => page.locator("#nextStep").click());
   await action(page, report, flowId, "mobile-customize", "Open mobile customization controls", () => page.locator("#visualControls").click());
@@ -278,6 +285,7 @@ function summarize(report) {
     }));
   report.issues = issues;
   report.summary = {
+    repeatCount,
     totalSteps: report.steps.length,
     pass: report.steps.filter((step) => step.severity === "pass").length,
     minor: report.steps.filter((step) => step.severity === "minor").length,
@@ -308,6 +316,7 @@ Run: ${report.runId}
 ## Summary
 
 - Steps captured: ${report.summary.totalSteps}
+- Repeat count: ${repeatCount}
 - Pass: ${report.summary.pass}
 - Minor: ${report.summary.minor}
 - Major: ${report.summary.major}
@@ -353,16 +362,19 @@ try {
     baseURL,
     artifacts,
     maxFixPasses,
+    repeatCount,
     datasetSources,
     browserErrors: [],
     steps: [],
     issues: [],
   };
   try {
-    await harborFlow(browser, report);
-    await dojoFlow(browser, report);
-    await fraudImportFlow(browser, report);
-    await mobileFlow(browser, report);
+    for (let iteration = 1; iteration <= repeatCount; iteration += 1) {
+      await harborFlow(browser, report, iteration);
+      await dojoFlow(browser, report, iteration);
+      await fraudImportFlow(browser, report, iteration);
+      await mobileFlow(browser, report, iteration);
+    }
   } finally {
     await browser.close();
   }
