@@ -122,6 +122,7 @@ try {
     await page.locator("#previewImport").click();
     assert.match(await page.locator("#importPreview").innerText(), /8 accepted/i);
     assert.match(await page.locator("#importPreview").innerText(), /1 rejected/i);
+    assert.match(await page.locator("#importPreview").innerText(), /Built-in sample transaction CSV/i);
     await page.locator("#applyImport").click();
     assert.match(await page.locator("#statusMessage").textContent(), /Imported 8 transactions/i);
     assert.match(await page.locator("#graphHeading").textContent(), /Imported financial/i);
@@ -129,7 +130,7 @@ try {
     assert.match(await page.locator("#evidenceRows").innerText(), /imp-004/i);
     assert.doesNotMatch(await page.locator("#evidenceRows").innerText(), /tx-004|HL-033|Harbor/i);
     assert.match(await page.locator("#communityInterpretation").textContent(), /top imported review-priority account/i);
-    assert.match(await page.locator("#reportPreview").innerText(), /training-transactions\.csv|Imported cuentas mulas|imp-004/i);
+    assert.match(await page.locator("#reportPreview").innerText(), /built-in-sample-transaction-csv\.csv|Imported cuentas mulas|imp-004/i);
     assert.doesNotMatch(await page.locator("#reportPreview").innerText(), /FinancialFraudInterchange@1\.0\.0|Harbor Lantern/i);
     await page.locator("#runLocalModel").click();
     assert.match(await page.locator("#localModelOutput").innerText(), /browser-local logistic review-priority model/i);

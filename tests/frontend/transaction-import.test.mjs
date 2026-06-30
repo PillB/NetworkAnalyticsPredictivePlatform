@@ -29,6 +29,7 @@ test("transaction import maps required columns and rejects invalid rows", () => 
   assert.equal(preview.summary.rejected, 1);
   assert.match(preview.rejectedRows[0].reasons.join(" "), /Invalid timestamp|timezone/);
   assert.equal(preview.provenance.mappingMode, "inferred");
+  assert.equal(preview.provenance.sourceLabel, "Manual pasted transaction data");
 });
 
 test("JSON import supports explicit field mapping and shared validation", () => {
@@ -38,6 +39,8 @@ test("JSON import supports explicit field mapping and shared validation", () => 
   const preview = previewTransactionImport(SAMPLE_TRANSACTION_JSON, {
     format: "json",
     fileName: "sample.json",
+    sourceLabel: "DGraph-Fin safe synthetic transaction slice",
+    sourceCaveat: "Schema-compatible synthetic rows; not a row sample from DGraph-Fin.",
     mapping: {
       id: "transaction_id",
       at: "timestamp",
@@ -54,6 +57,8 @@ test("JSON import supports explicit field mapping and shared validation", () => 
   assert.match(preview.rejectedRows[0].reasons.join(" "), /timezone/);
   assert.match(preview.rejectedRows[0].reasons.join(" "), /Unsupported currency: DOGE/);
   assert.equal(preview.provenance.mappingMode, "explicit-with-inference-fallback");
+  assert.match(preview.provenance.sourceLabel, /DGraph-Fin/);
+  assert.match(preview.provenance.sourceCaveat, /not a row sample/);
 });
 
 test("timestamps without explicit timezone and unsupported currencies are rejected", () => {

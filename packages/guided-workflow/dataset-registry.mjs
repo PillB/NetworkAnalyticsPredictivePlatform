@@ -272,6 +272,7 @@ ${prefix}-007,2026-05-10T11:20:00Z,merchant-processor,account,customer-refund,pe
 ${prefix}-008,2026-05-10T11:25:00Z,shared-device-1,device,${focus},account,0,N/A,login event,Infrastructure context only,${focus},true`;
 
 function recommendedUseCase(dataset) {
+  if (dataset.id === "synthetic-criminal-network-generator") return "dojo";
   const text = `${dataset.domain} ${dataset.taskTypes.join(" ")}`.toLowerCase();
   if (/transaction|fraud|aml|money|financial|risk|anomaly/.test(text)) return "fraud";
   if (/community|contact|crime|co-offending|centrality|dojo/.test(text)) return "dojo";
@@ -284,8 +285,8 @@ export function datasetUseCaseResults(datasetId) {
   const embedded = embeddedWorkflowId(datasetId);
   const statusFor = (useCase) => {
     if (embedded) return embedded === useCase ? "runs-now" : "supporting-benchmark";
-    if (recommended !== useCase) return useCase === "fraud" ? "not-primary" : "supporting-benchmark";
-    return useCase === "fraud" ? "matched-safe-demo-slice" : "matched-adapter-demo";
+    if (recommended !== useCase) return "requires-adapter-mapping";
+    return useCase === "fraud" ? "matched-safe-demo-slice" : "matched-safe-demo-flow";
   };
   return [
     {
@@ -318,6 +319,28 @@ export function datasetUseCaseResults(datasetId) {
   ];
 }
 
+export function datasetDataUseStatus(datasetId) {
+  const dataset = getDataset(datasetId);
+  const embedded = embeddedWorkflowId(datasetId);
+  if (embedded) {
+    const counts = {
+      harbor: "all 7 embedded entities, 9 relationships, and 6 dated evidence records",
+      fraud: "all 12 embedded entities and 13 transaction/context relationships",
+      dojo: "all 34 benchmark-derived members and 78 club interactions",
+    };
+    return {
+      status: "all-embedded-data",
+      canUseAllRowsInBrowser: true,
+      label: `Full-data mode: the ${embedded} workflow uses ${counts[embedded]}.`,
+    };
+  }
+  return {
+    status: "external-adapter-required",
+    canUseAllRowsInBrowser: false,
+    label: `Full-data mode: ${dataset.name} rows are not bundled. Use the adapter steps to download, license-check, map, validate, and import all source nodes, edges, timestamps, labels, and features outside this static demo.`,
+  };
+}
+
 export function recommendedUseCaseForDataset(datasetId) {
   return embeddedWorkflowId(datasetId) ?? recommendedUseCase(getDataset(datasetId));
 }
@@ -326,12 +349,27 @@ export function safeDemoSliceForDataset(datasetId) {
   const dataset = getDataset(datasetId);
   const recommended = recommendedUseCase(dataset);
   if (embeddedWorkflowId(datasetId)) return null;
-  if (recommended !== "fraud") return null;
   const prefix = datasetId.split("-").slice(0, 2).join("-").replaceAll(/[^a-z0-9]/gi, "").slice(0, 12) || "adapter";
+  if (recommended !== "fraud") {
+    const workflow = recommended;
+    const counts = workflow === "dojo"
+      ? { nodes: 34, edges: 78, datapoints: 78 }
+      : { nodes: 7, edges: 9, datapoints: 15 };
+    return {
+      kind: "matched-flow",
+      format: "workflow",
+      workflow,
+      label: `${dataset.name} safe ${workflow} demo flow`,
+      caveat: "This opens the closest embedded workflow with all of its curated nodes, edges, and datapoints. It is not a row sample from the external dataset.",
+      ...counts,
+    };
+  }
   return {
+    kind: "transaction-import",
     format: "csv",
     label: `${dataset.name} safe synthetic transaction slice`,
     caveat: "This is a schema-compatible synthetic slice inspired by the adapter family. It is not a row sample from the external dataset.",
+    rows: 8,
     content: transactionDemoCsv(prefix),
   };
 }

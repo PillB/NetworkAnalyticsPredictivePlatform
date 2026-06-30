@@ -18,6 +18,7 @@ import * as FinancialFraud from "../../packages/guided-workflow/financial-fraud.
 import * as DojoKarate from "../../packages/guided-workflow/dojo-karate-split.mjs";
 import {
   DATASET_INTEGRATION_STEPS,
+  datasetDataUseStatus,
   datasetUseCaseResults,
   embeddedWorkflowId,
   listDatasets,
@@ -150,6 +151,7 @@ let activeInspectorTab = "evidence";
 let graphView = { positions: {}, rotation: 0, nodeVisuals: {}, undo: [], redo: [] };
 let chartWorkspace = createChartWorkspace();
 let importPreview = null;
+let transactionImportProvenance = { sourceLabel: "Manual pasted transaction data", sourceCaveat: "" };
 const importedFraudStorageKey = "napp-imported-fraud-preview-v1";
 function restoreImportedFraudWorkflow() {
   try {
@@ -240,10 +242,12 @@ function renderDatasetCatalog(selectedId) {
   const runnable = embeddedWorkflowId(selected.id);
   const matrix = datasetUseCaseResults(selected.id);
   const demo = safeDemoSliceForDataset(selected.id);
+  const dataUse = datasetDataUseStatus(selected.id);
   elements.selectedDatasetSummary.innerHTML = `
     <b>${escapeHtml(selected.name)}</b>
     <small>${escapeHtml(selected.domain)} · ${escapeHtml(selected.availability)} · ${selected.synthetic ? "synthetic" : "public/external"} · ${selected.benchmarkDerived ? "benchmark-derived" : "project fixture"}</small>
     <small>${escapeHtml(selected.dataBoundary ?? selected.licenseNote)}</small>
+    <small>${escapeHtml(dataUse.label)}</small>
     <small>${runnable ? `Runs now as the ${runnable} website workflow.` : "Adapter-only: use the import/training workflow after offline download and validation."}</small>
   `;
   elements.datasetUseCaseMatrix.innerHTML = matrix.map((row) => `
@@ -256,7 +260,11 @@ function renderDatasetCatalog(selectedId) {
   `).join("");
   elements.useDatasetFlow.disabled = false;
   elements.loadDatasetDemo.disabled = !demo;
-  elements.loadDatasetDemo.textContent = demo ? "Load safe demo slice" : "No safe slice";
+  elements.loadDatasetDemo.textContent = demo?.kind === "transaction-import"
+    ? "Load safe transaction slice"
+    : demo
+      ? "Open safe demo flow"
+      : "No safe slice";
   elements.datasetAdapterSteps.innerHTML = DATASET_INTEGRATION_STEPS
     .map((step) => `<li>${escapeHtml(step)}</li>`)
     .join("");
@@ -629,6 +637,7 @@ function renderImportPreview() {
     .join("<br>") || "None";
   elements.importPreview.innerHTML = `
     <div class="workspace-item"><b>${importPreview.summary.accepted} accepted</b><small>${importPreview.summary.rejected} rejected of ${importPreview.summary.totalRows} rows</small></div>
+    <div class="workspace-item"><b>Import provenance</b><small>${escapeHtml(importPreview.provenance.sourceLabel)}<br>${escapeHtml(importPreview.provenance.sourceCaveat || importPreview.provenance.sourceFileName)}</small></div>
     <div class="workspace-item"><b>${escapeHtml(importPreview.format.toUpperCase())} mapped fields</b><small>${mapped || "No required columns mapped"}</small></div>
     <div class="workspace-item"><b>Rejected rows</b><small>${escapeHtml(rejected)}</small></div>
   `;
@@ -1529,7 +1538,7 @@ elements.datasetMode.addEventListener("change", (event) => {
     const target = recommendedUseCaseForDataset(selectedDatasetId);
     const demo = safeDemoSliceForDataset(selectedDatasetId);
     setStatus(demo
-      ? `Adapter documented. Open ${target} flow or load a safe synthetic demo slice for local analysis.`
+      ? `Adapter documented. Open ${target} flow or run the safe demo route; full external rows require offline adapter validation.`
       : `Adapter documented. Open ${target} flow for the closest built-in use case; real data still requires offline mapping.`);
     renderDatasetCatalog(selectedDatasetId);
     return;
@@ -1545,7 +1554,7 @@ elements.useDatasetFlow.addEventListener("click", () => {
   elements.useCaseMode.dispatchEvent(new Event("change"));
   selectedDatasetId = datasetId;
   renderDatasetCatalog(selectedDatasetId);
-  setStatus(`Opened ${target} flow for ${listDatasets().find((dataset) => dataset.id === selectedDatasetId)?.name ?? "selected dataset"}`);
+  setStatus(`Opened built-in ${target} demo flow for ${listDatasets().find((dataset) => dataset.id === selectedDatasetId)?.name ?? "selected dataset"}; external source rows still require adapter mapping.`);
 });
 
 elements.loadDatasetDemo.addEventListener("click", () => {
@@ -1555,11 +1564,20 @@ elements.loadDatasetDemo.addEventListener("click", () => {
     setStatus("No safe browser demo slice is available for this dataset family; use the matched flow and offline adapter steps.");
     return;
   }
+  if (demo.kind === "matched-flow") {
+    elements.useCaseMode.value = demo.workflow;
+    elements.useCaseMode.dispatchEvent(new Event("change"));
+    selectedDatasetId = datasetId;
+    renderDatasetCatalog(selectedDatasetId);
+    setStatus(`${demo.label} opened with ${demo.nodes} nodes, ${demo.edges} edges, and ${demo.datapoints} demo datapoints. ${demo.caveat}`);
+    return;
+  }
   elements.useCaseMode.value = "fraud";
   elements.useCaseMode.dispatchEvent(new Event("change"));
   selectedDatasetId = datasetId;
   elements.transactionFormat.value = demo.format;
   elements.transactionCsv.value = demo.content;
+  transactionImportProvenance = { sourceLabel: demo.label, sourceCaveat: demo.caveat };
   importPreview = null;
   renderMappingControls();
   renderImportPreview();
@@ -1574,6 +1592,7 @@ elements.scopeToggle.addEventListener("click", () => {
 elements.loadSampleCsv.addEventListener("click", () => {
   elements.transactionFormat.value = "csv";
   elements.transactionCsv.value = SAMPLE_TRANSACTION_CSV;
+  transactionImportProvenance = { sourceLabel: "Built-in sample transaction CSV", sourceCaveat: "Project-authored synthetic rows; not an external dataset sample." };
   importPreview = null;
   renderImportPreview();
   setStatus("Sample transaction CSV loaded for preview");
@@ -1581,16 +1600,19 @@ elements.loadSampleCsv.addEventListener("click", () => {
 elements.loadSampleJson.addEventListener("click", () => {
   elements.transactionFormat.value = "json";
   elements.transactionCsv.value = SAMPLE_TRANSACTION_JSON;
+  transactionImportProvenance = { sourceLabel: "Built-in sample transaction JSON", sourceCaveat: "Project-authored synthetic rows; not an external dataset sample." };
   importPreview = null;
   renderImportPreview();
   setStatus("Sample transaction JSON loaded for preview");
 });
 elements.transactionFormat.addEventListener("change", () => {
+  transactionImportProvenance = { sourceLabel: "Manual pasted transaction data", sourceCaveat: "" };
   importPreview = null;
   renderImportPreview();
   setStatus(`${elements.transactionFormat.value.toUpperCase()} import mode selected`);
 });
 elements.transactionCsv.addEventListener("input", () => {
+  transactionImportProvenance = { sourceLabel: "Manual pasted transaction data", sourceCaveat: "" };
   importPreview = null;
   renderMappingControls();
 });
@@ -1598,7 +1620,9 @@ elements.previewImport.addEventListener("click", () => {
   const format = elements.transactionFormat.value;
   importPreview = previewTransactionImport(elements.transactionCsv.value, {
     format,
-    fileName: `training-transactions.${format}`,
+    fileName: `${transactionImportProvenance.sourceLabel.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "training-transactions"}.${format}`,
+    sourceLabel: transactionImportProvenance.sourceLabel,
+    sourceCaveat: transactionImportProvenance.sourceCaveat,
     mapping: currentMappingOverrides(),
   });
   renderImportPreview();

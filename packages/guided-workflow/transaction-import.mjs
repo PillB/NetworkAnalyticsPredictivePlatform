@@ -470,6 +470,8 @@ export function previewTransactionImport(text, options = {}) {
       summary: { totalRows: 0, accepted: 0, rejected: 1 },
       provenance: {
         sourceFileName: options.fileName ?? `pasted-transactions.${parsed.format}`,
+        sourceLabel: options.sourceLabel ?? "Manual pasted transaction data",
+        sourceCaveat: options.sourceCaveat ?? "",
         parserVersion: `${parsed.format}-import-0.2`,
         importedAt: "training-session",
       },
@@ -549,6 +551,8 @@ export function previewTransactionImport(text, options = {}) {
     },
     provenance: {
       sourceFileName: options.fileName ?? `pasted-transactions.${parsed.format}`,
+      sourceLabel: options.sourceLabel ?? "Manual pasted transaction data",
+      sourceCaveat: options.sourceCaveat ?? "",
       parserVersion: `${parsed.format}-import-0.2`,
       importedAt: "training-session",
       mappingMode: options.mapping ? "explicit-with-inference-fallback" : "inferred",

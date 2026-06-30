@@ -10,6 +10,11 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import {
+  embeddedWorkflowId,
+  listDatasets,
+  safeDemoSliceForDataset,
+} from "../../packages/guided-workflow/dataset-registry.mjs";
 import { probeOnlineDatasetSources } from "../../packages/guided-workflow/online-dataset-adapters.mjs";
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 4411);
@@ -54,7 +59,10 @@ async function visualDiagnostics(page) {
     const visible = (element) => {
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
+      const closedDetails = element.closest("details:not([open])");
+      if (closedDetails && element !== closedDetails.querySelector("summary")) return false;
       if (style.visibility === "hidden" || style.display === "none" || box.width <= 0 || box.height <= 0) return false;
+      if (box.right < 0 || box.bottom < 0 || box.left > innerWidth || box.top > innerHeight) return false;
       const x = Math.min(Math.max(box.left + Math.min(box.width / 2, 8), 0), innerWidth - 1);
       const y = Math.min(Math.max(box.top + Math.min(box.height / 2, 8), 0), innerHeight - 1);
       const hit = document.elementFromPoint(x, y);
@@ -257,6 +265,31 @@ async function fraudImportFlow(browser, report, iteration) {
   await context.close();
 }
 
+async function allDatasetsFlow(browser, report, iteration) {
+  const flowId = repeatCount > 1 ? `run-${iteration}-all-dataset-routes` : "all-dataset-routes";
+  const { context, page, errors } = await startFreshPage(browser, report, flowId);
+  await action(page, report, flowId, "open-dataset-catalog", "Open dataset catalog before all-dataset route sweep", () => page.locator(".dataset-catalog-panel summary").click());
+  for (const dataset of listDatasets()) {
+    const safeId = dataset.id.replaceAll(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+    await action(page, report, flowId, `select-${safeId}`, `Select dataset: ${dataset.name}`, () => page.locator("#datasetMode").selectOption(dataset.id));
+    await action(page, report, flowId, `open-${safeId}`, `Open built-in demo flow for: ${dataset.name}`, () => page.locator("#useDatasetFlow").click());
+    const demo = safeDemoSliceForDataset(dataset.id);
+    if (demo) {
+      await action(page, report, flowId, `demo-${safeId}`, `Run safe demo route for: ${dataset.name}`, async () => {
+        await page.locator(".dataset-catalog-panel").evaluate((details) => { details.open = true; });
+        await page.locator("#loadDatasetDemo").click();
+      });
+      if (demo.kind === "transaction-import") {
+        await action(page, report, flowId, `preview-${safeId}`, `Preview transaction demo for: ${dataset.name}`, () => page.locator("#previewImport").click());
+      }
+    } else {
+      assert.ok(embeddedWorkflowId(dataset.id), `${dataset.id} without safe demo route must be embedded`);
+    }
+  }
+  report.browserErrors.push(...errors.map((message) => ({ flowId, message })));
+  await context.close();
+}
+
 async function mobileFlow(browser, report, iteration) {
   const flowId = repeatCount > 1 ? `run-${iteration}-mobile-critical-path` : "mobile-critical-path";
   const { context, page, errors } = await startFreshPage(browser, report, flowId, { width: 390, height: 844 });
@@ -377,6 +410,7 @@ try {
       await harborFlow(browser, report, iteration);
       await dojoFlow(browser, report, iteration);
       await fraudImportFlow(browser, report, iteration);
+      await allDatasetsFlow(browser, report, iteration);
       await mobileFlow(browser, report, iteration);
     }
   } finally {

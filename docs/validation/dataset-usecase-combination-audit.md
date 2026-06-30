@@ -7,13 +7,16 @@ Date: 2026-06-30
 Every dataset is now connected to the website by one of three paths:
 
 - **Runs now**: embedded fixture directly drives a website use case.
-- **Matched adapter demo**: external dataset family maps to the closest use
-  case, but real data still requires offline download/license/schema work.
+- **Matched safe demo flow**: external dataset family maps to the closest use
+  case and opens that full embedded demo flow, but real data still requires
+  offline download/license/schema work.
 - **Matched safe demo slice**: external fraud/AML/financial graph family can
   load a synthetic schema-compatible transaction slice into the import flow.
 
 No external sensitive, credentialed, large, or real-person dataset is represented
-as embedded training data.
+as embedded training data. The page now states whether the selected dataset uses
+all embedded nodes/edges/datapoints in-browser or requires an external adapter
+before all source rows can be used.
 
 ## AI, ML, and Deep-Learning Semantics
 
@@ -34,19 +37,19 @@ as embedded training data.
 | Harbor Lantern | Runs now | Supporting benchmark | Not primary |
 | Synthetic cuentas mulas | Supporting benchmark | Supporting benchmark | Runs now |
 | Dojo karate split | Supporting benchmark | Runs now | Not primary |
-| TGB/TGB2/TGX | Matched adapter demo | Supporting benchmark | Not primary |
-| Elliptic/Elliptic++ | Supporting benchmark | Supporting benchmark | Matched safe demo slice |
-| AMLSim | Supporting benchmark | Supporting benchmark | Matched safe demo slice |
-| PaySim | Supporting benchmark | Supporting benchmark | Matched safe demo slice |
-| IEEE-CIS | Supporting benchmark | Supporting benchmark | Matched safe demo slice |
-| DGraph-Fin | Supporting benchmark | Supporting benchmark | Matched safe demo slice |
-| GADBench | Supporting benchmark | Supporting benchmark | Matched safe demo slice |
-| ORBITAAL-style AML | Supporting benchmark | Supporting benchmark | Matched safe demo slice |
-| SNAP temporal communication | Supporting benchmark | Matched adapter demo | Not primary |
-| SocioPatterns contact networks | Supporting benchmark | Matched adapter demo | Not primary |
-| Network Repository crime/co-offending | Supporting benchmark | Matched adapter demo | Not primary |
-| UCINET crime-network references | Supporting benchmark | Matched adapter demo | Not primary |
-| Synthetic criminal-network generator | Supporting benchmark | Supporting benchmark | Matched safe demo slice |
+| TGB/TGB2/TGX | Matched safe demo flow | Requires adapter mapping | Requires adapter mapping |
+| Elliptic/Elliptic++ | Requires adapter mapping | Requires adapter mapping | Matched safe demo slice |
+| AMLSim | Requires adapter mapping | Requires adapter mapping | Matched safe demo slice |
+| PaySim | Requires adapter mapping | Requires adapter mapping | Matched safe demo slice |
+| IEEE-CIS | Requires adapter mapping | Requires adapter mapping | Matched safe demo slice |
+| DGraph-Fin | Requires adapter mapping | Requires adapter mapping | Matched safe demo slice |
+| GADBench | Requires adapter mapping | Requires adapter mapping | Matched safe demo slice |
+| ORBITAAL-style AML | Requires adapter mapping | Requires adapter mapping | Matched safe demo slice |
+| SNAP temporal communication | Requires adapter mapping | Matched safe demo flow | Requires adapter mapping |
+| SocioPatterns contact networks | Requires adapter mapping | Matched safe demo flow | Requires adapter mapping |
+| Network Repository crime/co-offending | Requires adapter mapping | Matched safe demo flow | Requires adapter mapping |
+| UCINET crime-network references | Requires adapter mapping | Matched safe demo flow | Requires adapter mapping |
+| Synthetic criminal-network generator | Requires adapter mapping | Matched safe demo flow | Requires adapter mapping |
 
 ## Website Flow
 
@@ -54,16 +57,20 @@ as embedded training data.
 2. User selects any dataset family.
 3. The panel shows Harbor, Dojo, and Fraud compatibility rows with expected
    AI/ML behavior.
-4. **Open matched flow** switches to the closest runnable built-in workflow.
-5. **Load safe demo slice** is enabled only for transaction/AML/fraud-like
+4. **Open built-in demo flow** switches to the closest runnable built-in
+   workflow and states that source rows still require adapter mapping.
+5. **Load safe transaction slice** is enabled for transaction/AML/fraud-like
    external families and loads synthetic CSV into the import preview workflow.
-6. User previews rows, applies accepted rows, runs local analysis, inspects
+6. **Open safe demo flow** is enabled for temporal/community/crime/contact
+   adapters and opens the closest embedded demo with explicit node/edge/datapoint
+   counts.
+7. User previews rows, applies accepted rows, runs local analysis, inspects
    evidence, reviews reasoning/options, acknowledges the recommendation, marks
    the finding ready, and runs report preflight.
 
 ## Product Review Result
 
 This closes the previous gap where datasets were only cataloged. They are now
-actionable in the website through either a matched flow or a safe synthetic
-transaction demo slice, while preserving the boundary that real external data
-requires offline adapter work.
+actionable in the website through either an embedded full-data flow, a matched
+safe demo flow, or a safe synthetic transaction demo slice, while preserving the
+boundary that real external data requires offline adapter work.
