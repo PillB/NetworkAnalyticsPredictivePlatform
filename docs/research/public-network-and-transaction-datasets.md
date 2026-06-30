@@ -32,6 +32,8 @@ does not pretend that a large or license-restricted dataset has been trained.
 
 1. **Temporal Graph Benchmark / TGX**
    - Use for temporal link/node prediction adapters and chronological evaluation.
+   - Include TGB/TGB 2.0 link-prediction and node-prediction families as
+     adapter targets, not embedded data.
    - Do not vendor datasets into the repo because many are large and
      dataset-specific licenses can include noncommercial restrictions.
    - Sources:
@@ -65,6 +67,56 @@ does not pretend that a large or license-restricted dataset has been trained.
      review.
    - Source: https://sociopatterns.org/datasets/high-school-contact-and-friendship-networks/
 
+6. **PaySim mobile-money fraud**
+   - Use as a synthetic mobile-money fraud adapter after source and license
+     verification.
+   - Product use: stress-test transaction imbalance, obvious fraud patterns,
+     and hard-negative scenarios against the browser-local review-priority
+     workflow.
+   - Boundary: do not claim real banking data or production profitability.
+
+7. **IEEE-CIS fraud**
+   - Use as a tabular fraud baseline adapter when credentials and competition
+     terms are satisfied.
+   - Product use: compare graph-enriched features against a tabular baseline
+     and detect feature leakage.
+   - Boundary: Kaggle/competition terms prevent vendoring into this repo.
+
+8. **DGraph-Fin**
+   - Use as a large financial graph anomaly adapter for offline node-risk and
+     graph-model evaluation.
+   - Product use: stress large-scale graph anomaly scoring and GNN candidate
+     gates.
+   - Boundary: no embedded rows or calibrated operational score without
+     dataset-specific review and validation.
+
+9. **GADBench-style graph anomaly suites**
+   - Use as an adapter suite for YelpChi, Amazon, Weibo, Reddit, and related
+     public graph anomaly baselines.
+   - Product use: model-family comparison and false-positive stress testing.
+   - Boundary: each constituent dataset has separate licensing and provenance.
+
+10. **ORBITAAL-style AML graph benchmarks**
+    - Use as an AML transaction-graph adapter target for motif/path risk
+      scoring and temporal-GNN candidate evaluation.
+    - Boundary: no laundering benchmark rows should be copied into the static
+      app without source, license, and sensitivity review.
+
+11. **Network Repository and UCINET crime/co-offending references**
+    - Use only as topology and wording-test adapters after original source,
+      license, and person-identifiability review.
+    - Product use: tiny centrality/community sanity checks and explanation
+      safety tests.
+    - Boundary: do not embed named sensitive criminal networks or claim real
+      gang detection.
+
+12. **Synthetic criminal-network generator target**
+    - Use as the safe path for additional gang/community, hierarchy, bridge,
+      suspicious-transaction, and group-risk examples.
+    - Product use: generate fictional, labeled scenarios that can be imported
+      through the website and used in local analysis.
+    - Boundary: generated fixtures must still pass prohibited-claim review.
+
 ## Do Not Embed By Default
 
 - Named covert/criminal/terror networks from repository mirrors or papers until
@@ -79,3 +131,22 @@ Embedded fixtures must declare source notes, license notes, allowed claims, and
 prohibited claims in `packages/guided-workflow/dataset-registry.mjs`.
 Benchmark-only local runs must declare `calibrated: false` and
 `productionPredictionsEnabled: false`.
+
+## Complete Website Integration Workflow
+
+1. Select an embedded fixture in the website dataset panel to run immediately:
+   Harbor Lantern, Dojo karate split, or Synthetic transaction flow.
+2. For an adapter-only dataset, use the panel instructions instead of treating
+   the external dataset as loaded.
+3. Download and validate the external dataset outside the static website,
+   preserving license notes, source checksums, schema definitions, labels, and
+   time cutoffs.
+4. Convert a curated slice to the transaction CSV/JSON schema or to a future
+   graph-adapter artifact with explicit rejected-row reporting.
+5. In the website, choose the financial transaction use case, load or paste the
+   curated rows, preview mapping, apply accepted rows, run automatic local
+   analysis, inspect evidence, review reasoning/options, acknowledge the next
+   action, mark the finding ready, and run report preflight.
+6. Treat every output as decision support. The website must not describe
+   adapter-only datasets as embedded, trained, calibrated, SOTA, or
+   production-ready.

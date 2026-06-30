@@ -53,7 +53,11 @@ async function visualDiagnostics(page) {
     const visible = (element) => {
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
-      return style.visibility !== "hidden" && style.display !== "none" && box.width > 0 && box.height > 0;
+      if (style.visibility === "hidden" || style.display === "none" || box.width <= 0 || box.height <= 0) return false;
+      const x = Math.min(Math.max(box.left + Math.min(box.width / 2, 8), 0), innerWidth - 1);
+      const y = Math.min(Math.max(box.top + Math.min(box.height / 2, 8), 0), innerHeight - 1);
+      const hit = document.elementFromPoint(x, y);
+      return !hit || hit === element || element.contains(hit) || hit.contains(element);
     };
     const elements = [...document.querySelectorAll("button, input, select, textarea, h1, h2, h3, p, small, td, th")]
       .filter((element) => !element.closest(".status-bar"))

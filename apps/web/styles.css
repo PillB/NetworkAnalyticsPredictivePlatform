@@ -125,6 +125,65 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   text-transform: uppercase;
 }
 .use-case-picker select { width: 100%; }
+.dataset-catalog-panel {
+  margin: 10px 0 18px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.dataset-catalog-panel summary {
+  cursor: pointer;
+  color: var(--teal-dark);
+  font-size: 10px;
+  font-weight: 900;
+}
+.dataset-summary {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8faf7;
+}
+.dataset-summary b { font-size: 11px; }
+.dataset-summary small, .dataset-steps, .dataset-catalog-item small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+.dataset-steps {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+.dataset-catalog {
+  display: grid;
+  gap: 6px;
+  max-height: 220px;
+  overflow: auto;
+}
+.dataset-catalog-item {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.dataset-catalog-item.is-selected {
+  border-color: var(--teal);
+  background: #eef3f1;
+}
+.dataset-catalog-item b { font-size: 10px; }
+.dataset-catalog-item span {
+  justify-self: start;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
 .kicker {
   margin: 0 0 5px;
   color: var(--teal);
@@ -238,6 +297,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 .control-bar {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: 12px;
   padding: 12px 15px;
@@ -247,6 +307,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 .control-bar label { min-width: 125px; }
+.control-bar .split-boundary-control { min-width: 185px; }
 .control-bar label > span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 select, .control-button {
   min-height: 34px;
@@ -257,8 +318,9 @@ select, .control-button {
   font-size: 11px;
 }
 .control-bar select { width: 100%; min-width: 0; }
+.control-bar input[type="range"] { width: 100%; min-width: 0; }
 .control-button { padding-right: 9px; font-weight: 700; }
-.reset-button { margin-left: auto; white-space: nowrap; }
+.reset-button { white-space: nowrap; }
 .visual-popover {
   position: absolute;
   z-index: 5;

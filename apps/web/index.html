@@ -76,6 +76,12 @@
               <option value="financial-fraud-synthetic-v1">Synthetic transaction flow</option>
             </select>
           </label>
+          <details class="dataset-catalog-panel" open>
+            <summary>Dataset coverage</summary>
+            <div id="selectedDatasetSummary" class="dataset-summary" aria-live="polite"></div>
+            <ol id="datasetAdapterSteps" class="dataset-steps"></ol>
+            <div id="datasetCatalog" class="dataset-catalog" aria-label="Dataset catalog"></div>
+          </details>
         </div>
         <nav aria-label="Guided analysis steps">
           <ol class="step-list" id="stepList"></ol>
@@ -167,13 +173,32 @@
             <span>Comparison</span>
             <select id="comparisonMode">
               <option value="side-by-side">Side by side</option>
+              <option value="unified">Single unified graph</option>
+              <option value="no-split">No split</option>
               <option value="overlay">Overlay summary</option>
               <option value="single-before">Single view · before</option>
               <option value="single-after">Single view · after</option>
-              <option value="timeline-split">3-slice timeline</option>
+              <option value="timeline-split">N-slice timeline</option>
               <option value="difference">Differences only</option>
             </select>
           </label>
+          <label>
+            <span>Splits</span>
+            <select id="splitCount">
+              <option value="1">1 · no split</option>
+              <option value="2">2 · before/after</option>
+              <option value="3">3 · timeline</option>
+              <option value="4">4 · timeline</option>
+              <option value="5">5 · timeline</option>
+            </select>
+          </label>
+          <label class="split-boundary-control">
+            <span>Split point <output id="splitBoundaryOutput">auto</output></span>
+            <input id="splitBoundary" type="range" min="10" max="90" step="5" value="50" />
+          </label>
+          <button class="control-button" id="applyRecommendedSplit" type="button">
+            Auto split
+          </button>
           <label>
             <span>Relations</span>
             <select id="relationFilter">

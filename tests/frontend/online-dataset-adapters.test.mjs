@@ -9,6 +9,9 @@ import {
 test("online dataset source catalog separates sensitive adapter-only data from embedded fixtures", () => {
   assert.ok(ONLINE_DATASET_SOURCES.some((source) => source.id === "elliptic-plusplus-readme"));
   assert.ok(ONLINE_DATASET_SOURCES.some((source) => source.id === "ibm-amlsim-readme"));
+  assert.ok(ONLINE_DATASET_SOURCES.some((source) => source.id === "dgraph-fin-paper"));
+  assert.ok(ONLINE_DATASET_SOURCES.some((source) => source.id === "gadbench-readme"));
+  assert.ok(ONLINE_DATASET_SOURCES.some((source) => source.id === "networkrepository-crime"));
   for (const source of ONLINE_DATASET_SOURCES) {
     assert.match(source.url, /^https:\/\//);
     assert.ok(source.expectedUse);

@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildChronologicalSplitModels,
   buildTimelineSplitModels,
+  buildUnifiedModel,
+  recommendSplit,
   semanticRows,
 } from "../../packages/graph-renderer/graph-model.mjs";
 
@@ -36,4 +39,22 @@ test("timeline split builds chronological visual slices without changing semanti
   ]);
   assert.deepEqual(slices.map((slice) => slice.label), ["Slice 1", "Slice 2", "Slice 3"]);
   assert.equal(semanticRows({}, source).length, relationships.length);
+});
+
+test("single unified graph preserves all visible relationships without splitting", () => {
+  const unified = buildUnifiedModel({}, source);
+  assert.equal(unified.label, "Unified graph");
+  assert.deepEqual(unified.edges.map((edge) => edge.id), ["r1", "r2", "r3", "r4", "r5", "r6"]);
+});
+
+test("custom split boundary and algorithmic recommendation drive two-way split", () => {
+  const recommended = recommendSplit({}, source);
+  assert.match(recommended.reason, /largest chronological gap/i);
+  const split = buildChronologicalSplitModels({ splitBoundaryPercent: 50 }, source, 2);
+  assert.deepEqual(split.map((slice) => slice.edges.map((edge) => edge.id)), [
+    ["r1", "r2", "r3"],
+    ["r4", "r5", "r6"],
+  ]);
+  const fiveSlices = buildChronologicalSplitModels({ splitCount: 5 }, source, 5);
+  assert.ok(fiveSlices.length >= 3);
 });

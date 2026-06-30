@@ -111,6 +111,9 @@ export const RELATIONSHIPS = Object.freeze(EDGE_DEFS.map(([id, subject, object, 
 
 export const DEFAULT_SETTINGS = Object.freeze({
   comparisonMode: "side-by-side",
+  splitCount: 2,
+  splitBoundaryPercent: 50,
+  splitStrategy: "algorithmic-largest-gap",
   relationFilter: "all",
   windowDays: 8,
   labelDensity: "comfortable",

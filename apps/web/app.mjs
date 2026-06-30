@@ -17,7 +17,9 @@ import {
 import * as FinancialFraud from "../../packages/guided-workflow/financial-fraud.mjs";
 import * as DojoKarate from "../../packages/guided-workflow/dojo-karate-split.mjs";
 import {
+  DATASET_INTEGRATION_STEPS,
   embeddedWorkflowId,
+  listDatasets,
 } from "../../packages/guided-workflow/dataset-registry.mjs";
 import {
   SAMPLE_TRANSACTION_CSV,
@@ -54,8 +56,11 @@ import {
   staticWorkbenchBootstrap,
 } from "../../packages/api-client/workbench-client.mjs";
 import {
+  buildChronologicalSplitModels,
   buildTimelineSplitModels,
+  buildUnifiedModel,
   graphSummary,
+  recommendSplit,
   semanticRows,
 } from "../../packages/graph-renderer/graph-model.mjs";
 import {
@@ -167,6 +172,7 @@ let assistantDraft = null;
 let localModelRun = null;
 let anomalyRun = null;
 let communityRun = null;
+let selectedDatasetId = "harbor-lantern-v1";
 let bloomExploration = { phrase: "", result: null, presetId: "financial-flow", ruleStyle: "default" };
 const modelEvaluation = evaluatePredictiveModelCandidates();
 const workspaceStorageKey = "napp-investigation-workspace-v1";
@@ -174,9 +180,11 @@ const workspaceStorageKey = "napp-investigation-workspace-v1";
 const elements = Object.fromEntries(
   [
     "stepList", "stepEyebrow", "stepTitle", "stepExplanation", "stepTask", "backStep",
-    "useCaseMode", "datasetMode", "caseId", "caseRange", "caseKnownAt", "question-title",
+    "useCaseMode", "datasetMode", "selectedDatasetSummary", "datasetAdapterSteps", "datasetCatalog",
+    "caseId", "caseRange", "caseKnownAt", "question-title",
     "graphHeading", "communityHeading", "aliasControlLabel", "aliasControlHelp",
-    "nextStep", "scopeToggle", "scopeDrawer", "comparisonMode", "relationFilter",
+    "nextStep", "scopeToggle", "scopeDrawer", "comparisonMode", "splitCount", "splitBoundary",
+    "splitBoundaryOutput", "applyRecommendedSplit", "relationFilter",
     "windowDays", "labelDensity", "visualStyle", "visualControls", "visualPopover", "spacing",
     "spacingOutput", "showCommunities", "highContrast", "rotateLeft", "rotateRight",
     "graphUndo", "graphRedo", "resetLayout", "resetAnalysis", "beforeGraph",
@@ -216,6 +224,35 @@ function escapeHtml(value) {
 
 function setStatus(message) {
   elements.statusMessage.textContent = message;
+}
+
+function renderDatasetCatalog(selectedId) {
+  const datasets = listDatasets();
+  const selected = datasets.find((dataset) => dataset.id === selectedId) ?? datasets[0];
+  elements.datasetMode.innerHTML = datasets.map((dataset) => `
+    <option value="${escapeHtml(dataset.id)}">${escapeHtml(dataset.name)}</option>
+  `).join("");
+  elements.datasetMode.value = selected.id;
+  const runnable = embeddedWorkflowId(selected.id);
+  elements.selectedDatasetSummary.innerHTML = `
+    <b>${escapeHtml(selected.name)}</b>
+    <small>${escapeHtml(selected.domain)} · ${escapeHtml(selected.availability)} · ${selected.synthetic ? "synthetic" : "public/external"} · ${selected.benchmarkDerived ? "benchmark-derived" : "project fixture"}</small>
+    <small>${escapeHtml(selected.dataBoundary ?? selected.licenseNote)}</small>
+    <small>${runnable ? `Runs now as the ${runnable} website workflow.` : "Adapter-only: use the import/training workflow after offline download and validation."}</small>
+  `;
+  elements.datasetAdapterSteps.innerHTML = DATASET_INTEGRATION_STEPS
+    .map((step) => `<li>${escapeHtml(step)}</li>`)
+    .join("");
+  elements.datasetCatalog.innerHTML = datasets.map((dataset) => {
+    const enabled = embeddedWorkflowId(dataset.id);
+    return `
+      <article class="dataset-catalog-item${dataset.id === selected.id ? " is-selected" : ""}">
+        <b>${escapeHtml(dataset.name)}</b>
+        <small>${escapeHtml(dataset.taskTypes.slice(0, 3).join(" · "))}</small>
+        <span>${enabled ? "Run now" : dataset.availability.replace("-", " ")}</span>
+      </article>
+    `;
+  }).join("");
 }
 
 function updateJourney(updates) {
@@ -484,11 +521,7 @@ function renderControls() {
   const workflow = activeWorkflow();
   elements.transactionImportPanel.hidden = activeUseCase !== "fraud";
   elements.useCaseMode.value = activeUseCase;
-  elements.datasetMode.value = activeUseCase === "dojo"
-    ? "dojo-karate-split-v1"
-    : activeUseCase === "fraud"
-      ? "financial-fraud-synthetic-v1"
-      : "harbor-lantern-v1";
+  renderDatasetCatalog(selectedDatasetId);
   elements.caseId.textContent = workflow.case.displayId ?? workflow.case.id;
   elements.caseRange.textContent = workflow.case.eventRange ?? "Jan 18–Mar 18, 2026";
   elements.caseKnownAt.textContent = (workflow.case.knownAt ?? workflow.case.scope?.knownAt ?? "2026-03-18T23:59:00Z")
@@ -526,6 +559,7 @@ function renderControls() {
   }
   Object.entries({
     comparisonMode: state.settings.comparisonMode,
+    splitCount: state.settings.splitCount ?? (state.settings.comparisonMode === "timeline-split" ? 3 : 2),
     relationFilter: state.settings.relationFilter,
     windowDays: state.settings.windowDays,
     labelDensity: state.settings.labelDensity,
@@ -539,6 +573,10 @@ function renderControls() {
     if (element.type === "checkbox") element.checked = Boolean(value);
     else element.value = String(value);
   });
+  const recommended = recommendSplit(state.settings, graphSource());
+  const boundary = Number(state.settings.splitBoundaryPercent ?? recommended.percent);
+  elements.splitBoundary.value = String(boundary);
+  elements.splitBoundaryOutput.textContent = `${boundary}% · ${recommended.label}`;
   elements.spacingOutput.textContent = state.settings.spacing;
   elements.graphUndo.disabled = graphView.undo.length === 0;
   elements.graphRedo.disabled = graphView.redo.length === 0;
@@ -612,6 +650,12 @@ function renderGraphs() {
   const source = graphSource();
   const summary = graphSummary(state.settings, source);
   const mode = state.settings.comparisonMode;
+  const recommendedSplit = recommendSplit(state.settings, source);
+  const splitSettings = {
+    ...state.settings,
+    splitBoundaryPercent: state.settings.splitBoundaryPercent ?? recommendedSplit.percent,
+  };
+  const twoPartSplit = buildChronologicalSplitModels(splitSettings, source, 2);
   const options = {
     selectedId: state.selectedId,
     comparisonMode: state.settings.comparisonMode,
@@ -627,19 +671,28 @@ function renderGraphs() {
     onNodeMovePreview: previewNodeMove,
     onNodeMoveEnd: commitNodeMove,
   };
-  renderGraph(elements.beforeGraph, summary.before, options);
-  renderGraph(elements.afterGraph, summary.after, options);
+  renderGraph(elements.beforeGraph, twoPartSplit[0] ?? summary.before, options);
+  renderGraph(elements.afterGraph, twoPartSplit[1] ?? summary.after, options);
   elements.appearedCount.textContent = `${summary.appeared.length} appeared later`;
   elements.missingCount.textContent = `${summary.noLongerObserved.length} no longer observed`;
 
   elements.graphComparison.className = `graph-comparison mode-${mode}`;
   const beforePanel = elements.beforeGraph.closest(".graph-panel");
   const afterPanel = elements.afterGraph.closest(".graph-panel");
-  const dynamicMode = ["overlay", "timeline-split"].includes(mode);
+  const dynamicMode = ["overlay", "timeline-split", "unified", "no-split"].includes(mode);
   beforePanel.hidden = dynamicMode || mode === "single-after";
   afterPanel.hidden = dynamicMode || mode === "single-before";
   elements.overlayPanel.hidden = !dynamicMode;
-  if (mode === "overlay") {
+  if (mode === "unified" || mode === "no-split") {
+    const unifiedModel = buildUnifiedModel(state.settings, source);
+    elements.overlayPanel.innerHTML = `
+      <p class="kicker">Single view · no split</p>
+      <h3>${unifiedModel.edges.length} visible relationships in one graph</h3>
+      <svg id="unifiedGraph" aria-label="Single unified graph without before-after split"></svg>
+      <p>This view removes the before/after split. It is useful when the user wants the complete visible network first, then can add one or more splits for temporal review.</p>
+    `;
+    renderGraph(document.getElementById("unifiedGraph"), unifiedModel, { ...options, comparisonMode: "unified" });
+  } else if (mode === "overlay") {
     const overlayModel = {
       period: "overlay",
       nodes: [...new Map([...summary.before.nodes, ...summary.after.nodes].map((node) => [node.id, node])).values()],
@@ -657,9 +710,10 @@ function renderGraphs() {
     `;
     renderGraph(document.getElementById("overlayGraph"), overlayModel, { ...options, comparisonMode: "overlay" });
   } else if (mode === "timeline-split") {
-    const slices = buildTimelineSplitModels(state.settings, source, 3);
+    const splitCount = Number(state.settings.splitCount ?? 3);
+    const slices = buildTimelineSplitModels(state.settings, source, splitCount);
     elements.overlayPanel.innerHTML = `
-      <p class="kicker">Timeline split · visual-only three-slice view</p>
+      <p class="kicker">Timeline split · visual-only ${slices.length}-slice view</p>
       <h3>${slices.length} chronological slices from visible evidence</h3>
       <div class="timeline-split-grid">
         ${slices.map((slice, index) => `
@@ -669,7 +723,7 @@ function renderGraphs() {
           </article>
         `).join("")}
       </div>
-      <p>This split is for visual review only. Reports still use the complete authorized visible relationship set.</p>
+      <p>This split is for visual review only. Reports still use the complete authorized visible relationship set. Auto split starts from: ${escapeHtml(recommendedSplit.reason)}</p>
     `;
     slices.forEach((slice, index) => {
       renderGraph(document.getElementById(`timelineGraph${index}`), slice, { ...options, comparisonMode: "timeline-split" });
@@ -1425,6 +1479,11 @@ elements.nextStep.addEventListener("click", () => {
 
 elements.useCaseMode.addEventListener("change", (event) => {
   activeUseCase = event.target.value;
+  selectedDatasetId = activeUseCase === "dojo"
+    ? "dojo-karate-split-v1"
+    : activeUseCase === "fraud"
+      ? "financial-fraud-synthetic-v1"
+      : "harbor-lantern-v1";
   const workflow = activeUseCase === "fraud" ? activeWorkflow() : null;
   state = activeUseCase === "fraud"
     ? { ...financialInitialState(), selectedId: workflow?.relationships?.[0]?.id ?? "tx-004" }
@@ -1447,10 +1506,11 @@ elements.useCaseMode.addEventListener("change", (event) => {
 });
 
 elements.datasetMode.addEventListener("change", (event) => {
+  selectedDatasetId = event.target.value;
   const workflowId = embeddedWorkflowId(event.target.value);
   if (!workflowId) {
     setStatus("External benchmark adapters are documented but not embedded in the static training app");
-    renderControls();
+    renderDatasetCatalog(selectedDatasetId);
     return;
   }
   elements.useCaseMode.value = workflowId;
@@ -1519,11 +1579,37 @@ elements.visualControls.addEventListener("click", () => {
   elements.visualControls.setAttribute("aria-expanded", String(!elements.visualPopover.hidden));
 });
 
-["comparisonMode", "relationFilter", "windowDays", "labelDensity", "visualStyle"].forEach((id) => {
+["comparisonMode", "splitCount", "relationFilter", "windowDays", "labelDensity", "visualStyle"].forEach((id) => {
   elements[id].addEventListener("change", (event) => {
-    const value = id === "windowDays" ? Number(event.target.value) : event.target.value;
+    const value = ["windowDays", "splitCount"].includes(id) ? Number(event.target.value) : event.target.value;
+    if (id === "comparisonMode" && ["unified", "no-split"].includes(value)) {
+      state = { ...state, settings: { ...state.settings, splitCount: 1 } };
+    }
+    if (id === "splitCount" && Number(value) === 1) {
+      state = { ...state, settings: { ...state.settings, comparisonMode: "no-split" } };
+    }
+    if (id === "splitCount" && Number(value) > 2) {
+      state = { ...state, settings: { ...state.settings, comparisonMode: "timeline-split" } };
+    }
     changeSetting(id, value);
   });
+});
+elements.splitBoundary.addEventListener("input", (event) => {
+  changeSetting("splitBoundaryPercent", Number(event.target.value));
+});
+elements.applyRecommendedSplit.addEventListener("click", () => {
+  const recommended = recommendSplit(state.settings, graphSource());
+  state = {
+    ...state,
+    settings: {
+      ...state.settings,
+      splitBoundaryPercent: recommended.percent,
+      splitCount: Math.max(2, Number(state.settings.splitCount ?? 2)),
+      comparisonMode: ["unified", "no-split"].includes(state.settings.comparisonMode) ? "side-by-side" : state.settings.comparisonMode,
+    },
+  };
+  render();
+  setStatus(`Auto split set at ${recommended.percent}%: ${recommended.reason}`);
 });
 elements.spacing.addEventListener("input", (event) => changeSetting("spacing", Number(event.target.value)));
 elements.showCommunities.addEventListener("change", (event) => changeSetting("showCommunities", event.target.checked));
@@ -1853,18 +1939,23 @@ elements.resetScenePreset.addEventListener("click", () => {
 });
 elements.resetAnalysis.addEventListener("click", () => {
   if (activeUseCase === "fraud") {
+    const defaults = activeWorkflow().defaults;
     const changed = ["aliasIncluded", "windowDays", "relationFilter", "priorityThreshold", "includeInfrastructure"].some(
-      (key) => String(state.settings[key]) !== String(FinancialFraud.DEFAULT_SETTINGS[key]),
+      (key) => String(state.settings[key]) !== String(defaults[key]),
     );
     state = {
       ...state,
       settings: {
         ...state.settings,
-        aliasIncluded: FinancialFraud.DEFAULT_SETTINGS.aliasIncluded,
-        includeInfrastructure: FinancialFraud.DEFAULT_SETTINGS.includeInfrastructure,
-        windowDays: FinancialFraud.DEFAULT_SETTINGS.windowDays,
-        relationFilter: FinancialFraud.DEFAULT_SETTINGS.relationFilter,
-        priorityThreshold: FinancialFraud.DEFAULT_SETTINGS.priorityThreshold,
+        aliasIncluded: defaults.aliasIncluded,
+        includeInfrastructure: defaults.includeInfrastructure,
+        windowDays: defaults.windowDays,
+        relationFilter: defaults.relationFilter,
+        priorityThreshold: defaults.priorityThreshold,
+        comparisonMode: defaults.comparisonMode,
+        splitCount: defaults.splitCount,
+        splitBoundaryPercent: defaults.splitBoundaryPercent,
+        splitStrategy: defaults.splitStrategy,
       },
       analysisVersion: state.analysisVersion + (changed ? 1 : 0),
       preflightRun: false,

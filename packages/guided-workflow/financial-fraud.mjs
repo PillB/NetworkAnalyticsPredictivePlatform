@@ -212,6 +212,9 @@ export const RELATIONSHIPS = Object.freeze(
 
 export const DEFAULT_SETTINGS = Object.freeze({
   comparisonMode: "side-by-side",
+  splitCount: 2,
+  splitBoundaryPercent: 50,
+  splitStrategy: "algorithmic-largest-gap",
   relationFilter: "all",
   windowDays: 3,
   labelDensity: "comfortable",
