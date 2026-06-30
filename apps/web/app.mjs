@@ -1554,7 +1554,11 @@ elements.useDatasetFlow.addEventListener("click", () => {
   elements.useCaseMode.dispatchEvent(new Event("change"));
   selectedDatasetId = datasetId;
   renderDatasetCatalog(selectedDatasetId);
-  setStatus(`Opened built-in ${target} demo flow for ${listDatasets().find((dataset) => dataset.id === selectedDatasetId)?.name ?? "selected dataset"}; external source rows still require adapter mapping.`);
+  const dataset = listDatasets().find((entry) => entry.id === selectedDatasetId);
+  const dataUse = datasetDataUseStatus(selectedDatasetId);
+  setStatus(dataUse.canUseAllRowsInBrowser
+    ? `Opened ${target} workflow for ${dataset?.name ?? "selected dataset"} using all embedded demo data.`
+    : `Opened built-in ${target} demo flow for ${dataset?.name ?? "selected dataset"}; external source rows still require adapter mapping.`);
 });
 
 elements.loadDatasetDemo.addEventListener("click", () => {
